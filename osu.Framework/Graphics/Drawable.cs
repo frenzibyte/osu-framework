@@ -2093,7 +2093,7 @@ namespace osu.Framework.Graphics
         /// Triggers a left click event for this <see cref="Drawable"/>.
         /// </summary>
         /// <returns>Whether the click event is handled.</returns>
-        public bool TriggerClick() => TriggerEvent(new ClickEvent(GetContainingInputManager()?.CurrentState ?? new InputState(), MouseButton.Left));
+        public virtual bool TriggerClick() => TriggerEvent(new ClickEvent(GetContainingInputManager()?.CurrentState ?? new InputState(), MouseButton.Left));
 
         #region Individual event handlers
 
@@ -2573,12 +2573,12 @@ namespace osu.Framework.Graphics
         /// <param name="screenSpacePos">The screen space position of the positional input.</param>
         /// <param name="queue">The input queue to be built.</param>
         /// <returns>Returns false if we should skip this sub-tree.</returns>
-        internal virtual bool BuildPositionalInputQueue(Vector2 screenSpacePos, List<Drawable> queue)
+        internal virtual bool BuildPositionalInputQueue(Vector2? screenSpacePos, List<Drawable> queue)
         {
             if (!PropagatePositionalInputSubTree)
                 return false;
 
-            if (HandlePositionalInput && ReceivePositionalInputAt(screenSpacePos))
+            if (HandlePositionalInput && (screenSpacePos == null || ReceivePositionalInputAt(screenSpacePos.Value)))
                 queue.Add(this);
 
             return true;

@@ -23,11 +23,16 @@ using JetBrains.Annotations;
 using osu.Framework.Development;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Extensions.ExceptionExtensions;
+using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Input.Events;
+using osu.Framework.Input.States;
 using osu.Framework.Layout;
+using osu.Framework.Logging;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
+using osuTK.Input;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -1346,12 +1351,12 @@ namespace osu.Framework.Graphics.Containers
         /// <returns>True if the subtree should receive input at the given screen-space position.</returns>
         protected virtual bool ReceivePositionalInputAtSubTree(Vector2 screenSpacePos) => !Masking || ReceivePositionalInputAt(screenSpacePos);
 
-        internal override bool BuildPositionalInputQueue(Vector2 screenSpacePos, List<Drawable> queue)
+        internal override bool BuildPositionalInputQueue(Vector2? screenSpacePos, List<Drawable> queue)
         {
             if (!base.BuildPositionalInputQueue(screenSpacePos, queue))
                 return false;
 
-            if (!ReceivePositionalInputAtSubTree(screenSpacePos))
+            if (screenSpacePos != null && !ReceivePositionalInputAtSubTree(screenSpacePos.Value))
                 return false;
 
             for (int i = 0; i < aliveInternalChildren.Count; ++i)
@@ -1360,6 +1365,24 @@ namespace osu.Framework.Graphics.Containers
                     aliveInternalChildren[i].BuildPositionalInputQueue(screenSpacePos, queue);
             }
 
+            return true;
+        }
+
+        public override bool TriggerClick()
+        {
+            var state = GetContainingInputManager()?.CurrentState ?? new InputState();
+            var click = new ClickEvent(state, MouseButton.Left);
+            var queue = new List<Drawable>();
+
+            BuildPositionalInputQueue(null, queue);
+            queue.Reverse();
+
+            var handledBy = queue.FirstOrDefault(target => target.TriggerEvent(click));
+
+            if (handledBy == null)
+                return false;
+
+            Logger.Log($"{GetType().ReadableName()}.{nameof(TriggerClick)}() handled by {handledBy}.", LoggingTarget.Runtime, LogLevel.Debug);
             return true;
         }
 

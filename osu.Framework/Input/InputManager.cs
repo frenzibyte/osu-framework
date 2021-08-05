@@ -420,7 +420,7 @@ namespace osu.Framework.Input
             return false;
         }
 
-        internal override bool BuildPositionalInputQueue(Vector2 screenSpacePos, List<Drawable> queue) => false;
+        internal override bool BuildPositionalInputQueue(Vector2? screenSpacePos, List<Drawable> queue) => false;
 
         private bool hoverEventsUpdated;
 
