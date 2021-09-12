@@ -3,7 +3,9 @@
 
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osuTK.Graphics;
 
 namespace osu.Framework.Tests.Visual.Sprites
 {
@@ -42,6 +44,55 @@ namespace osu.Framework.Tests.Visual.Sprites
             flow.Add(new SpriteText
             {
                 Text = @"0123456789!@#$%^&*()_-+-[]{}.,<>;'\"
+            });
+            flow.Add(new Container
+            {
+                Margin = new MarginPadding(15f),
+                AutoSizeAxes = Axes.Both,
+                Children = new Drawable[]
+                {
+                    new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = FrameworkColour.GreenDark,
+                    },
+                    new Box
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Colour = Color4.Red,
+                        RelativeSizeAxes = Axes.X,
+                        Height = 1f,
+                    },
+                    new Box
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Colour = Color4.Red,
+                        RelativeSizeAxes = Axes.Y,
+                        Width = 1f,
+                    },
+                    new Container
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        AutoSizeAxes = Axes.Both,
+                        Margin = new MarginPadding(20f),
+                        Children = new Drawable[]
+                        {
+                            new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Colour = FrameworkColour.Green,
+                            },
+                            new SpriteText
+                            {
+                                Text = "pA",
+                                UseFullGlyphHeight = false,
+                            }
+                        }
+                    }
+                }
             });
 
             for (int i = 1; i <= 200; i++)
