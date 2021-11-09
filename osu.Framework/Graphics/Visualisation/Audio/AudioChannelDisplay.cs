@@ -2,12 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using ManagedBass;
-using ManagedBass.Mix;
-using osu.Framework.Audio;
+// using ManagedBass;
+// using ManagedBass.Mix;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Graphics.Sprites;
 using osuTK;
 using osuTK.Graphics;
 
@@ -22,8 +20,6 @@ namespace osu.Framework.Graphics.Visualisation.Audio
 
         private readonly Drawable volBarL;
         private readonly Drawable volBarR;
-        private readonly SpriteText peakText;
-        private readonly SpriteText maxPeakText;
 
         private float maxPeak = float.MinValue;
         private double lastMaxPeakTime;
@@ -81,17 +77,6 @@ namespace osu.Framework.Graphics.Visualisation.Audio
                     },
                     new Drawable[]
                     {
-                        new FillFlowContainer
-                        {
-                            AutoSizeAxes = Axes.Y,
-                            RelativeSizeAxes = Axes.X,
-                            Direction = FillDirection.Vertical,
-                            Children = new Drawable[]
-                            {
-                                peakText = new SpriteText { Text = "N/A", Font = FrameworkFont.Condensed.With(size: 14f) },
-                                maxPeakText = new SpriteText { Text = "N/A", Font = FrameworkFont.Condensed.With(size: 14f) },
-                            }
-                        }
                     }
                 }
             };
@@ -102,7 +87,7 @@ namespace osu.Framework.Graphics.Visualisation.Audio
             base.Update();
 
             float[] levels = new float[2];
-            BassMix.ChannelGetLevel(ChannelHandle, levels, 1 / 1000f * sample_window, LevelRetrievalFlags.Stereo);
+            // BassMix.ChannelGetLevel(ChannelHandle, levels, 1 / 1000f * sample_window, LevelRetrievalFlags.Stereo);
 
             float curPeakL = levels[0];
             float curPeakR = levels[1];
@@ -118,13 +103,13 @@ namespace osu.Framework.Graphics.Visualisation.Audio
 
             volBarL.ResizeHeightTo(curPeakL, sample_window * 4);
             volBarR.ResizeHeightTo(curPeakR, sample_window * 4);
-
-            string peakDisplay = curPeak == 0 ? "-∞ " : $"{BassUtils.LevelToDb(curPeak):F}";
-            string maxPeakDisplay = maxPeak == 0 ? "-∞ " : $"{BassUtils.LevelToDb(maxPeak):F}";
-            peakText.Text = $"curr: {peakDisplay}dB";
-            maxPeakText.Text = $"peak: {maxPeakDisplay}dB";
-            peakText.Colour = BassUtils.LevelToDb(curPeak) > 0 ? Colour4.Red : Colour4.White;
-            maxPeakText.Colour = BassUtils.LevelToDb(maxPeak) > 0 ? Colour4.Red : Colour4.White;
+            //
+            // string peakDisplay = curPeak == 0 ? "-∞ " : $"{BassUtils.LevelToDb(curPeak):F}";
+            // string maxPeakDisplay = maxPeak == 0 ? "-∞ " : $"{BassUtils.LevelToDb(maxPeak):F}";
+            // peakText.Text = $"curr: {peakDisplay}dB";
+            // maxPeakText.Text = $"peak: {maxPeakDisplay}dB";
+            // peakText.Colour = true ? Colour4.Red : Colour4.White;
+            // maxPeakText.Colour = true ? Colour4.Red : Colour4.White;
         }
     }
 }

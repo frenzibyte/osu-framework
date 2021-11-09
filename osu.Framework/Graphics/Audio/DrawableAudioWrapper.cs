@@ -5,7 +5,6 @@ using System;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
-using osu.Framework.Audio.Mixing;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Layout;
@@ -49,7 +48,6 @@ namespace osu.Framework.Graphics.Audio
         private readonly AudioAdjustments adjustments = new AudioAdjustments();
 
         private IAggregateAudioAdjustment parentAdjustment;
-        private IAudioMixer parentMixer;
 
         private readonly LayoutValue fromParentLayout = new LayoutValue(Invalidation.Parent);
 
@@ -100,11 +98,10 @@ namespace osu.Framework.Graphics.Audio
             // in the majority of cases the traversal should be quite short. may require later attention if a use case comes up which this is not true for.
             Drawable cursor = this;
             IAggregateAudioAdjustment newAdjustments = null;
-            IAudioMixer newMixer = null;
 
             while ((cursor = cursor.Parent) != null)
             {
-                if (newAdjustments == null && cursor is IAggregateAudioAdjustment candidateAdjustment)
+                if (cursor is IAggregateAudioAdjustment candidateAdjustment)
                 {
                     // components may be delegating the aggregates of a contained child.
                     // to avoid binding to one's self, check reference equality on an arbitrary bindable.
@@ -112,10 +109,7 @@ namespace osu.Framework.Graphics.Audio
                         newAdjustments = candidateAdjustment;
                 }
 
-                if (newMixer == null && cursor is IAudioMixer candidateMixer)
-                    newMixer = candidateMixer;
-
-                if (newAdjustments != null && newMixer != null)
+                if (newAdjustments != null)
                     break;
             }
 
@@ -125,15 +119,6 @@ namespace osu.Framework.Graphics.Audio
                 parentAdjustment = newAdjustments;
                 if (parentAdjustment != null) adjustments.BindAdjustments(parentAdjustment);
             }
-
-            if (parentMixer != newMixer)
-                OnMixerChanged(new ValueChangedEvent<IAudioMixer>(parentMixer, newMixer));
-
-            parentMixer = newMixer;
-        }
-
-        protected virtual void OnMixerChanged(ValueChangedEvent<IAudioMixer> mixer)
-        {
         }
 
         protected override void Dispose(bool isDisposing)
@@ -145,7 +130,6 @@ namespace osu.Framework.Graphics.Audio
                 (component as IDisposable)?.Dispose();
 
             parentAdjustment = null;
-            parentMixer = null;
         }
 
         public void AddAdjustment(AdjustableProperty type, IBindable<double> adjustBindable)

@@ -5,12 +5,10 @@
 
 using osu.Framework.Statistics;
 using System;
-using System.Threading.Tasks;
-using osu.Framework.Audio.Mixing;
 
 namespace osu.Framework.Audio.Track
 {
-    public abstract class Track : AdjustableAudioComponent, ITrack, IAudioChannel
+    public abstract class Track : AdjustableAudioComponent, ITrack
     {
         public event Action? Completed;
         public event Action? Failed;
@@ -120,19 +118,5 @@ namespace osu.Framework.Audio.Track
             if (Looping && HasCompleted)
                 Restart();
         }
-
-        #region Mixing
-
-        protected virtual AudioMixer? Mixer { get; set; }
-
-        AudioMixer? IAudioChannel.Mixer
-        {
-            get => Mixer;
-            set => Mixer = value;
-        }
-
-        Task IAudioChannel.EnqueueAction(Action action) => EnqueueAction(action);
-
-        #endregion
     }
 }

@@ -4,14 +4,12 @@
 #nullable enable
 
 using System;
-using System.Threading.Tasks;
-using osu.Framework.Audio.Mixing;
 using osu.Framework.Statistics;
 using osu.Framework.Audio.Track;
 
 namespace osu.Framework.Audio.Sample
 {
-    public abstract class SampleChannel : AdjustableAudioComponent, ISampleChannel, IAudioChannel
+    public abstract class SampleChannel : AdjustableAudioComponent, ISampleChannel
     {
         internal Action<SampleChannel>? OnPlay;
 
@@ -43,20 +41,6 @@ namespace osu.Framework.Audio.Sample
         public override bool IsAlive => base.IsAlive && Playing;
 
         public virtual ChannelAmplitudes CurrentAmplitudes { get; } = ChannelAmplitudes.Empty;
-
-        #region Mixing
-
-        protected virtual AudioMixer? Mixer { get; set; }
-
-        AudioMixer? IAudioChannel.Mixer
-        {
-            get => Mixer;
-            set => Mixer = value;
-        }
-
-        Task IAudioChannel.EnqueueAction(Action action) => EnqueueAction(action);
-
-        #endregion
 
         protected override void Dispose(bool disposing)
         {
