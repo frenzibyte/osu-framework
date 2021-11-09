@@ -78,8 +78,16 @@
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.7.0" />
     <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
-
-    <!-- Manually downgrade for 4.5.1-4.5.3. Should be removed when 4.6.0 released. -->
-    <PackageReference Include="System.Memory" Version="4.5.4" NoWarn="NU1605" />
   </ItemGroup>
+  <Target
+    Name="VS16_RemoveSystemMemory"
+    BeforeTargets="FindReferenceAssembliesForReferences"
+    Condition="'$(MSBuildVersion)' &gt;= '16.0'">
+    <ItemGroup>
+      <_ReferencePathToRemove
+        Include="@(ReferencePath)"
+        Condition="'%(ReferencePath.NuGetPackageId)'=='System.Memory'" />
+      <ReferencePath Remove="@(_ReferencePathToRemove)" />
+    </ItemGroup>
+  </Target>
 </Project>
