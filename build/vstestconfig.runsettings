@@ -3,4 +3,7 @@
    <MSTest>
       <TestTimeout>300000</TestTimeout>
    </MSTest>
+   <NUnit>
+       <StopOnError>True</StopOnError>
+   </NUnit>
 </RunSettings>
