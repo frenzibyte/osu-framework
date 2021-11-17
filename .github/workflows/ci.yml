@@ -36,5 +36,5 @@ jobs:
         run: dotnet build -c Debug -warnaserror build/Desktop.proj
 
       - name: Test
-        run: dotnet test $pwd/*.Tests/bin/Debug/*/*.Tests.dll --blame-crash --blame-hang --settings $pwd/build/vstestconfig.runsettings --logger "console;verbosity=detailed"
+        run: dotnet test $pwd/*.Tests/bin/Debug/*/*.Tests.dll --blame-crash --blame-hang --settings $pwd/build/vstestconfig.runsettings --logger "console;verbosity=detailed" --logger "trx;LogFileName=TestResults-${{matrix.os.prettyname}}-${{matrix.threadingName}}.trx"
         shell: pwsh
