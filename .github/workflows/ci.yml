@@ -84,9 +84,16 @@ jobs:
 
       # Contrary to seemingly any other msbuild, msbuild running on macOS/Mono
       # cannot accept .sln(f) files as arguments.
-      # Build just the iOS framework project for now.
-      - name: Build
+      # Build each project separately for now.
+
+      - name: Build framework iOS project
         run: msbuild osu.Framework.iOS/osu.Framework.iOS.csproj /restore /p:Configuration=Debug
+
+      - name: Build tests iOS project
+        run: msbuild osu.Framework.Tests.iOS/osu.Framework.Tests.iOS.csproj /restore /p:Configuration=Debug
+
+      - name: Build sample iOS project
+        run: msbuild SampleGame.iOS/SampleGame.iOS.csproj /restore /p:Configuration=Debug
 
   inspect-code:
     name: Code Quality
