@@ -33,7 +33,6 @@ namespace osu.Framework.iOS
         public override void ViewWillTransitionToSize(CGSize toSize, IUIViewControllerTransitionCoordinator coordinator)
         {
             base.ViewWillTransitionToSize(toSize, coordinator);
-            gameView.RequestResizeFrameBuffer();
         }
     }
 }

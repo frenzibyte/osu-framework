@@ -71,18 +71,25 @@ namespace osu.Framework.iOS
         public override void TouchesEnded(NSSet touches, UIEvent evt) => HandleTouches?.Invoke(touches, evt);
         public override void TouchesMoved(NSSet touches, UIEvent evt) => HandleTouches?.Invoke(touches, evt);
 
+        private bool needsResizeFrameBuffer;
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            needsResizeFrameBuffer = true;
+        }
+
         protected override void CreateFrameBuffer()
         {
             base.CreateFrameBuffer();
             GLWrapper.DefaultFrameBuffer = Framebuffer;
         }
 
-        private bool needsResizeFrameBuffer;
-        public void RequestResizeFrameBuffer() => needsResizeFrameBuffer = true;
-
         public override void LayoutSubviews()
         {
             base.LayoutSubviews();
+
+            Size = new Size((int)Math.Round(Bounds.Width * ContentScaleFactor), (int)Math.Round(Bounds.Height * ContentScaleFactor));
             SafeArea = SafeAreaInsets;
         }
 
