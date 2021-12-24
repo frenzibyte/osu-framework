@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -17,7 +18,6 @@ using JetBrains.Annotations;
 using Newtonsoft.Json;
 using osuTK;
 using osuTK.Graphics;
-using osuTK.Graphics.ES30;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
@@ -25,7 +25,7 @@ using osu.Framework.Development;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.Renderer;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -41,9 +41,10 @@ using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
 using SixLabors.ImageSharp.Memory;
+using Veldrid;
 using Image = SixLabors.ImageSharp.Image;
-using PixelFormat = osuTK.Graphics.ES30.PixelFormat;
 using Size = System.Drawing.Size;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Platform
 {
@@ -446,6 +447,8 @@ namespace osu.Framework.Platform
             if (Root == null)
                 return;
 
+            Vd.Commands.Begin();
+
             while (ExecutionState == ExecutionState.Running)
             {
                 using (var buffer = DrawRoots.Get(UsageType.Read))
@@ -464,42 +467,46 @@ namespace osu.Framework.Platform
                     }
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
-                        GLWrapper.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                        Vd.Reset(new System.Numerics.Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
-                    if (!bypassFrontToBackPass.Value)
+                    if (false)
                     {
-                        depthValue.Reset();
-
-                        GL.ColorMask(false, false, false, false);
-                        GLWrapper.SetBlend(BlendingParameters.None);
-                        GLWrapper.PushDepthInfo(DepthInfo.Default);
-
-                        // Front pass
-                        buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
-
-                        GLWrapper.PopDepthInfo();
-                        GL.ColorMask(true, true, true, true);
-
-                        // The back pass doesn't write depth, but needs to depth test properly
-                        GLWrapper.PushDepthInfo(new DepthInfo(true, false));
+                        // depthValue.Reset();
+                        //
+                        // GL.ColorMask(false, false, false, false);
+                        // Vd.SetBlend(BlendingParameters.None);
+                        // Vd.PushDepthInfo(DepthInfo.Default);
+                        //
+                        // // Front pass
+                        // buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
+                        //
+                        // Vd.PopDepthInfo();
+                        // GL.ColorMask(true, true, true, true);
+                        //
+                        // // The back pass doesn't write depth, but needs to depth test properly
+                        // Vd.PushDepthInfo(new DepthInfo(true, false));
                     }
                     else
                     {
                         // Disable depth testing
-                        GLWrapper.PushDepthInfo(new DepthInfo());
+                        Vd.PushDepthInfo(new DepthInfo());
                     }
 
                     // Back pass
                     buffer.Object.Draw(null);
 
-                    GLWrapper.PopDepthInfo();
+                    Vd.PopDepthInfo();
 
                     lastDrawFrameId = buffer.FrameId;
                     break;
                 }
             }
 
-            GLWrapper.FlushCurrentBatch();
+            Vd.FlushCurrentBatch();
+
+            Vd.Commands.End();
+
+            Vd.Device.SubmitCommands(Vd.Commands);
 
             using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
             {
@@ -514,17 +521,17 @@ namespace osu.Framework.Platform
         {
             Window.SwapBuffers();
 
-            if (Window.VerticalSync)
-                // without glFinish, vsync is basically unplayable due to the extra latency introduced.
-                // we will likely want to give the user control over this in the future as an advanced setting.
-                GL.Finish();
+            // if (Window.VerticalSync)
+            //     // without glFinish, vsync is basically unplayable due to the extra latency introduced.
+            //     // we will likely want to give the user control over this in the future as an advanced setting.
+            //     VeldridGraphicsBackend.Device.WaitForIdle();
         }
 
         /// <summary>
         /// Takes a screenshot of the game. The returned <see cref="Image{TPixel}"/> must be disposed by the caller when applicable.
         /// </summary>
         /// <returns>The screenshot as an <see cref="Image{TPixel}"/>.</returns>
-        public async Task<Image<Rgba32>> TakeScreenshotAsync()
+        public unsafe async Task<Image<Rgba32>> TakeScreenshotAsync()
         {
             if (Window == null) throw new InvalidOperationException($"{nameof(Window)} has not been set!");
 
@@ -541,14 +548,16 @@ namespace osu.Framework.Platform
                     else if (GraphicsContext.CurrentContext == null)
                         throw new GraphicsContextMissingException();
 
-                    GL.ReadPixels(0, 0, width, height, PixelFormat.Rgba, PixelType.UnsignedByte, ref MemoryMarshal.GetReference(pixelData.Memory.Span));
+                    // todo: uhhhhhhhhhh
+                    var resource = Vd.Device.Map(Vd.Device.SwapchainFramebuffer.ColorTargets.Single().Target, MapMode.Read);
+                    Unsafe.CopyBlock(ref MemoryMarshal.GetReference(MemoryMarshal.Cast<Rgba32, byte>(pixelData.Memory.Span)), ref Unsafe.AsRef<byte>(resource.Data.ToPointer()), resource.SizeInBytes);
 
                     // ReSharper disable once AccessToDisposedClosure
                     completionEvent.Set();
                 });
 
                 // this is required as attempting to use a TaskCompletionSource blocks the thread calling SetResult on some configurations.
-                await Task.Run(completionEvent.Wait).ConfigureAwait(false);
+                Task.Run(completionEvent.Wait).ConfigureAwait(false);
 
                 var image = Image.LoadPixelData<Rgba32>(pixelData.Memory.Span, width, height);
                 image.Mutate(c => c.Flip(FlipMode.Vertical));
@@ -723,10 +732,6 @@ namespace osu.Framework.Platform
                         {
                             case SDL2DesktopWindow window:
                                 window.Update += windowUpdate;
-                                break;
-
-                            case OsuTKWindow tkWindow:
-                                tkWindow.UpdateFrame += (o, e) => windowUpdate();
                                 break;
                         }
 
