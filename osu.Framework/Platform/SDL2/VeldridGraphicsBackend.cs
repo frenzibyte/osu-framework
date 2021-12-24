@@ -85,8 +85,6 @@ namespace osu.Framework.Platform.SDL2
 
         public static bool UsingBackbuffer => frame_buffer_stack.Peek() == DefaultFrameBuffer;
 
-        public static bool UsingShaders => pipelineDescription.ShaderSet.Shaders.Length > 0;
-
         public static Framebuffer DefaultFrameBuffer;
 
         public static bool IsEmbedded { get; internal set; }

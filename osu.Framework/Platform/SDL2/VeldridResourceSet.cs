@@ -17,7 +17,7 @@ namespace osu.Framework.Platform.SDL2
         /// <summary>
         /// The resource layout of the resource set.
         /// </summary>
-        public ResourceLayout ResourceLayout { get; private set; }
+        public ResourceLayout ResourceLayout { get; }
 
         public VeldridResourceSet(ResourceLayoutDescription resourceLayoutDescription)
         {
@@ -40,6 +40,8 @@ namespace osu.Framework.Platform.SDL2
             return resourceLayoutDescription.Elements[index];
         }
 
+        private bool requiresReinstantiation;
+
         /// <summary>
         /// Sets a <see cref="BindableResource"/> of a specified <see cref="ResourceKind"/> to the resource set.
         /// </summary>
@@ -48,23 +50,27 @@ namespace osu.Framework.Platform.SDL2
         public void SetResource(ResourceKind kind, BindableResource resource)
         {
             int index = Array.FindIndex(resourceLayoutDescription.Elements, e => e.Kind == kind);
-            description.BoundResources[index] = resource;
-        }
 
-        private ResourceSetDescription descriptionLastFetch;
+            if (resource == description.BoundResources[index])
+                return;
+
+            description.BoundResources[index] = resource;
+            requiresReinstantiation = true;
+        }
 
         /// <summary>
         /// Returns an updated <see cref="ResourceSet"/> instance for consumption.
         /// </summary>
         public ResourceSet GetResourceSet()
         {
-            if (!description.Equals(descriptionLastFetch))
+            if (requiresReinstantiation)
             {
                 resourceSet?.Dispose();
                 resourceSet = Vd.Factory.CreateResourceSet(description);
+
+                requiresReinstantiation = false;
             }
 
-            descriptionLastFetch = description;
             return resourceSet;
         }
     }
