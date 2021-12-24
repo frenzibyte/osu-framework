@@ -176,7 +176,7 @@ namespace osu.Framework.Graphics.Shaders
             var uniformLayout = Vd.ResourceSet.GetLayout(ResourceKind.UniformBuffer, out int uniformIndex);
 
             var uniformBuilder = new StringBuilder();
-            uniformBuilder.AppendLine($"layout(packed, binding = {uniformIndex}) uniform {uniformLayout.Name}");
+            uniformBuilder.AppendLine($"layout(std140, binding = {uniformIndex}) uniform {uniformLayout.Name}");
             uniformBuilder.AppendLine("{");
 
             foreach (var uniform in uniforms)
