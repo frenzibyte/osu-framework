@@ -4,59 +4,53 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
-using osu.Framework.Graphics.OpenGL;
-using osuTK.Graphics.ES30;
+using Veldrid;
+using Encoding = System.Text.Encoding;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shaders
 {
-    internal class ShaderPart : IDisposable
+    internal class ShaderPart
     {
-        internal const string SHADER_ATTRIBUTE_PATTERN = "^\\s*(?>attribute|in)\\s+(?:(?:lowp|mediump|highp)\\s+)?\\w+\\s+(\\w+)";
+        internal string Name { get; }
 
-        internal List<ShaderInputInfo> ShaderInputs = new List<ShaderInputInfo>();
+        internal ShaderStages Type { get; }
 
-        internal string Name;
-        internal bool HasCode;
-        internal bool Compiled;
+        internal IReadOnlyList<ShaderUniformInfo> Uniforms { get; }
 
-        internal ShaderType Type;
+        private readonly string code;
 
-        private bool isVertexShader => Type == ShaderType.VertexShader || Type == ShaderType.VertexShaderArb;
+        private static readonly Regex include_regex = new Regex("^\\s*#\\s*include\\s+[\"<](.*)[\">]");
+        private static readonly Regex shader_attribute_location_regex = new Regex(@"(layout\(location\s=\s)(-?\d+)(\)\s(?>attribute|in).*)", RegexOptions.Multiline);
+        private static readonly Regex shader_resource_regex = new Regex(@"^\s*(?>uniform)\s+(?:lowp|mediump|highp)\s+?(texture2D|sampler)\s+\w+;", RegexOptions.Multiline);
+        private static readonly Regex shader_uniform_regex = new Regex(@"^\s*(?>uniform)\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(\w+);", RegexOptions.Multiline);
 
-        private int partID = -1;
-
-        private int lastShaderInputIndex;
-
-        private readonly List<string> shaderCodes = new List<string>();
-
-        private readonly Regex includeRegex = new Regex("^\\s*#\\s*include\\s+[\"<](.*)[\">]");
-        private readonly Regex shaderInputRegex = new Regex(SHADER_ATTRIBUTE_PATTERN);
-
-        private readonly ShaderManager manager;
-
-        internal ShaderPart(string name, byte[] data, ShaderType type, ShaderManager manager)
+        private ShaderPart(string name, ShaderStages type, string code, List<ShaderUniformInfo> uniforms)
         {
             Name = name;
             Type = type;
+            Uniforms = uniforms;
 
-            this.manager = manager;
-
-            shaderCodes.Add(loadFile(data, true));
-            shaderCodes.RemoveAll(string.IsNullOrEmpty);
-
-            if (shaderCodes.Count == 0)
-                return;
-
-            HasCode = true;
+            this.code = code;
         }
 
-        private string loadFile(byte[] bytes, bool mainFile)
+        internal static ShaderPart LoadFromFile(string name, byte[] data, ShaderStages type, ShaderManager manager)
         {
-            if (bytes == null)
+            var uniforms = new List<ShaderUniformInfo>();
+
+            string code = loadFile(data, true, type, manager, uniforms);
+
+            return new ShaderPart(name, type, code, uniforms);
+        }
+
+        private static string loadFile(byte[] data, bool mainFile, ShaderStages type, ShaderManager manager, List<ShaderUniformInfo> uniforms)
+        {
+            if (data == null)
                 return null;
 
-            using (MemoryStream ms = new MemoryStream(bytes))
+            using (MemoryStream ms = new MemoryStream(data))
             using (StreamReader sr = new StreamReader(ms))
             {
                 string code = string.Empty;
@@ -68,114 +62,143 @@ namespace osu.Framework.Graphics.Shaders
                     if (string.IsNullOrEmpty(line))
                         continue;
 
-                    if (line.StartsWith("#version", StringComparison.Ordinal)) // the version directive has to appear before anything else in the shader
-                    {
-                        shaderCodes.Add(line);
-                        continue;
-                    }
-
-                    Match includeMatch = includeRegex.Match(line);
+                    Match includeMatch = include_regex.Match(line);
 
                     if (includeMatch.Success)
                     {
                         string includeName = includeMatch.Groups[1].Value.Trim();
 
-                        //#if DEBUG
-                        //                        byte[] rawData = null;
-                        //                        if (File.Exists(includeName))
-                        //                            rawData = File.ReadAllBytes(includeName);
-                        //#endif
-                        code += loadFile(manager.LoadRaw(includeName), false) + '\n';
+                        code += loadFile(manager.LoadRaw(includeName), false, type, manager, uniforms) + '\n';
                     }
                     else
                         code += line + '\n';
-
-                    if (Type == ShaderType.VertexShader || Type == ShaderType.VertexShaderArb)
-                    {
-                        Match inputMatch = shaderInputRegex.Match(line);
-
-                        if (inputMatch.Success)
-                        {
-                            ShaderInputs.Add(new ShaderInputInfo
-                            {
-                                Location = lastShaderInputIndex++,
-                                Name = inputMatch.Groups[1].Value.Trim()
-                            });
-                        }
-                    }
                 }
 
-                if (mainFile)
-                {
-                    code = loadFile(manager.LoadRaw("sh_Precision_Internal.h"), false) + "\n" + code;
+                if (!mainFile)
+                    return code;
 
-                    if (isVertexShader)
-                    {
-                        string realMainName = "real_main_" + Guid.NewGuid().ToString("N");
+                code = loadFile(manager.LoadRaw("sh_Precision_Internal.h"), false, type, manager, uniforms) + "\n" + code;
 
-                        string backbufferCode = loadFile(manager.LoadRaw("sh_Backbuffer_Internal.h"), false);
+                if (type == ShaderStages.Vertex)
+                    code = appendBackbuffer(code, manager, uniforms);
 
-                        backbufferCode = backbufferCode.Replace("{{ real_main }}", realMainName);
-                        code = Regex.Replace(code, @"void main\((.*)\)", $"void {realMainName}()") + backbufferCode + '\n';
-                    }
-                }
+                code = resolveResources(code);
+                code = emitUniforms(code, uniforms);
 
                 return code;
             }
         }
 
-        internal bool Compile()
+        private static string appendBackbuffer(string code, ShaderManager manager, List<ShaderUniformInfo> uniforms)
         {
-            if (!HasCode)
-                return false;
+            string realMainName = "real_main_" + Guid.NewGuid().ToString("N");
 
-            if (partID == -1)
-                partID = GL.CreateShader(Type);
+            string backbufferCode = loadFile(manager.LoadRaw("sh_Backbuffer_Internal.h"), false, ShaderStages.Vertex, manager, uniforms);
 
-            int[] codeLengths = new int[shaderCodes.Count];
-            for (int i = 0; i < shaderCodes.Count; i++)
-                codeLengths[i] = shaderCodes[i].Length;
+            Match backbufferLocationMatch = shader_attribute_location_regex.Match(backbufferCode);
+            int backbufferAttributeOffset = -int.Parse(backbufferLocationMatch.Groups[2].Value);
 
-            GL.ShaderSource(this, shaderCodes.Count, shaderCodes.ToArray(), codeLengths);
-            GL.CompileShader(this);
+            backbufferCode = backbufferCode.Replace("{{ real_main }}", realMainName);
+            code = Regex.Replace(code, @"void main\((.*)\)", $"void {realMainName}()") + backbufferCode + '\n';
 
-            GL.GetShader(this, ShaderParameter.CompileStatus, out int compileResult);
-            Compiled = compileResult == 1;
+            Match attributeLocationMatch = shader_attribute_location_regex.Match(code);
 
-            if (!Compiled)
-                throw new Shader.PartCompilationFailedException(Name, GL.GetShaderInfoLog(this));
-
-            return Compiled;
-        }
-
-        public static implicit operator int(ShaderPart program) => program.partID;
-
-        #region IDisposable Support
-
-        protected internal bool IsDisposed { get; private set; }
-
-        ~ShaderPart()
-        {
-            GLWrapper.ScheduleDisposal(() => Dispose(false));
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!IsDisposed)
+            while (attributeLocationMatch.Success)
             {
-                IsDisposed = true;
+                int.TryParse(attributeLocationMatch.Groups[2].Value, out int location);
+                code = code.Replace(attributeLocationMatch.Value, shader_attribute_location_regex.Replace(attributeLocationMatch.Value, m => m.Groups[1] + $"{location + backbufferAttributeOffset}" + m.Groups[3]));
 
-                if (partID != -1)
-                    GL.DeleteShader(this);
+                attributeLocationMatch = attributeLocationMatch.NextMatch();
             }
+
+            return code;
         }
 
-        #endregion
+        private static string resolveResources(string code)
+        {
+            Match resourceMatch = shader_resource_regex.Match(code);
+
+            while (resourceMatch.Success)
+            {
+                ResourceKind kind;
+
+                switch (resourceMatch.Groups[1].Value)
+                {
+                    case "texture2D":
+                        kind = ResourceKind.TextureReadOnly;
+                        break;
+
+                    case "sampler":
+                        kind = ResourceKind.Sampler;
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(code));
+                }
+
+                Vd.ResourceSet.GetLayout(kind, out int index);
+                code = code.Replace(resourceMatch.Value, $"layout(binding = {index}) {resourceMatch.Value}");
+
+                resourceMatch = resourceMatch.NextMatch();
+            }
+
+            return code;
+        }
+
+        private static string emitUniforms(string code, List<ShaderUniformInfo> uniforms)
+        {
+            Match uniformMatch = shader_uniform_regex.Match(code);
+
+            if (!uniformMatch.Success)
+                return code;
+
+            do
+            {
+                ShaderUniformInfo info = new ShaderUniformInfo
+                {
+                    Name = uniformMatch.Groups[3].Value.Trim(),
+                    Type = uniformMatch.Groups[2].Value.Trim(),
+                    Precision = uniformMatch.Groups[1].Value.Trim(),
+                };
+
+                uniforms.Add(info);
+                code = code.Replace(uniformMatch.Value, string.Empty);
+            } while ((uniformMatch = uniformMatch.NextMatch()).Success);
+
+            return code;
+        }
+
+        private string includeUniformStructure(string code, IReadOnlyList<ShaderUniformInfo> uniforms)
+        {
+            if (uniforms.Count == 0)
+                return code;
+
+            var uniformLayout = Vd.ResourceSet.GetLayout(ResourceKind.UniformBuffer, out int uniformIndex);
+
+            var uniformBuilder = new StringBuilder();
+            uniformBuilder.AppendLine($"layout(packed, binding = {uniformIndex}) uniform {uniformLayout.Name}");
+            uniformBuilder.AppendLine("{");
+
+            foreach (var uniform in uniforms)
+                uniformBuilder.AppendLine($"{uniform.Precision} {uniform.Type} {uniform.Name};".Trim());
+
+            uniformBuilder.AppendLine("};");
+            uniformBuilder.AppendLine();
+
+            return $"{uniformBuilder}{code}";
+        }
+
+        internal byte[] GetData(IReadOnlyList<ShaderUniformInfo> uniforms)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return Array.Empty<byte>();
+
+            string result = includeUniformStructure(code, uniforms);
+
+            if (!result.StartsWith("#version", StringComparison.Ordinal))
+                result = $"#version 450\n{result}";
+
+            return Encoding.UTF8.GetBytes(result);
+        }
     }
 }

@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using osu.Framework.Graphics.OpenGL;
 using osu.Framework.IO.Stores;
-using osuTK.Graphics.ES30;
+using Veldrid;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shaders
 {
@@ -51,8 +51,8 @@ namespace osu.Framework.Graphics.Shaders
 
             List<ShaderPart> parts = new List<ShaderPart>
             {
-                createShaderPart(vertex, ShaderType.VertexShader),
-                createShaderPart(fragment, ShaderType.FragmentShader)
+                createShaderPart(vertex, ShaderStages.Vertex),
+                createShaderPart(fragment, ShaderStages.Fragment)
             };
 
             return shaderCache[tuple] = CreateShader($"{vertex}/{fragment}", parts);
@@ -60,7 +60,7 @@ namespace osu.Framework.Graphics.Shaders
 
         internal virtual Shader CreateShader(string name, List<ShaderPart> parts) => new Shader(name, parts);
 
-        private ShaderPart createShaderPart(string name, ShaderType type, bool bypassCache = false)
+        private ShaderPart createShaderPart(string name, ShaderStages type, bool bypassCache = false)
         {
             name = ensureValidName(name, type);
 
@@ -69,14 +69,14 @@ namespace osu.Framework.Graphics.Shaders
 
             byte[]? rawData = LoadRaw(name);
 
-            part = new ShaderPart(name, rawData, type, this);
+            part = ShaderPart.LoadFromFile(name, rawData, type, this);
 
             //cache even on failure so we don't try and fail every time.
             partCache[name] = part;
             return part;
         }
 
-        private string ensureValidName(string name, ShaderType type)
+        private string ensureValidName(string name, ShaderStages type)
         {
             string ending = getFileEnding(type);
 
@@ -88,14 +88,14 @@ namespace osu.Framework.Graphics.Shaders
             return name + ending;
         }
 
-        private string getFileEnding(ShaderType type)
+        private string getFileEnding(ShaderStages type)
         {
             switch (type)
             {
-                case ShaderType.FragmentShader:
+                case ShaderStages.Fragment:
                     return @".fs";
 
-                case ShaderType.VertexShader:
+                case ShaderStages.Vertex:
                     return @".vs";
             }
 
@@ -120,13 +120,10 @@ namespace osu.Framework.Graphics.Shaders
 
                 store.Dispose();
 
-                GLWrapper.ScheduleDisposal(() =>
+                Vd.ScheduleDisposal(() =>
                 {
                     foreach (var shader in shaderCache.Values)
                         shader.Dispose();
-
-                    foreach (var part in partCache.Values)
-                        part.Dispose();
                 });
             }
         }
@@ -146,8 +143,6 @@ namespace osu.Framework.Graphics.Shaders
     {
         public const string TEXTURE = "Texture";
         public const string TEXTURE_ROUNDED = "TextureRounded";
-        public const string COLOUR = "Colour";
-        public const string COLOUR_ROUNDED = "ColourRounded";
         public const string GLOW = "Glow";
         public const string BLUR = "Blur";
         public const string VIDEO = "Video";

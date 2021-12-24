@@ -3,10 +3,14 @@
 
 using System;
 using System.Collections.Generic;
-using osu.Framework.Graphics.OpenGL;
+using System.Linq;
+using System.Runtime.InteropServices;
 using osu.Framework.Threading;
 using osuTK;
-using osuTK.Graphics.ES30;
+using Veldrid;
+using Veldrid.SPIRV;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using VdShader = Veldrid.Shader;
 using static osu.Framework.Threading.ScheduledDelegate;
 
 namespace osu.Framework.Graphics.Shaders
@@ -20,6 +24,8 @@ namespace osu.Framework.Graphics.Shaders
 
         internal readonly Dictionary<string, IUniform> Uniforms = new Dictionary<string, IUniform>();
 
+        private IReadOnlyList<ShaderUniformInfo> uniformInfo;
+
         /// <summary>
         /// Holds all the <see cref="Uniforms"/> values for faster access than iterating on <see cref="Dictionary{TKey,TValue}.Values"/>.
         /// </summary>
@@ -29,14 +35,16 @@ namespace osu.Framework.Graphics.Shaders
 
         internal bool IsBound { get; private set; }
 
-        private int programID = -1;
+        internal VdShader[] Shaders { get; private set; }
+
+        internal DeviceBuffer UniformBuffer { get; private set; }
 
         internal Shader(string name, List<ShaderPart> parts)
         {
             this.name = name;
             this.parts = parts;
 
-            GLWrapper.ScheduleExpensiveOperation(shaderCompileDelegate = new ScheduledDelegate(compile));
+            Vd.ScheduleExpensiveOperation(shaderCompileDelegate = new ScheduledDelegate(compile));
         }
 
         private void compile()
@@ -47,18 +55,11 @@ namespace osu.Framework.Graphics.Shaders
             if (IsLoaded)
                 throw new InvalidOperationException("Attempting to compile an already-compiled shader.");
 
-            parts.RemoveAll(p => p == null);
-            if (parts.Count == 0)
-                return;
+            SetupUniforms();
 
-            programID = CreateProgram();
-
-            if (!CompileInternal())
-                throw new ProgramLinkingFailedException(name, GetProgramLog());
+            CompileInternal();
 
             IsLoaded = true;
-
-            SetupUniforms();
 
             GlobalPropertyManager.Register(this);
         }
@@ -82,7 +83,7 @@ namespace osu.Framework.Graphics.Shaders
 
             EnsureShaderCompiled();
 
-            GLWrapper.UseProgram(this);
+            Vd.BindShader(this);
 
             foreach (var uniform in uniformsValues)
                 uniform?.Update();
@@ -95,7 +96,7 @@ namespace osu.Framework.Graphics.Shaders
             if (!IsBound)
                 return;
 
-            GLWrapper.UseProgram(null);
+            Vd.UnbindShader(this);
 
             IsBound = false;
         }
@@ -116,104 +117,118 @@ namespace osu.Framework.Graphics.Shaders
             return (Uniform<T>)Uniforms[name];
         }
 
-        private protected virtual bool CompileInternal()
+        private protected virtual void CompileInternal()
         {
-            foreach (ShaderPart p in parts)
-            {
-                if (!p.Compiled) p.Compile();
-                GL.AttachShader(this, p);
-
-                foreach (ShaderInputInfo input in p.ShaderInputs)
-                    GL.BindAttribLocation(this, input.Location, input.Name);
-            }
-
-            GL.LinkProgram(this);
-            GL.GetProgram(this, GetProgramParameterName.LinkStatus, out int linkResult);
+            var descriptions = new List<ShaderDescription>();
 
             foreach (var part in parts)
-                GL.DetachShader(this, part);
+                descriptions.Add(new ShaderDescription(part.Type, part.GetData(uniformInfo), "main"));
 
-            return linkResult == 1;
+            var vertex = descriptions.Single(s => s.Stage == ShaderStages.Vertex);
+            var fragment = descriptions.Single(s => s.Stage == ShaderStages.Fragment);
+
+            try
+            {
+                Shaders = Vd.Factory.CreateFromSpirv(vertex, fragment, new CrossCompileOptions(Vd.Device.IsDepthRangeZeroToOne, !Vd.Device.IsClipSpaceYInverted));
+            }
+            catch (SpirvCompilationException sce)
+            {
+                throw new ShaderCompilationFailedException(name, sce.Message);
+            }
         }
 
         private protected virtual void SetupUniforms()
         {
-            GL.GetProgram(this, GetProgramParameterName.ActiveUniforms, out int uniformCount);
+            uniformInfo = parts.SelectMany(p => p.Uniforms).Distinct().ToArray();
+            uniformsValues = new IUniform[uniformInfo.Count];
 
-            uniformsValues = new IUniform[uniformCount];
+            int bufferSize = 0;
 
-            for (int i = 0; i < uniformCount; i++)
+            for (int i = 0; i < uniformInfo.Count; i++)
             {
-                GL.GetActiveUniform(this, i, 100, out _, out _, out ActiveUniformType type, out string uniformName);
-
                 IUniform uniform;
 
-                switch (type)
+                switch (uniformInfo[i].Type)
                 {
-                    case ActiveUniformType.Bool:
-                        uniform = createUniform<bool>(uniformName);
+                    case "bool":
+                        uniform = createUniform<bool>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.Float:
-                        uniform = createUniform<float>(uniformName);
+                    case "float":
+                        uniform = createUniform<float>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.Int:
-                        uniform = createUniform<int>(uniformName);
+                    case "int":
+                        uniform = createUniform<int>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.FloatMat3:
-                        uniform = createUniform<Matrix3>(uniformName);
+                    case "mat3":
+                        uniform = createUniform<Matrix3>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.FloatMat4:
-                        uniform = createUniform<Matrix4>(uniformName);
+                    case "mat4":
+                        uniform = createUniform<Matrix4>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.FloatVec2:
-                        uniform = createUniform<Vector2>(uniformName);
+                    case "vec2":
+                        uniform = createUniform<Vector2>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.FloatVec3:
-                        uniform = createUniform<Vector3>(uniformName);
+                    case "vec3":
+                        uniform = createUniform<Vector3>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.FloatVec4:
-                        uniform = createUniform<Vector4>(uniformName);
+                    case "vec4":
+                        uniform = createUniform<Vector4>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
-                    case ActiveUniformType.Sampler2D:
-                        uniform = createUniform<int>(uniformName);
+                    case "texture2D":
+                        uniform = createUniform<int>(this, uniformInfo[i].Name, ref bufferSize);
                         break;
 
                     default:
                         continue;
                 }
 
-                Uniforms.Add(uniformName, uniform);
+                Uniforms.Add(uniformInfo[i].Name, uniform);
                 uniformsValues[i] = uniform;
             }
 
-            IUniform createUniform<T>(string name)
-                where T : struct, IEquatable<T>
-            {
-                int location = GL.GetUniformLocation(this, name);
+            if (bufferSize % 16 > 0)
+                bufferSize += 16 - (bufferSize % 16);
 
-                if (GlobalPropertyManager.CheckGlobalExists(name)) return new GlobalUniform<T>(this, name, location);
-
-                return new Uniform<T>(this, name, location);
-            }
+            UniformBuffer = Vd.Factory.CreateBuffer(new BufferDescription((uint)bufferSize, BufferUsage.UniformBuffer));
         }
 
-        private protected virtual string GetProgramLog() => GL.GetProgramInfoLog(this);
+        private static IUniform createUniform<T>(Shader shader, string name, ref int bufferSize)
+            where T : struct, IEquatable<T>
+        {
+            int location = bufferSize;
 
-        private protected virtual int CreateProgram() => GL.CreateProgram();
+            // this is just wrong, needs fixing.
+            bufferSize += (int)Math.Max(Math.Pow(2, Math.Ceiling(Math.Log(Marshal.SizeOf<T>(), 2))), 16);
 
-        private protected virtual void DeleteProgram(int id) => GL.DeleteProgram(id);
+            if (GlobalPropertyManager.CheckGlobalExists(name))
+                return new GlobalUniform<T>(shader, name, location);
 
-        public override string ToString() => $@"{name} Shader (Compiled: {programID != -1})";
+            return new Uniform<T>(shader, name, location);
+        }
 
-        public static implicit operator int(Shader shader) => shader.programID;
+        private protected virtual void DeleteShaders()
+        {
+            UniformBuffer?.Dispose();
+            UniformBuffer = null;
+
+            for (int i = 0; i < Shaders.Length; i++)
+            {
+                Shaders[i]?.Dispose();
+                Shaders[i] = null;
+            }
+
+            Shaders = null;
+        }
+
+        public override string ToString() => $@"{name} Shader (Compiled: {Shaders != null})";
 
         #region IDisposable Support
 
@@ -221,7 +236,7 @@ namespace osu.Framework.Graphics.Shaders
 
         ~Shader()
         {
-            GLWrapper.ScheduleDisposal(() => Dispose(false));
+            Vd.ScheduleDisposal(() => Dispose(false));
         }
 
         public void Dispose()
@@ -240,25 +255,17 @@ namespace osu.Framework.Graphics.Shaders
 
                 GlobalPropertyManager.Unregister(this);
 
-                if (programID != -1)
-                    DeleteProgram(this);
+                if (Shaders != null)
+                    DeleteShaders();
             }
         }
 
         #endregion
 
-        public class PartCompilationFailedException : Exception
+        public class ShaderCompilationFailedException : Exception
         {
-            public PartCompilationFailedException(string partName, string log)
-                : base($"A {typeof(ShaderPart)} failed to compile: {partName}:\n{log.Trim()}")
-            {
-            }
-        }
-
-        public class ProgramLinkingFailedException : Exception
-        {
-            public ProgramLinkingFailedException(string programName, string log)
-                : base($"A {typeof(Shader)} failed to link: {programName}:\n{log.Trim()}")
+            public ShaderCompilationFailedException(string name, string log)
+                : base($"{nameof(Shader)} named '{name}' failed to compile:\n{log.Trim()}")
             {
             }
         }
