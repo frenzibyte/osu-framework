@@ -2,8 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using NUnit.Framework;
-using osu.Framework.Graphics.OpenGL.Textures;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Textures;
 
 namespace osu.Framework.Tests.Graphics
@@ -40,7 +40,7 @@ namespace osu.Framework.Tests.Graphics
         private void testWithSize(int width, int height)
         {
             TextureAtlas atlas = new TextureAtlas(1024, 1024);
-            TextureGL texture = atlas.Add(width, height);
+            RendererTexture texture = atlas.Add(width, height);
 
             if (texture != null)
             {
@@ -67,7 +67,7 @@ namespace osu.Framework.Tests.Graphics
 
             var atlas = new TextureAtlas(atlas_size, atlas_size);
 
-            TextureGL texture = atlas.Add(64, 64);
+            RendererTexture texture = atlas.Add(64, 64);
 
             RectangleF rect = texture.GetTextureRect(null);
             Assert.GreaterOrEqual(atlas_size * rect.X, TextureAtlas.WHITE_PIXEL_SIZE + TextureAtlas.PADDING, message: "Texture is placed on top of the white pixel");
@@ -81,7 +81,7 @@ namespace osu.Framework.Tests.Graphics
 
             var atlas = new TextureAtlas(atlas_size, atlas_size);
 
-            TextureGL texture = atlas.Add(atlas_size - 2 * TextureAtlas.PADDING, 64);
+            RendererTexture texture = atlas.Add(atlas_size - 2 * TextureAtlas.PADDING, 64);
 
             RectangleF rect = texture.GetTextureRect(null);
             Assert.GreaterOrEqual(atlas_size * rect.X, TextureAtlas.PADDING, message: "Texture has insufficient padding");

@@ -5,13 +5,13 @@ using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Testing;
-using osuTK.Graphics.ES30;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Veldrid.OpenGLBinding;
 
 namespace osu.Framework.Tests.Visual.Sprites
 {
@@ -120,9 +120,9 @@ namespace osu.Framework.Tests.Visual.Sprites
 
                 public override void Draw(Action<TexturedVertex2D> vertexAction)
                 {
-                    redTex.TextureGL.Bind(TextureUnit.Texture1);
-                    greenTex.TextureGL.Bind(TextureUnit.Texture2);
-                    blueTex.TextureGL.Bind(TextureUnit.Texture3);
+                    redTex.RendererTexture.Bind(TextureUnit.Texture1);
+                    greenTex.RendererTexture.Bind(TextureUnit.Texture2);
+                    blueTex.RendererTexture.Bind(TextureUnit.Texture3);
 
                     int unitId = unit - TextureUnit.Texture0;
                     Shader.GetUniform<int>("m_Sampler").UpdateValue(ref unitId);

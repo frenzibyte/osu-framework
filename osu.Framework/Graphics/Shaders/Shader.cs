@@ -214,20 +214,6 @@ namespace osu.Framework.Graphics.Shaders
             return new Uniform<T>(shader, name, location);
         }
 
-        private protected virtual void DeleteShaders()
-        {
-            UniformBuffer?.Dispose();
-            UniformBuffer = null;
-
-            for (int i = 0; i < Shaders.Length; i++)
-            {
-                Shaders[i]?.Dispose();
-                Shaders[i] = null;
-            }
-
-            Shaders = null;
-        }
-
         public override string ToString() => $@"{name} Shader (Compiled: {Shaders != null})";
 
         #region IDisposable Support
@@ -255,8 +241,16 @@ namespace osu.Framework.Graphics.Shaders
 
                 GlobalPropertyManager.Unregister(this);
 
-                if (Shaders != null)
-                    DeleteShaders();
+                UniformBuffer?.Dispose();
+                UniformBuffer = null;
+
+                for (int i = 0; i < Shaders.Length; i++)
+                {
+                    Shaders[i]?.Dispose();
+                    Shaders[i] = null;
+                }
+
+                Shaders = null;
             }
         }
 

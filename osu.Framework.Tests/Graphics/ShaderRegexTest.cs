@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.Text.RegularExpressions;
 using NUnit.Framework;
 using osu.Framework.Graphics.Shaders;
 
@@ -10,8 +9,6 @@ namespace osu.Framework.Tests.Graphics
     [TestFixture]
     public class ShaderRegexTest
     {
-        private readonly Regex shaderAttributeRegex = new Regex(ShaderPart.SHADER_ATTRIBUTE_PATTERN);
-
         [Test]
         public void TestComment()
         {
@@ -49,7 +46,7 @@ namespace osu.Framework.Tests.Graphics
 
         private void performValidAttributeTest(string testString)
         {
-            var match = shaderAttributeRegex.Match(testString);
+            var match = ShaderPart.SHADER_ATTRIBUTE_LOCATION_REGEX.Match(testString);
 
             Assert.IsTrue(match.Success);
             Assert.AreEqual("name", match.Groups[1].Value.Trim());
@@ -57,7 +54,7 @@ namespace osu.Framework.Tests.Graphics
 
         private void performInvalidAttributeTest(string testString)
         {
-            var match = shaderAttributeRegex.Match(testString);
+            var match = ShaderPart.SHADER_ATTRIBUTE_LOCATION_REGEX.Match(testString);
 
             Assert.IsFalse(match.Success);
         }

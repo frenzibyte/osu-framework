@@ -302,7 +302,7 @@ namespace osu.Framework.Tests.Visual.Sprites
 
                 for (int i = 0; i < LOADABLE_FRAMES; i++)
                 {
-                    AddFrame(new Texture(fontStore.Get(null, (char)('0' + i))?.Texture.TextureGL)
+                    AddFrame(new Texture(fontStore.Get(null, (char)('0' + i))?.Texture.RendererTexture)
                     {
                         ScaleAdjust = 1 + i / 40f,
                     }, 250);

@@ -22,8 +22,9 @@ namespace osu.Framework.Graphics.Shaders
 
         private readonly string code;
 
+        internal static readonly Regex SHADER_ATTRIBUTE_LOCATION_REGEX = new Regex(@"(layout\(location\s=\s)(-?\d+)(\)\s(?>attribute|in).*)", RegexOptions.Multiline);
+
         private static readonly Regex include_regex = new Regex("^\\s*#\\s*include\\s+[\"<](.*)[\">]");
-        private static readonly Regex shader_attribute_location_regex = new Regex(@"(layout\(location\s=\s)(-?\d+)(\)\s(?>attribute|in).*)", RegexOptions.Multiline);
         private static readonly Regex shader_resource_regex = new Regex(@"^\s*(?>uniform)\s+(?:lowp|mediump|highp)\s+?(texture2D|sampler)\s+\w+;", RegexOptions.Multiline);
         private static readonly Regex shader_uniform_regex = new Regex(@"^\s*(?>uniform)\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(\w+);", RegexOptions.Multiline);
 
@@ -95,18 +96,18 @@ namespace osu.Framework.Graphics.Shaders
 
             string backbufferCode = loadFile(manager.LoadRaw("sh_Backbuffer_Internal.h"), false, ShaderStages.Vertex, manager, uniforms);
 
-            Match backbufferLocationMatch = shader_attribute_location_regex.Match(backbufferCode);
+            Match backbufferLocationMatch = SHADER_ATTRIBUTE_LOCATION_REGEX.Match(backbufferCode);
             int backbufferAttributeOffset = -int.Parse(backbufferLocationMatch.Groups[2].Value);
 
             backbufferCode = backbufferCode.Replace("{{ real_main }}", realMainName);
             code = Regex.Replace(code, @"void main\((.*)\)", $"void {realMainName}()") + backbufferCode + '\n';
 
-            Match attributeLocationMatch = shader_attribute_location_regex.Match(code);
+            Match attributeLocationMatch = SHADER_ATTRIBUTE_LOCATION_REGEX.Match(code);
 
             while (attributeLocationMatch.Success)
             {
                 int.TryParse(attributeLocationMatch.Groups[2].Value, out int location);
-                code = code.Replace(attributeLocationMatch.Value, shader_attribute_location_regex.Replace(attributeLocationMatch.Value, m => m.Groups[1] + $"{location + backbufferAttributeOffset}" + m.Groups[3]));
+                code = code.Replace(attributeLocationMatch.Value, SHADER_ATTRIBUTE_LOCATION_REGEX.Replace(attributeLocationMatch.Value, m => m.Groups[1] + $"{location + backbufferAttributeOffset}" + m.Groups[3]));
 
                 attributeLocationMatch = attributeLocationMatch.NextMatch();
             }
