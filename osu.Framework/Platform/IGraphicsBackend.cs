@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Drawing;
+
 namespace osu.Framework.Platform
 {
     /// <summary>
@@ -19,6 +21,11 @@ namespace osu.Framework.Platform
         /// </summary>
         /// <param name="window">The <see cref="IWindow"/> being used for display.</param>
         void Initialise(IWindow window);
+
+        /// <summary>
+        /// The drawable area of the graphics backend.
+        /// </summary>
+        Size GetDrawableSize();
 
         /// <summary>
         /// Performs a backbuffer swap immediately if <see cref="VerticalSync"/> is false,

@@ -475,11 +475,12 @@ namespace osu.Framework.Platform
         /// <returns>Whether the window size has been changed after updating.</returns>
         private void updateWindowSize()
         {
-            SDL.SDL_GL_GetDrawableSize(SDLWindowHandle, out int w, out int h);
-            SDL.SDL_GetWindowSize(SDLWindowHandle, out int actualW, out int _);
+            var drawableSize = graphicsBackend.GetDrawableSize();
 
-            Scale = (float)w / actualW;
-            Size = new Size(w, h);
+            SDL.SDL_GetWindowSize(SDLWindowHandle, out int windowWidth, out int _);
+
+            Scale = (float)drawableSize.Width / windowWidth;
+            Size = drawableSize;
 
             // This function may be invoked before the SDL internal states are all changed. (as documented here: https://wiki.libsdl.org/SDL_SetEventFilter)
             // Scheduling the store to config until after the event poll has run will ensure the window is in the correct state.
@@ -1069,8 +1070,7 @@ namespace osu.Framework.Platform
                     SDL.SDL_RestoreWindow(SDLWindowHandle);
                     SDL.SDL_MaximizeWindow(SDLWindowHandle);
 
-                    SDL.SDL_GL_GetDrawableSize(SDLWindowHandle, out int w, out int h);
-                    Size = new Size(w, h);
+                    Size = graphicsBackend.GetDrawableSize();
                     break;
 
                 case WindowState.Minimised:
@@ -1174,7 +1174,7 @@ namespace osu.Framework.Platform
 
         #endregion
 
-        protected virtual IGraphicsBackend CreateGraphicsBackend() => new SDL2GraphicsBackend();
+        protected virtual IGraphicsBackend CreateGraphicsBackend() => new VeldridGraphicsBackend();
 
         public void SetupWindow(FrameworkConfigManager config)
         {
