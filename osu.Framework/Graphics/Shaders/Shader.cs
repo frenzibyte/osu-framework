@@ -203,10 +203,33 @@ namespace osu.Framework.Graphics.Shaders
         private static IUniform createUniform<T>(Shader shader, string name, ref int bufferSize)
             where T : struct, IEquatable<T>
         {
+            int uniformSize = Marshal.SizeOf<T>();
+            int baseAlignment = 0;
+
+            // see https://www.khronos.org/registry/OpenGL/specs/gl/glspec45.core.pdf#page=159.
+            if (typeof(T) == typeof(Vector3))
+            {
+                // vec3 has a base alignment of 4N (vec4).
+                baseAlignment = uniformSize = Marshal.SizeOf<Vector4>();
+            }
+            else if (typeof(T) == typeof(Matrix3) || typeof(T) == typeof(Matrix4))
+            {
+                // mat3 has a base alignment of vec4 for each column.
+                if (typeof(T) == typeof(Matrix3))
+                    uniformSize = Marshal.SizeOf<Matrix3x4>();
+
+                baseAlignment = Marshal.SizeOf<Vector4>();
+            }
+            else
+                baseAlignment = uniformSize;
+
+            // offset the location of this uniform with the calculated base alignment.
+            if (bufferSize % baseAlignment > 0)
+                bufferSize += baseAlignment - (bufferSize % baseAlignment);
+
             int location = bufferSize;
 
-            // this is just wrong, needs fixing.
-            bufferSize += (int)Math.Max(Math.Pow(2, Math.Ceiling(Math.Log(Marshal.SizeOf<T>(), 2))), 16);
+            bufferSize += uniformSize;
 
             if (GlobalPropertyManager.CheckGlobalExists(name))
                 return new GlobalUniform<T>(shader, name, location);
@@ -259,7 +282,7 @@ namespace osu.Framework.Graphics.Shaders
         public class ShaderCompilationFailedException : Exception
         {
             public ShaderCompilationFailedException(string name, string log)
-                : base($"{nameof(Shader)} named '{name}' failed to compile:\n{log.Trim()}")
+                : base($"{nameof(Shader)} '{name}' failed to compile:\n{log.Trim()}")
             {
             }
         }
