@@ -26,9 +26,5 @@ void main()
 	v_TexRect = m_TexRect;
 	v_BlendRange = m_BlendRange;
 
-    //gl_Position.x = g_ProjMatrix[0].x * m_Position.x + g_ProjMatrix[1].x * m_Position.y + g_ProjMatrix[2].x + g_ProjMatrix[3].x;
-    //gl_Position.y = g_ProjMatrix[0].y * m_Position.x + g_ProjMatrix[1].y * m_Position.y + g_ProjMatrix[2].y + g_ProjMatrix[3].y;
-    //gl_Position.z = g_ProjMatrix[0].z * m_Position.x + g_ProjMatrix[1].z * m_Position.y + g_ProjMatrix[2].z + g_ProjMatrix[3].z;
-    //gl_Position.w = g_ProjMatrix[0].w * m_Position.x + g_ProjMatrix[1].w * m_Position.y + g_ProjMatrix[2].w + g_ProjMatrix[3].w;
     gl_Position = g_ProjMatrix * vec4(m_Position, 1.0, 1.0);
 }
