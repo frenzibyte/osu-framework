@@ -1032,10 +1032,27 @@ namespace osu.Framework.Platform.SDL2
                 case IUniformWithValue<Vector2> _:
                 case IUniformWithValue<Vector3> _:
                 case IUniformWithValue<Vector4> _:
-                case IUniformWithValue<Matrix3> _:
-                case IUniformWithValue<Matrix4> _:
                     Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location, ref uniform.GetValueByRef());
                     break;
+
+                case IUniformWithValue<Matrix3> matrix3:
+                {
+                    ref var value = ref matrix3.GetValueByRef();
+                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 0, ref value.Row0);
+                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 16, ref value.Row1);
+                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 32, ref value.Row2);
+                    break;
+                }
+
+                case IUniformWithValue<Matrix4> matrix4:
+                {
+                    ref var value = ref matrix4.GetValueByRef();
+                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 0, ref value.Row0);
+                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 16, ref value.Row1);
+                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 32, ref value.Row2);
+                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 48, ref value.Row3);
+                    break;
+                }
             }
         }
 
