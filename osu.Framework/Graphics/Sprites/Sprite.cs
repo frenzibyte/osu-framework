@@ -8,7 +8,7 @@ using osuTK;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Allocation;
 using osu.Framework.Layout;
-using osu.Framework.Graphics.OpenGL.Textures;
+using osu.Framework.Graphics.Renderer.Textures;
 
 namespace osu.Framework.Graphics.Sprites
 {

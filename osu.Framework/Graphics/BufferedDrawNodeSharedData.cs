@@ -2,9 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osuTK.Graphics.ES30;
+using osu.Framework.Graphics.Renderer.Buffers;
+using osu.Framework.Graphics.Renderer.Textures;
+using Veldrid;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {
@@ -46,7 +47,7 @@ namespace osu.Framework.Graphics
         /// <summary>
         /// Creates a new <see cref="BufferedDrawNodeSharedData"/> with no effect buffers.
         /// </summary>
-        public BufferedDrawNodeSharedData(RenderbufferInternalFormat[] formats = null, bool pixelSnapping = false, bool clipToRootNode = false)
+        public BufferedDrawNodeSharedData(PixelFormat[] formats = null, bool pixelSnapping = false, bool clipToRootNode = false)
             : this(0, formats, pixelSnapping, clipToRootNode)
         {
         }
@@ -60,13 +61,14 @@ namespace osu.Framework.Graphics
         /// This amounts to setting the texture filtering mode to "nearest".</param>
         /// <param name="clipToRootNode">Whether the frame buffer should be clipped to be contained in the root node..</param>
         /// <exception cref="ArgumentOutOfRangeException">If <paramref name="effectBufferCount"/> is less than 0.</exception>
-        public BufferedDrawNodeSharedData(int effectBufferCount, RenderbufferInternalFormat[] formats = null, bool pixelSnapping = false, bool clipToRootNode = false)
+        public BufferedDrawNodeSharedData(int effectBufferCount, PixelFormat[] formats = null, bool pixelSnapping = false, bool clipToRootNode = false)
         {
             if (effectBufferCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(effectBufferCount), "Must be positive.");
 
             PixelSnapping = pixelSnapping;
-            All filterMode = pixelSnapping ? All.Nearest : All.Linear;
+
+            var filterMode = pixelSnapping ? FilteringMode.Nearest : FilteringMode.Linear;
 
             ClipToRootNode = clipToRootNode;
 
@@ -106,7 +108,7 @@ namespace osu.Framework.Graphics
 
         public void Dispose()
         {
-            GLWrapper.ScheduleDisposal(() => Dispose(true));
+            Vd.ScheduleDisposal(() => Dispose(true));
             GC.SuppressFinalize(this);
         }
 

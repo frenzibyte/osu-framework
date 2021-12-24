@@ -6,14 +6,16 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osu.Framework.Graphics.OpenGL.Textures;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Renderer.Buffers;
+using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Logging;
 using osu.Framework.Utils;
 using osuTK;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {
@@ -84,11 +86,15 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
         public virtual void Draw(Action<TexturedVertex2D> vertexAction)
         {
-            GLWrapper.SetBlend(DrawColourInfo.Blending);
+            // Logger.Log("Set blending information");
+
+            Vd.SetBlend(DrawColourInfo.Blending);
+
+            // Logger.Log($"Set draw depth to {drawDepth}");
 
             // This is the back-to-front (BTF) pass. The back-buffer depth test function used is GL_LESS.
             // The depth test will fail for samples that overlap the opaque interior of this <see cref="DrawNode"/> and any <see cref="DrawNode"/>s above this one.
-            GLWrapper.SetDrawDepth(drawDepth);
+            Vd.SetDrawDepth(drawDepth);
         }
 
         /// <summary>
@@ -135,7 +141,7 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
         protected virtual void DrawOpaqueInterior(Action<TexturedVertex2D> vertexAction)
         {
-            GLWrapper.SetDrawDepth(drawDepth);
+            Vd.SetDrawDepth(drawDepth);
         }
 
         /// <summary>
@@ -170,7 +176,7 @@ namespace osu.Framework.Graphics
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="textureCoords">The texture coordinates of the triangle's vertices (translated from the corresponding quad's rectangle).</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void DrawTriangle(TextureGL texture, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+        protected void DrawTriangle(RendererTexture texture, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
                                     Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
             => texture.DrawTriangle(vertexTriangle, drawColour, textureRect, vertexAction, inflationPercentage, textureCoords);
 
@@ -202,7 +208,7 @@ namespace osu.Framework.Graphics
         /// <param name="blendRangeOverride">The range over which the edges of the <paramref name="textureRect"/> should be blended.</param>
         /// <param name="textureCoords">The texture coordinates of the quad's vertices.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void DrawQuad(TextureGL texture, Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+        protected void DrawQuad(RendererTexture texture, Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
                                 Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
             => texture.DrawQuad(vertexQuad, drawColour, textureRect, vertexAction, inflationPercentage: inflationPercentage, blendRangeOverride: blendRangeOverride, textureCoords: textureCoords);
 
@@ -221,7 +227,7 @@ namespace osu.Framework.Graphics
                                       Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
             where T : IConvexPolygon
         {
-            var maskingQuad = GLWrapper.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
+            var maskingQuad = Vd.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
 
             var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
             Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
@@ -242,11 +248,11 @@ namespace osu.Framework.Graphics
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="textureCoords">The texture coordinates of the polygon's vertices (translated from the corresponding quad's rectangle).</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void DrawClipped<T>(ref T polygon, TextureGL texture, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+        protected void DrawClipped<T>(ref T polygon, RendererTexture texture, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
                                       Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
             where T : IConvexPolygon
         {
-            var maskingQuad = GLWrapper.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
+            var maskingQuad = Vd.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
 
             var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
             Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
@@ -291,7 +297,7 @@ namespace osu.Framework.Graphics
             if (Interlocked.Decrement(ref referenceCount) != 0)
                 return;
 
-            GLWrapper.ScheduleDisposal(() => Dispose(true));
+            Vd.ScheduleDisposal(() => Dispose(true));
             GC.SuppressFinalize(this);
         }
 

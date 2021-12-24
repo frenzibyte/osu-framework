@@ -3,13 +3,14 @@
 
 using System;
 using osu.Framework.Allocation;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Renderer.Buffers;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Statistics;
 using osuTK;
 using osuTK.Graphics;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {
@@ -96,12 +97,12 @@ namespace osu.Framework.Graphics
                     {
                         // We need to draw children as if they were zero-based to the top-left of the texture.
                         // We can do this by adding a translation component to our (orthogonal) projection matrix.
-                        GLWrapper.PushOrtho(screenSpaceDrawRectangle);
-                        GLWrapper.Clear(new ClearInfo(backgroundColour));
+                        Vd.PushOrtho(screenSpaceDrawRectangle);
+                        Vd.Clear(new ClearInfo(backgroundColour));
 
                         Child.Draw(vertexAction);
 
-                        GLWrapper.PopOrtho();
+                        Vd.PopOrtho();
                     }
 
                     PopulateContents();
@@ -156,7 +157,7 @@ namespace osu.Framework.Graphics
             // in the frame buffer and helps with cached buffers being re-used.
             RectangleI screenSpaceMaskingRect = new RectangleI((int)Math.Floor(screenSpaceDrawRectangle.X), (int)Math.Floor(screenSpaceDrawRectangle.Y), (int)frameBufferSize.X + 1, (int)frameBufferSize.Y + 1);
 
-            GLWrapper.PushMaskingInfo(new MaskingInfo
+            Vd.PushMaskingInfo(new MaskingInfo
             {
                 ScreenSpaceAABB = screenSpaceMaskingRect,
                 MaskingRect = screenSpaceDrawRectangle,
@@ -166,19 +167,19 @@ namespace osu.Framework.Graphics
             }, true);
 
             // Match viewport to FrameBuffer such that we don't draw unnecessary pixels.
-            GLWrapper.PushViewport(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
-            GLWrapper.PushScissor(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
-            GLWrapper.PushScissorOffset(screenSpaceMaskingRect.Location);
+            Vd.PushViewport(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
+            Vd.PushScissor(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
+            Vd.PushScissorOffset(screenSpaceMaskingRect.Location);
 
             return new ValueInvokeOnDisposal<BufferedDrawNode>(this, d => d.returnViewport());
         }
 
         private void returnViewport()
         {
-            GLWrapper.PopScissorOffset();
-            GLWrapper.PopViewport();
-            GLWrapper.PopScissor();
-            GLWrapper.PopMaskingInfo();
+            Vd.PopScissorOffset();
+            Vd.PopViewport();
+            Vd.PopScissor();
+            Vd.PopMaskingInfo();
         }
 
         private void clipDrawRectangle()

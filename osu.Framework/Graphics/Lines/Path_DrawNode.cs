@@ -2,17 +2,18 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Textures;
-using osuTK.Graphics.ES30;
-using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.Renderer;
 using osuTK;
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osuTK.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Shaders;
+using Veldrid;
+using Texture = osu.Framework.Graphics.Textures.Texture;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Lines
 {
@@ -34,7 +35,7 @@ namespace osu.Framework.Graphics.Lines
             // We multiply the size param by 3 such that the amount of vertices is a multiple of the amount of vertices
             // per primitive (triangles in this case). Otherwise overflowing the batch will result in wrong
             // grouping of vertices into primitives.
-            private readonly LinearBatch<TexturedVertex3D> halfCircleBatch = new LinearBatch<TexturedVertex3D>(MAX_RES * 100 * 3, 10, PrimitiveType.Triangles);
+            private readonly LinearBatch<TexturedVertex3D> halfCircleBatch = new LinearBatch<TexturedVertex3D>(MAX_RES * 100 * 3, 10, PrimitiveTopology.TriangleList);
             private readonly QuadBatch<TexturedVertex3D> quadBatch = new QuadBatch<TexturedVertex3D>(200, 10);
 
             public PathDrawNode(Path source)
@@ -208,20 +209,20 @@ namespace osu.Framework.Graphics.Lines
                 if (texture?.Available != true || segments.Count == 0)
                     return;
 
-                GLWrapper.PushDepthInfo(DepthInfo.Default);
+                Vd.PushDepthInfo(DepthInfo.Default);
 
                 // Blending is removed to allow for correct blending between the wedges of the path.
-                GLWrapper.SetBlend(BlendingParameters.None);
+                Vd.SetBlend(BlendingParameters.None);
 
                 pathShader.Bind();
 
-                texture.TextureGL.Bind();
+                texture.RendererTexture.Bind();
 
                 updateVertexBuffer();
 
                 pathShader.Unbind();
 
-                GLWrapper.PopDepthInfo();
+                Vd.PopDepthInfo();
             }
 
             protected override void Dispose(bool isDisposing)

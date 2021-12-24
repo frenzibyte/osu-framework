@@ -3,17 +3,19 @@
 
 using System;
 using System.Diagnostics;
-using osuTK.Graphics.ES30;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Textures;
+using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
+using Veldrid;
+using Veldrid.OpenGLBinding;
+using Texture = Veldrid.Texture;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Video
 {
-    internal unsafe class VideoTexture : TextureGLSingle
+    internal unsafe class VideoTexture : RendererTextureSingle
     {
-        private int[] textureIds;
+        private Texture[] textures;
 
         /// <summary>
         /// Whether the latest frame data has been uploaded.
@@ -21,7 +23,7 @@ namespace osu.Framework.Graphics.Video
         public bool UploadComplete { get; private set; }
 
         public VideoTexture(int width, int height, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
-            : base(width, height, true, All.Linear, wrapModeS, wrapModeT)
+            : base(width, height, true, FilteringMode.Linear, wrapModeS, wrapModeT)
         {
         }
 
@@ -40,7 +42,9 @@ namespace osu.Framework.Graphics.Video
             base.SetData(upload, wrapModeS, wrapModeT, Opacity = Opacity.Opaque);
         }
 
-        public override int TextureId => textureIds?[0] ?? 0;
+        public override Texture Texture => textures?[0];
+
+        public override Sampler Sampler => Vd.Device.LinearSampler;
 
         private int textureSize;
 
@@ -53,13 +57,13 @@ namespace osu.Framework.Graphics.Video
 
             Upload();
 
-            if (textureIds == null)
+            if (textures == null)
                 return false;
 
             bool anyBound = false;
 
-            for (int i = 0; i < textureIds.Length; i++)
-                anyBound |= GLWrapper.BindTexture(textureIds[i], unit + i, wrapModeS, wrapModeT);
+            for (int i = 0; i < textures.Length; i++)
+                anyBound |= Vd.BindTexture(textures[i], Sampler, unit + i, wrapModeS, wrapModeT);
 
             if (anyBound)
                 BindCount++;
@@ -73,55 +77,56 @@ namespace osu.Framework.Graphics.Video
                 return;
 
             // Do we need to generate a new texture?
-            if (textureIds == null)
+            if (textures == null)
             {
                 Debug.Assert(memoryLease == null);
                 memoryLease = NativeMemoryTracker.AddMemory(this, Width * Height * 3 / 2);
 
-                textureIds = new int[3];
-                GL.GenTextures(textureIds.Length, textureIds);
+                textures = new Texture[3];
 
-                for (int i = 0; i < textureIds.Length; i++)
+                for (int i = 0; i < textures.Length; i++)
                 {
-                    GLWrapper.BindTexture(textureIds[i]);
+                    int width, height;
 
                     if (i == 0)
                     {
-                        int width = videoUpload.Frame->width;
-                        int height = videoUpload.Frame->height;
-
-                        GL.TexImage2D(TextureTarget2d.Texture2D, 0, TextureComponentCount.R8, width, height, 0, PixelFormat.Red, PixelType.UnsignedByte, IntPtr.Zero);
+                        width = videoUpload.Frame->width;
+                        height = videoUpload.Frame->height;
 
                         textureSize += width * height;
                     }
                     else
                     {
-                        int width = (videoUpload.Frame->width + 1) / 2;
-                        int height = (videoUpload.Frame->height + 1) / 2;
-
-                        GL.TexImage2D(TextureTarget2d.Texture2D, 0, TextureComponentCount.R8, width, height, 0, PixelFormat.Red, PixelType.UnsignedByte, IntPtr.Zero);
+                        width = (videoUpload.Frame->width + 1) / 2;
+                        height = (videoUpload.Frame->height + 1) / 2;
 
                         textureSize += width * height;
                     }
 
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
+                    var description = TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R8_UNorm, TextureUsage.Sampled);
 
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+                    textures[i] = Vd.Factory.CreateTexture(description);
+
+                    Vd.BindTexture(textures[i], Sampler);
                 }
             }
 
-            for (int i = 0; i < textureIds.Length; i++)
+            for (int i = 0; i < textures.Length; i++)
             {
-                GLWrapper.BindTexture(textureIds[i]);
+                Vd.BindTexture(textures[i], Sampler);
 
-                GL.PixelStore(PixelStoreParameter.UnpackRowLength, videoUpload.Frame->linesize[(uint)i]);
-                GL.TexSubImage2D(TextureTarget2d.Texture2D, 0, 0, 0, videoUpload.Frame->width / (i > 0 ? 2 : 1), videoUpload.Frame->height / (i > 0 ? 2 : 1),
-                    PixelFormat.Red, PixelType.UnsignedByte, (IntPtr)videoUpload.Frame->data[(uint)i]);
+                // TODO: this is just fucked.
+                uint size = 0;
+
+                while (videoUpload.Frame->data[(uint)i][size] != 0)
+                    size++;
+
+                Vd.Device.UpdateTexture(textures[i], (IntPtr)videoUpload.Frame->data[(uint)i], size, 0, 0, 0, (uint)(videoUpload.Frame->width / (i > 0 ? 2 : 1)), (uint)(videoUpload.Frame->height / (i > 0 ? 2 : 1)), 1, 1, 1);
+
+                // GL.PixelStore(PixelStoreParameter.UnpackRowLength, videoUpload.Frame->linesize[(uint)i]);
+                // GL.TexSubImage2D(TextureTarget2d.Texture2D, 0, 0, 0, videoUpload.Frame->width / (i > 0 ? 2 : 1), videoUpload.Frame->height / (i > 0 ? 2 : 1),
+                //     PixelFormat.Red, PixelType.UnsignedByte, (IntPtr)videoUpload.Frame->data[(uint)i]);
             }
-
-            GL.PixelStore(PixelStoreParameter.UnpackRowLength, 0);
 
             UploadComplete = true;
         }
@@ -134,19 +139,21 @@ namespace osu.Framework.Graphics.Video
 
             memoryLease?.Dispose();
 
-            GLWrapper.ScheduleDisposal(unload);
+            Vd.ScheduleDisposal(unload);
         }
 
         private void unload()
         {
-            if (textureIds == null)
+            if (textures == null)
                 return;
 
-            for (int i = 0; i < textureIds.Length; i++)
+            for (int i = 0; i < textures.Length; i++)
             {
-                if (textureIds[i] >= 0)
-                    GL.DeleteTextures(1, new[] { textureIds[i] });
+                textures[i]?.Dispose();
+                textures[i] = null;
             }
+
+            textures = null;
         }
 
         #endregion

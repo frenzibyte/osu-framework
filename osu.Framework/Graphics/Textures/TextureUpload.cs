@@ -5,14 +5,13 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using osu.Framework.Extensions.ImageExtensions;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Buffers;
+using osu.Framework.Graphics.Renderer.Buffers;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Logging;
-using osuTK.Graphics.ES30;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using StbiSharp;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -26,11 +25,6 @@ namespace osu.Framework.Graphics.Textures
         /// The target mipmap level to upload into.
         /// </summary>
         public int Level { get; set; }
-
-        /// <summary>
-        /// The texture format for this upload.
-        /// </summary>
-        public PixelFormat Format => PixelFormat.Rgba;
 
         /// <summary>
         /// The target bounds for this upload. If not specified, will assume to be (0, 0, width, height).
@@ -58,7 +52,7 @@ namespace osu.Framework.Graphics.Textures
         {
             this.image = image;
 
-            if (image.Width > GLWrapper.MaxTextureSize || image.Height > GLWrapper.MaxTextureSize)
+            if (image.Width > Vd.MaxTextureSize || image.Height > Vd.MaxTextureSize)
                 throw new TextureTooLargeForGLException();
 
             pixelMemory = image.CreateReadOnlyPixelMemory();

@@ -3,11 +3,12 @@
 
 using osuTK;
 using System;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Textures;
+using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Logging;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Sprites
 {
@@ -65,7 +66,7 @@ namespace osu.Framework.Graphics.Sprites
 
         protected virtual void BlitOpaqueInterior(Action<TexturedVertex2D> vertexAction)
         {
-            if (GLWrapper.IsMaskingActive)
+            if (Vd.IsMaskingActive)
                 DrawClipped(ref ConservativeScreenSpaceDrawQuad, Texture, DrawColourInfo.Colour, vertexAction: vertexAction);
             else
                 DrawQuad(Texture, ConservativeScreenSpaceDrawQuad, DrawColourInfo.Colour, vertexAction: vertexAction, textureCoords: TextureCoords);
@@ -78,9 +79,15 @@ namespace osu.Framework.Graphics.Sprites
             if (Texture?.Available != true)
                 return;
 
+            // Logger.Log("Binding shader to draw texture");
+
             Shader.Bind();
 
+            // Logger.Log("Draw texture");
+
             Blit(vertexAction);
+
+            // Logger.Log("Unbinding shader after drawing texture");
 
             Shader.Unbind();
         }

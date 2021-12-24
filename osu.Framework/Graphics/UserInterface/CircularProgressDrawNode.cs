@@ -1,15 +1,15 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using osu.Framework.Graphics.Textures;
-using osuTK.Graphics.ES30;
 using osuTK;
 using System;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
 using osuTK.Graphics;
 using osu.Framework.Extensions.MatrixExtensions;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Vertices;
+using Veldrid;
+using Texture = osu.Framework.Graphics.Textures.Texture;
 
 namespace osu.Framework.Graphics.UserInterface
 {
@@ -71,7 +71,7 @@ namespace osu.Framework.Graphics.UserInterface
                 halfCircleBatch?.Dispose();
 
                 // Amount of points is multiplied by 2 to account for each part requiring two vertices.
-                halfCircleBatch = new LinearBatch<TexturedVertex2D>(amountPoints * 2, 1, PrimitiveType.TriangleStrip);
+                halfCircleBatch = new LinearBatch<TexturedVertex2D>(amountPoints * 2, 1, PrimitiveTopology.TriangleStrip);
             }
 
             Matrix3 transformationMatrix = DrawInfo.Matrix;
@@ -151,7 +151,7 @@ namespace osu.Framework.Graphics.UserInterface
 
             Shader.Bind();
 
-            texture.TextureGL.Bind();
+            texture.RendererTexture.Bind();
 
             updateVertexBuffer();
 

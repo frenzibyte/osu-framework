@@ -2,9 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osu.Framework.Graphics.OpenGL.Vertices;
-using osuTK.Graphics.ES30;
+using osu.Framework.Graphics.Renderer.Buffers;
+using osu.Framework.Graphics.Renderer.Vertices;
 
 namespace osu.Framework.Graphics.Batches
 {
@@ -18,6 +17,6 @@ namespace osu.Framework.Graphics.Batches
                 throw new OverflowException($"Attempted to initialise a {nameof(QuadVertexBuffer<T>)} with more than {nameof(QuadVertexBuffer<T>)}.{nameof(QuadVertexBuffer<T>.MAX_QUADS)} quads ({QuadVertexBuffer<T>.MAX_QUADS}).");
         }
 
-        protected override VertexBuffer<T> CreateVertexBuffer() => new QuadVertexBuffer<T>(Size, BufferUsageHint.DynamicDraw);
+        protected override VertexBuffer<T> CreateVertexBuffer() => new QuadVertexBuffer<T>(Size);
     }
 }

@@ -6,8 +6,8 @@ using System.Linq;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
-using osu.Framework.Graphics.OpenGL.Textures;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
@@ -65,10 +65,10 @@ namespace osu.Framework.Graphics.Visualisation
         {
             base.PopIn();
 
-            foreach (var tex in TextureGLSingle.GetAllTextures())
+            foreach (var tex in RendererTextureSingle.GetAllTextures())
                 addTexture(tex);
 
-            TextureGLSingle.TextureCreated += addTexture;
+            RendererTextureSingle.TextureCreated += addTexture;
         }
 
         protected override void PopOut()
@@ -78,12 +78,12 @@ namespace osu.Framework.Graphics.Visualisation
             atlasFlow.Clear();
             textureFlow.Clear();
 
-            TextureGLSingle.TextureCreated -= addTexture;
+            RendererTextureSingle.TextureCreated -= addTexture;
         }
 
-        private void addTexture(TextureGLSingle texture) => Schedule(() =>
+        private void addTexture(RendererTextureSingle texture) => Schedule(() =>
         {
-            var target = texture is TextureGLAtlas ? atlasFlow : textureFlow;
+            var target = texture is RendererTextureAtlas ? atlasFlow : textureFlow;
 
             if (target.Any(p => p.Texture == texture))
                 return;
@@ -93,18 +93,18 @@ namespace osu.Framework.Graphics.Visualisation
 
         private class TexturePanel : CompositeDrawable
         {
-            private readonly WeakReference<TextureGLSingle> textureReference;
+            private readonly WeakReference<RendererTextureSingle> textureReference;
 
-            public TextureGLSingle Texture => textureReference.TryGetTarget(out var tex) ? tex : null;
+            public RendererTextureSingle Texture => textureReference.TryGetTarget(out var tex) ? tex : null;
 
             private readonly SpriteText titleText;
             private readonly SpriteText footerText;
 
             private readonly UsageBackground usage;
 
-            public TexturePanel(TextureGLSingle texture)
+            public TexturePanel(RendererTextureSingle texture)
             {
-                textureReference = new WeakReference<TextureGLSingle>(texture);
+                textureReference = new WeakReference<RendererTextureSingle>(texture);
 
                 Size = new Vector2(100, 132);
 
@@ -159,7 +159,7 @@ namespace osu.Framework.Graphics.Visualisation
                         return;
                     }
 
-                    titleText.Text = $"{texture.TextureId}. {texture.Width}x{texture.Height} ";
+                    titleText.Text = $"{texture.Texture}. {texture.Width}x{texture.Height} ";
                     footerText.Text = Precision.AlmostBigger(usage.AverageUsagesPerFrame, 1) ? $"{usage.AverageUsagesPerFrame:N0} binds" : string.Empty;
                 }
                 catch { }
@@ -168,13 +168,13 @@ namespace osu.Framework.Graphics.Visualisation
 
         private class UsageBackground : Box, IHasTooltip
         {
-            private readonly WeakReference<TextureGLSingle> textureReference;
+            private readonly WeakReference<RendererTextureSingle> textureReference;
 
             private ulong lastBindCount;
 
             public float AverageUsagesPerFrame { get; private set; }
 
-            public UsageBackground(WeakReference<TextureGLSingle> textureReference)
+            public UsageBackground(WeakReference<RendererTextureSingle> textureReference)
             {
                 this.textureReference = textureReference;
             }
@@ -187,7 +187,7 @@ namespace osu.Framework.Graphics.Visualisation
 
                 private ColourInfo drawColour;
 
-                private WeakReference<TextureGLSingle> textureReference;
+                private WeakReference<RendererTextureSingle> textureReference;
 
                 public UsageBackgroundDrawNode(Box source)
                     : base(source)

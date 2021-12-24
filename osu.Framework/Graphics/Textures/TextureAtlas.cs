@@ -4,8 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using osu.Framework.Graphics.OpenGL.Textures;
-using osuTK.Graphics.ES30;
+using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Logging;
@@ -19,11 +18,11 @@ namespace osu.Framework.Graphics.Textures
         // We are adding an extra padding on top of the padding required by
         // mipmap blending in order to support smooth edges without antialiasing which requires
         // inflating texture rectangles.
-        internal const int PADDING = (1 << TextureGLSingle.MAX_MIPMAP_LEVELS) * Sprite.MAX_EDGE_SMOOTHNESS;
+        internal const int PADDING = (1 << RendererTextureSingle.MAX_MIPMAP_LEVELS) * Sprite.MAX_EDGE_SMOOTHNESS;
         internal const int WHITE_PIXEL_SIZE = 1;
 
         private readonly List<RectangleI> subTextureBounds = new List<RectangleI>();
-        internal TextureGLSingle AtlasTexture;
+        internal RendererTextureSingle AtlasTexture;
 
         private readonly int atlasWidth;
         private readonly int atlasHeight;
@@ -40,15 +39,15 @@ namespace osu.Framework.Graphics.Textures
                 if (AtlasTexture == null)
                     Reset();
 
-                return new TextureWhitePixel(new TextureGLAtlasWhite(AtlasTexture));
+                return new TextureWhitePixel(new RendererTextureAtlasWhite(AtlasTexture));
             }
         }
 
         private readonly bool manualMipmaps;
-        private readonly All filteringMode;
+        private readonly FilteringMode filteringMode;
         private readonly object textureRetrievalLock = new object();
 
-        public TextureAtlas(int width, int height, bool manualMipmaps = false, All filteringMode = All.Linear)
+        public TextureAtlas(int width, int height, bool manualMipmaps = false, FilteringMode filteringMode = FilteringMode.Linear)
         {
             atlasWidth = width;
             atlasHeight = height;
@@ -65,12 +64,12 @@ namespace osu.Framework.Graphics.Textures
 
             // We pass PADDING/2 as opposed to PADDING such that the padded region of each individual texture
             // occupies half of the padded space.
-            AtlasTexture = new TextureGLAtlas(atlasWidth, atlasHeight, manualMipmaps, filteringMode, PADDING / 2);
+            AtlasTexture = new RendererTextureAtlas(atlasWidth, atlasHeight, manualMipmaps, filteringMode, PADDING / 2);
 
             RectangleI bounds = new RectangleI(0, 0, WHITE_PIXEL_SIZE, WHITE_PIXEL_SIZE);
             subTextureBounds.Add(bounds);
 
-            using (var whiteTex = new TextureGLSub(bounds, AtlasTexture, WrapMode.Repeat, WrapMode.Repeat))
+            using (var whiteTex = new RendererTextureSub(bounds, AtlasTexture, WrapMode.Repeat, WrapMode.Repeat))
                 // Generate white padding as if WhitePixel was wrapped, even though it isn't
                 whiteTex.SetData(new TextureUpload(new Image<Rgba32>(SixLabors.ImageSharp.Configuration.Default, whiteTex.Width, whiteTex.Height, new Rgba32(Vector4.One))));
 
@@ -85,7 +84,7 @@ namespace osu.Framework.Graphics.Textures
         /// <param name="wrapModeS">The horizontal wrap mode of the texture.</param>
         /// <param name="wrapModeT">The vertical wrap mode of the texture.</param>
         /// <returns>A texture, or null if the requested size exceeds the atlas' bounds.</returns>
-        internal TextureGL Add(int width, int height, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
+        internal RendererTexture Add(int width, int height, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
         {
             if (!canFitEmptyTextureAtlas(width, height)) return null;
 
@@ -95,7 +94,7 @@ namespace osu.Framework.Graphics.Textures
                 RectangleI bounds = new RectangleI(position.X, position.Y, width, height);
                 subTextureBounds.Add(bounds);
 
-                return new TextureGLSub(bounds, AtlasTexture, wrapModeS, wrapModeT);
+                return new RendererTextureSub(bounds, AtlasTexture, wrapModeS, wrapModeT);
             }
         }
 

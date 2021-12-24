@@ -10,8 +10,7 @@ using JetBrains.Annotations;
 using osu.Framework.Platform;
 using osu.Framework.Text;
 using osu.Framework.Extensions.IEnumerableExtensions;
-using osu.Framework.Graphics.OpenGL.Textures;
-using osuTK.Graphics.ES30;
+using osu.Framework.Graphics.Renderer.Textures;
 
 namespace osu.Framework.IO.Stores
 {
@@ -46,12 +45,12 @@ namespace osu.Framework.IO.Stores
         /// <param name="store">The texture source.</param>
         /// <param name="scaleAdjust">The raw pixel height of the font. Can be used to apply a global scale or metric to font usages.</param>
         /// <param name="minFilterMode">The texture minification filtering mode to use.</param>
-        public FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100, All minFilterMode = All.Linear)
+        public FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100, FilteringMode minFilterMode = FilteringMode.Linear)
             : this(store, scaleAdjust, true, filteringMode: minFilterMode)
         {
         }
 
-        internal FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100, bool useAtlas = false, Storage cacheStorage = null, All filteringMode = All.Linear)
+        internal FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100, bool useAtlas = false, Storage cacheStorage = null, FilteringMode filteringMode = FilteringMode.Linear)
             : base(store, scaleAdjust: scaleAdjust, useAtlas: useAtlas, filteringMode: filteringMode)
         {
             this.cacheStorage = cacheStorage;

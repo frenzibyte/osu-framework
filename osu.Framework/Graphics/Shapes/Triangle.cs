@@ -2,12 +2,12 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Textures;
 using osuTK;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.OpenGL;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shapes
 {
@@ -52,7 +52,7 @@ namespace osu.Framework.Graphics.Shapes
             {
                 var triangle = toTriangle(ConservativeScreenSpaceDrawQuad);
 
-                if (GLWrapper.IsMaskingActive)
+                if (Vd.IsMaskingActive)
                     DrawClipped(ref triangle, Texture, DrawColourInfo.Colour, vertexAction: vertexAction);
                 else
                     DrawTriangle(Texture, triangle, DrawColourInfo.Colour, vertexAction: vertexAction);

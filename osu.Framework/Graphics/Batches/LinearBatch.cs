@@ -2,23 +2,23 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osuTK.Graphics.ES30;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Buffers;
+using osu.Framework.Graphics.Renderer.Vertices;
+using Veldrid;
 
 namespace osu.Framework.Graphics.Batches
 {
     public class LinearBatch<T> : VertexBatch<T>
         where T : struct, IEquatable<T>, IVertex
     {
-        private readonly PrimitiveType type;
+        private readonly PrimitiveTopology topology;
 
-        public LinearBatch(int size, int maxBuffers, PrimitiveType type)
+        public LinearBatch(int size, int maxBuffers, PrimitiveTopology topology)
             : base(size, maxBuffers)
         {
-            this.type = type;
+            this.topology = topology;
         }
 
-        protected override VertexBuffer<T> CreateVertexBuffer() => new LinearVertexBuffer<T>(Size, type, BufferUsageHint.DynamicDraw);
+        protected override VertexBuffer<T> CreateVertexBuffer() => new LinearVertexBuffer<T>(Size, topology);
     }
 }

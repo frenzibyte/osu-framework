@@ -165,7 +165,7 @@ namespace osu.Framework.Graphics.Video
         {
             foreach (var f in frames)
             {
-                ((VideoTexture)f.Texture.TextureGL).FlushUploads();
+                ((VideoTexture)f.Texture.RendererTexture).FlushUploads();
                 availableTextures.Enqueue(f.Texture);
             }
         }
@@ -864,7 +864,7 @@ namespace osu.Framework.Graphics.Video
 
             while (decodedFrames.TryDequeue(out var f))
             {
-                ((VideoTexture)f.Texture.TextureGL).FlushUploads();
+                ((VideoTexture)f.Texture.RendererTexture).FlushUploads();
                 f.Texture.Dispose();
             }
 

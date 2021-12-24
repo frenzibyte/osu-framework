@@ -5,12 +5,11 @@ using System;
 using System.IO;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.OpenGL.Textures;
+using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Primitives;
 using osuTK;
-using osuTK.Graphics.ES30;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Vertices;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
 
 namespace osu.Framework.Graphics.Textures
@@ -23,7 +22,7 @@ namespace osu.Framework.Graphics.Textures
 
         public static Texture WhitePixel => white_pixel.Value;
 
-        public virtual TextureGL TextureGL { get; }
+        public virtual RendererTexture RendererTexture { get; }
 
         public string Filename;
         public string AssetName;
@@ -41,23 +40,23 @@ namespace osu.Framework.Graphics.Textures
         public float DisplayWidth => Width / ScaleAdjust;
         public float DisplayHeight => Height / ScaleAdjust;
 
-        public Opacity Opacity => TextureGL.Opacity;
+        public Opacity Opacity => RendererTexture.Opacity;
 
-        public WrapMode WrapModeS => TextureGL.WrapModeS;
+        public WrapMode WrapModeS => RendererTexture.WrapModeS;
 
-        public WrapMode WrapModeT => TextureGL.WrapModeT;
+        public WrapMode WrapModeT => RendererTexture.WrapModeT;
 
         /// <summary>
         /// Create a new texture.
         /// </summary>
-        /// <param name="textureGl">The GL texture.</param>
-        public Texture(TextureGL textureGl)
+        /// <param name="rendererTexture">The renderer texture.</param>
+        public Texture(RendererTexture rendererTexture)
         {
-            TextureGL = textureGl ?? throw new ArgumentNullException(nameof(textureGl));
+            RendererTexture = rendererTexture ?? throw new ArgumentNullException(nameof(rendererTexture));
         }
 
-        public Texture(int width, int height, bool manualMipmaps = false, All filteringMode = All.Linear)
-            : this(new TextureGLSingle(width, height, manualMipmaps, filteringMode))
+        public Texture(int width, int height, bool manualMipmaps = false, FilteringMode filteringMode = FilteringMode.Linear)
+            : this(new RendererTextureSingle(width, height, manualMipmaps, filteringMode))
         {
         }
 
@@ -80,7 +79,7 @@ namespace osu.Framework.Graphics.Textures
                 cropRectangle *= scale;
             }
 
-            return new Texture(new TextureGLSub(cropRectangle, TextureGL, wrapModeS, wrapModeT));
+            return new Texture(new RendererTextureSub(cropRectangle, RendererTexture, wrapModeS, wrapModeT));
         }
 
         /// <summary>
@@ -109,14 +108,14 @@ namespace osu.Framework.Graphics.Textures
 
         public int Width
         {
-            get => TextureGL.Width;
-            set => TextureGL.Width = value;
+            get => RendererTexture.Width;
+            set => RendererTexture.Width = value;
         }
 
         public int Height
         {
-            get => TextureGL.Height;
-            set => TextureGL.Height = value;
+            get => RendererTexture.Height;
+            set => RendererTexture.Height = value;
         }
 
         public Vector2 Size => new Vector2(Width, Height);
@@ -128,7 +127,7 @@ namespace osu.Framework.Graphics.Textures
         /// <param name="upload"></param>
         public void SetData(ITextureUpload upload)
         {
-            TextureGL?.SetData(upload);
+            RendererTexture?.SetData(upload);
         }
 
         protected virtual RectangleF TextureBounds(RectangleF? textureRect = null)
@@ -146,7 +145,7 @@ namespace osu.Framework.Graphics.Textures
             return texRect;
         }
 
-        public RectangleF GetTextureRect(RectangleF? textureRect = null) => TextureGL.GetTextureRect(TextureBounds(textureRect));
+        public RectangleF GetTextureRect(RectangleF? textureRect = null) => RendererTexture.GetTextureRect(TextureBounds(textureRect));
 
         /// <summary>
         /// Draws a triangle to the screen.
@@ -160,9 +159,9 @@ namespace osu.Framework.Graphics.Textures
         internal void DrawTriangle(Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
                                    Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
         {
-            if (TextureGL == null || !TextureGL.Bind()) return;
+            if (RendererTexture == null || !RendererTexture.Bind()) return;
 
-            TextureGL.DrawTriangle(vertexTriangle, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, TextureBounds(textureCoords));
+            RendererTexture.DrawTriangle(vertexTriangle, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, TextureBounds(textureCoords));
         }
 
         /// <summary>
@@ -178,17 +177,17 @@ namespace osu.Framework.Graphics.Textures
         internal void DrawQuad(Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null,
                                Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
         {
-            if (TextureGL == null || !TextureGL.Bind()) return;
+            if (RendererTexture == null || !RendererTexture.Bind()) return;
 
-            TextureGL.DrawQuad(vertexQuad, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, blendRangeOverride, TextureBounds(textureCoords));
+            RendererTexture.DrawQuad(vertexQuad, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, blendRangeOverride, TextureBounds(textureCoords));
         }
 
         public override string ToString() => $@"{AssetName} ({Width}, {Height})";
 
         /// <summary>
-        /// Whether <see cref="TextureGL"/> is in a usable state.
+        /// Whether <see cref="RendererTexture"/> is in a usable state.
         /// </summary>
-        public virtual bool Available => TextureGL.Available;
+        public virtual bool Available => RendererTexture.Available;
 
         #region Disposal
 

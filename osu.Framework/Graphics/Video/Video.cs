@@ -160,7 +160,7 @@ namespace osu.Framework.Graphics.Video
                 var tex = lastFrame.Texture;
 
                 // Check if the new frame has been uploaded so we don't display an old frame
-                if ((tex?.TextureGL as VideoTexture)?.UploadComplete ?? false)
+                if ((tex?.RendererTexture as VideoTexture)?.UploadComplete ?? false)
                 {
                     Sprite.Texture = tex;
                     UpdateSizing();

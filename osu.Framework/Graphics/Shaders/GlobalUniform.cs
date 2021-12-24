@@ -1,8 +1,8 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using osu.Framework.Graphics.OpenGL;
 using System;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shaders
 {
@@ -37,7 +37,7 @@ namespace osu.Framework.Graphics.Shaders
             if (PendingChange == null)
                 return;
 
-            GLWrapper.SetUniform(this);
+            Vd.UpdateUniform(this);
             PendingChange = null;
         }
 

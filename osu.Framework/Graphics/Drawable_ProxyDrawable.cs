@@ -2,9 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {
@@ -12,7 +13,7 @@ namespace osu.Framework.Graphics
     {
         private class ProxyDrawable : Drawable
         {
-            private readonly ulong[] drawNodeValidationIds = new ulong[GLWrapper.MAX_DRAW_NODES];
+            private readonly ulong[] drawNodeValidationIds = new ulong[Vd.MAX_DRAW_NODES];
             private readonly DrawNode[] originalDrawNodes;
 
             internal ProxyDrawable(Drawable original)

@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using JetBrains.Annotations;
+using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.IO.Stores;
-using osuTK.Graphics.ES30;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -18,7 +18,7 @@ namespace osu.Framework.Graphics.Textures
         private readonly object referenceCountLock = new object();
         private readonly Dictionary<string, TextureWithRefCount.ReferenceCount> referenceCounts = new Dictionary<string, TextureWithRefCount.ReferenceCount>();
 
-        public LargeTextureStore(IResourceStore<TextureUpload> store = null, All filteringMode = All.Linear)
+        public LargeTextureStore(IResourceStore<TextureUpload> store = null, FilteringMode filteringMode = FilteringMode.Linear)
             : base(store, false, filteringMode, true)
         {
         }
@@ -54,7 +54,7 @@ namespace osu.Framework.Graphics.Textures
                 if (!referenceCounts.TryGetValue(lookupKey, out TextureWithRefCount.ReferenceCount count))
                     referenceCounts[lookupKey] = count = new TextureWithRefCount.ReferenceCount(referenceCountLock, () => onAllReferencesLost(baseTexture));
 
-                return new TextureWithRefCount(baseTexture.TextureGL, count);
+                return new TextureWithRefCount(baseTexture.RendererTexture, count);
             }
         }
 

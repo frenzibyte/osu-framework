@@ -3,39 +3,39 @@
 
 using System;
 using System.Threading;
-using osu.Framework.Graphics.OpenGL.Textures;
+using osu.Framework.Graphics.Renderer.Textures;
 
 namespace osu.Framework.Graphics.Textures
 {
     /// <summary>
-    /// A texture which shares a common reference count with all other textures using the same <see cref="TextureGL"/>.
+    /// A texture which shares a common reference count with all other textures using the same <see cref="RendererTexture"/>.
     /// </summary>
     internal class TextureWithRefCount : Texture
     {
         private readonly ReferenceCount count;
 
-        public TextureWithRefCount(TextureGL textureGl, ReferenceCount count)
-            : base(textureGl)
+        public TextureWithRefCount(RendererTexture rendererTexture, ReferenceCount count)
+            : base(rendererTexture)
         {
             this.count = count;
 
             count.Increment();
         }
 
-        public sealed override TextureGL TextureGL
+        public sealed override RendererTexture RendererTexture
         {
             get
             {
                 if (!Available)
                     throw new InvalidOperationException($"Attempting to access a {nameof(TextureWithRefCount)}'s underlying texture after all references are lost.");
 
-                return base.TextureGL;
+                return base.RendererTexture;
             }
         }
 
         // The base property invokes the overridden TextureGL property, which will throw an exception if not available
         // So this property is redirected to reference the intended member
-        public sealed override bool Available => base.TextureGL.Available;
+        public sealed override bool Available => base.RendererTexture.Available;
 
         ~TextureWithRefCount()
         {

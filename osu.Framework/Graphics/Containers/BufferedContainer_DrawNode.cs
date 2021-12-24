@@ -2,8 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Buffers;
+using osu.Framework.Graphics.Renderer.Buffers;
 using osuTK;
 using osuTK.Graphics;
 using osu.Framework.Graphics.Primitives;
@@ -11,7 +10,8 @@ using osu.Framework.Graphics.Shaders;
 using System;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Utils;
-using osuTK.Graphics.ES30;
+using PixelFormat = Veldrid.PixelFormat;
+using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -67,12 +67,12 @@ namespace osu.Framework.Graphics.Containers
 
                 if (blurRadius.X > 0 || blurRadius.Y > 0)
                 {
-                    GLWrapper.PushScissorState(false);
+                    Vd.PushScissorState(false);
 
                     if (blurRadius.X > 0) drawBlurredFrameBuffer(blurRadius.X, blurSigma.X, blurRotation);
                     if (blurRadius.Y > 0) drawBlurredFrameBuffer(blurRadius.Y, blurSigma.Y, blurRotation + 90);
 
-                    GLWrapper.PopScissorState();
+                    Vd.PopScissorState();
                 }
             }
 
@@ -81,7 +81,7 @@ namespace osu.Framework.Graphics.Containers
                 if (drawOriginal && effectPlacement == EffectPlacement.InFront)
                     base.DrawContents();
 
-                GLWrapper.SetBlend(effectBlending);
+                Vd.SetBlend(effectBlending);
 
                 ColourInfo finalEffectColour = DrawColourInfo.Colour;
                 finalEffectColour.ApplyChild(effectColour);
@@ -97,7 +97,7 @@ namespace osu.Framework.Graphics.Containers
                 FrameBuffer current = SharedData.CurrentEffectBuffer;
                 FrameBuffer target = SharedData.GetNextEffectBuffer();
 
-                GLWrapper.SetBlend(BlendingParameters.None);
+                Vd.SetBlend(BlendingParameters.None);
 
                 using (BindFrameBuffer(target))
                 {
@@ -128,7 +128,7 @@ namespace osu.Framework.Graphics.Containers
 
         private class BufferedContainerDrawNodeSharedData : BufferedDrawNodeSharedData
         {
-            public BufferedContainerDrawNodeSharedData(RenderbufferInternalFormat[] formats, bool pixelSnapping, bool clipToRootNode)
+            public BufferedContainerDrawNodeSharedData(PixelFormat[] formats, bool pixelSnapping, bool clipToRootNode)
                 : base(2, formats, pixelSnapping, clipToRootNode)
             {
             }

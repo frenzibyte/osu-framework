@@ -4,7 +4,6 @@
 using System;
 using System.Buffers;
 using osu.Framework.Graphics.Primitives;
-using osuTK.Graphics.ES30;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace osu.Framework.Graphics.Textures
@@ -37,8 +36,6 @@ namespace osu.Framework.Graphics.Textures
         public ReadOnlySpan<Rgba32> Data => data;
 
         public int Level { get; set; }
-
-        public virtual PixelFormat Format => PixelFormat.Rgba;
 
         public RectangleI Bounds { get; set; }
     }

@@ -4,7 +4,7 @@
 using System;
 using osuTK;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Renderer.Vertices;
 
 namespace osu.Framework.Graphics.Video
 {
