@@ -1,7 +1,7 @@
-﻿varying highp vec2 v_MaskingPosition;
-varying lowp vec4 v_Colour;
-varying mediump vec4 v_TexRect;
-varying mediump vec2 v_BlendRange;
+﻿layout(location = 0) in highp vec2 v_MaskingPosition;
+layout(location = 1) in lowp vec4 v_Colour;
+layout(location = 3) in mediump vec4 v_TexRect;
+layout(location = 4) in mediump vec2 v_BlendRange;
 
 uniform highp float g_CornerRadius;
 uniform highp float g_CornerExponent;

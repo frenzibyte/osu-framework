@@ -2,10 +2,11 @@
     precision mediump float;
 #endif
 
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
+layout(location = 1) in vec4 v_Colour;
+layout(location = 2) in vec2 v_TexCoord;
 
-uniform sampler2D m_Sampler;
+uniform texture2D m_Texture;
+uniform sampler m_Sampler;
 
 //Width to sample from
 uniform float mag;
@@ -18,23 +19,25 @@ uniform float redtint;
 //Operate on a high range (0.5 - 1.0) or the full range (0.0 - 1.0)
 uniform bool hirange;
 
+layout(location = 0) out vec4 o_Colour;
+
 void main(void)
 {
-    vec4 sum = pow(texture2D(m_Sampler, v_TexCoord), vec4(2.0));
+    vec4 sum = pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord), vec4(2.0));
 
     //Accumulate the colour from 12 neighbouring pixels
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(-0.326212, -0.405805) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(-0.840144, -0.073580) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(-0.695914,  0.457137) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(-0.203345,  0.620716) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(0.962340, -0.194983) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(0.473434, -0.480026) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(0.519456,  0.767022) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(0.185461, -0.893124) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(0.507431,  0.064425) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(0.896420,  0.412458) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(-0.321940, -0.932615) * mag)), vec4(2.0));
-    sum += pow(texture2D(m_Sampler, v_TexCoord + (vec2(-0.791559, -0.597705) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(-0.326212, -0.405805) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(-0.840144, -0.073580) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(-0.695914,  0.457137) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(-0.203345,  0.620716) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(0.962340, -0.194983) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(0.473434, -0.480026) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(0.519456,  0.767022) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(0.185461, -0.893124) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(0.507431,  0.064425) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(0.896420,  0.412458) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(-0.321940, -0.932615) * mag)), vec4(2.0));
+    sum += pow(texture(sampler2D(m_Texture, m_Sampler), v_TexCoord + (vec2(-0.791559, -0.597705) * mag)), vec4(2.0));
 
     //Average the sum
     sum /= 13.0;
@@ -49,5 +52,5 @@ void main(void)
 
     sum.r += redtint;
 
-	gl_FragColor = v_Colour * sum;
+	o_Colour = v_Colour * sum;
 }

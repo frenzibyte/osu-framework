@@ -1,8 +1,8 @@
 #include "sh_TextureWrapping.h"
 
-uniform sampler2D m_SamplerY;
-uniform sampler2D m_SamplerU;
-uniform sampler2D m_SamplerV;
+uniform texture2D m_TextureY;
+uniform texture2D m_TextureU;
+uniform texture2D m_TextureV;
 
 uniform mediump mat3 yuvCoeff;
 

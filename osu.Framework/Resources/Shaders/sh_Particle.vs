@@ -1,10 +1,10 @@
-attribute vec2 m_Position;
-attribute vec2 m_TexCoord;
-attribute float m_Time;
-attribute vec2 m_Direction;
+layout(location = 0) in vec2 m_Position;
+layout(location = 2) in vec2 m_TexCoord;
+layout(location = 3) in float m_Time;
+layout(location = 4) in vec2 m_Direction;
 
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
+layout(location = 1) out vec4 v_Colour;
+layout(location = 2) out vec2 v_TexCoord;
 
 uniform mat4 g_ProjMatrix;
 uniform float g_FadeClock;

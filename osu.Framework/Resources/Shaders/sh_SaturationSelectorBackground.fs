@@ -1,7 +1,7 @@
 #include "sh_Utils.h"
 
-varying mediump vec2 v_TexCoord;
-varying mediump vec4 v_TexRect;
+layout(location = 1) in mediump vec2 v_TexCoord;
+layout(location = 2) in mediump vec4 v_TexRect;
 
 uniform mediump float hue;
 

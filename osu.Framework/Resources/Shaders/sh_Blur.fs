@@ -2,7 +2,7 @@
 
 #define INV_SQRT_2PI 0.39894
 
-varying mediump vec2 v_TexCoord;
+layout(location = 2) in mediump vec2 v_TexCoord;
 
 uniform lowp sampler2D m_Sampler;
 
@@ -10,6 +10,8 @@ uniform mediump vec2 g_TexSize;
 uniform int g_Radius;
 uniform mediump float g_Sigma;
 uniform highp vec2 g_BlurDirection;
+
+layout(location = 0) out vec4 o_Colour;
 
 mediump float computeGauss(in mediump float x, in mediump float sigma)
 {
@@ -39,5 +41,5 @@ lowp vec4 blur(sampler2D tex, int radius, highp vec2 direction, mediump vec2 tex
 
 void main(void)
 {
-	gl_FragColor = blur(m_Sampler, g_Radius, g_BlurDirection, v_TexCoord, g_TexSize, g_Sigma);
+	o_Colour = blur(m_Sampler, g_Radius, g_BlurDirection, v_TexCoord, g_TexSize, g_Sigma);
 }
