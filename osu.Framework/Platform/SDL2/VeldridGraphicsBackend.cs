@@ -259,12 +259,10 @@ namespace osu.Framework.Platform.SDL2
 
         internal static void ScheduleDisposal(Action disposalAction)
         {
-            // if (host != null && host.TryGetTarget(out _))
-            //     disposal_queue.ScheduleDisposal(disposalAction);
-            // else
-            //     disposalAction.Invoke();
-
-            disposalAction.Invoke();
+            if (host != null && host.TryGetTarget(out _))
+                disposal_queue.ScheduleDisposal(disposalAction);
+            else
+                disposalAction.Invoke();
         }
 
         private static void checkPendingDisposals()
