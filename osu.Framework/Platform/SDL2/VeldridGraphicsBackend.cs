@@ -319,6 +319,8 @@ namespace osu.Framework.Platform.SDL2
             Viewport = RectangleI.Empty;
             Ortho = RectangleF.Empty;
 
+            Device.MainSwapchain.Resize((uint)size.X, (uint)size.Y);
+
             PushScissorState(false);
             PushViewport(new RectangleI(0, 0, (int)size.X, (int)size.Y));
             PushScissor(new RectangleI(0, 0, (int)size.X, (int)size.Y));
