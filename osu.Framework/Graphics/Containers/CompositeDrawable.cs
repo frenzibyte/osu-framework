@@ -26,6 +26,7 @@ using osu.Framework.Extensions.ExceptionExtensions;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Layout;
+using osu.Framework.Logging;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 
@@ -85,9 +86,9 @@ namespace osu.Framework.Graphics.Containers
 
         private WeakList<Drawable> loadingComponents;
 
-        private static readonly ThreadedTaskScheduler threaded_scheduler = new ThreadedTaskScheduler(4, nameof(LoadComponentsAsync));
+        internal static readonly ThreadedTaskScheduler SCHEDULER_STANDARD = new ThreadedTaskScheduler(4, $"{nameof(LoadComponentsAsync)} (standard)");
 
-        private static readonly ThreadedTaskScheduler long_load_scheduler = new ThreadedTaskScheduler(4, nameof(LoadComponentsAsync));
+        internal static readonly ThreadedTaskScheduler SCHEDULER_LONG_LOAD = new ThreadedTaskScheduler(4, $"{nameof(LoadComponentsAsync)} (long load)");
 
         /// <summary>
         /// Loads a future child or grand-child of this <see cref="CompositeDrawable"/> asynchronously. <see cref="Dependencies"/>
@@ -159,10 +160,16 @@ namespace osu.Framework.Graphics.Containers
             foreach (var d in loadables)
             {
                 loadingComponents.Add(d);
-                d.OnLoadComplete += _ => loadingComponents.Remove(d);
+                LoadingComponentsLogger.Add(d);
+
+                d.OnLoadComplete += _ =>
+                {
+                    loadingComponents.Remove(d);
+                    LoadingComponentsLogger.Remove(d);
+                };
             }
 
-            var taskScheduler = loadables.Any(c => c.IsLongRunning) ? long_load_scheduler : threaded_scheduler;
+            var taskScheduler = loadables.Any(c => c.IsLongRunning) ? SCHEDULER_LONG_LOAD : SCHEDULER_STANDARD;
 
             return Task.Factory.StartNew(() => loadComponents(loadables, deps, true, linkedSource.Token), linkedSource.Token, TaskCreationOptions.HideScheduler, taskScheduler).ContinueWith(loaded =>
             {
@@ -173,6 +180,10 @@ namespace osu.Framework.Graphics.Containers
 
                 if (linkedSource.Token.IsCancellationRequested)
                 {
+                    // In the case of cancellation the final load state will not be reached, so cleanup here is required.
+                    foreach (var d in loadables)
+                        LoadingComponentsLogger.Remove(d);
+
                     linkedSource.Dispose();
                     return;
                 }
@@ -227,7 +238,10 @@ namespace osu.Framework.Graphics.Containers
                     break;
 
                 if (!components[i].LoadFromAsync(Clock, dependencies, isDirectAsyncContext))
+                {
+                    LoadingComponentsLogger.Remove(components[i]);
                     components.Remove(components[i--]);
+                }
             }
         }
 
@@ -301,7 +315,10 @@ namespace osu.Framework.Graphics.Containers
             if (loadingComponents != null)
             {
                 foreach (var d in loadingComponents)
+                {
                     d.Dispose();
+                    LoadingComponentsLogger.Remove(d);
+                }
             }
 
             OnAutoSize = null;
