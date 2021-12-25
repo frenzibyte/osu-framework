@@ -23,7 +23,7 @@ namespace osu.Framework.Platform
         void Initialise(IWindow window);
 
         /// <summary>
-        /// The drawable area of the graphics backend.
+        /// Retrieves the underlying drawable area of the window.
         /// </summary>
         Size GetDrawableSize();
 

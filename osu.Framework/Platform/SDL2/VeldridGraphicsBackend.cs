@@ -60,6 +60,8 @@ namespace osu.Framework.Platform.SDL2
             new ResourceLayoutElementDescription("m_Uniforms", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment),
         });
 
+        private SDL2DesktopWindow sdlWindow;
+
         public static GraphicsDevice Device { get; private set; }
 
         public static ResourceFactory Factory => Device.ResourceFactory;
@@ -137,8 +139,10 @@ namespace osu.Framework.Platform.SDL2
         {
             if (IsInitialized) return;
 
-            if (!(window is SDL2DesktopWindow sdlWindow))
+            if (!(window is SDL2DesktopWindow))
                 throw new ArgumentException("Unsupported window backend.", nameof(window));
+
+            sdlWindow = (SDL2DesktopWindow)window;
 
             var options = new GraphicsDeviceOptions
             {
@@ -225,7 +229,29 @@ namespace osu.Framework.Platform.SDL2
             return null;
         }
 
-        public Size GetDrawableSize() => new Size((int)Device.SwapchainFramebuffer.Width, (int)Device.SwapchainFramebuffer.Height);
+        public Size GetDrawableSize()
+        {
+            int width = 0;
+            int height = 0;
+
+            switch (Device.BackendType)
+            {
+                case GraphicsBackend.OpenGL:
+                case GraphicsBackend.OpenGLES:
+                    SDL.SDL_GL_GetDrawableSize(sdlWindow.SDLWindowHandle, out width, out height);
+                    break;
+
+                case GraphicsBackend.Vulkan:
+                    SDL.SDL_Vulkan_GetDrawableSize(sdlWindow.SDLWindowHandle, out width, out height);
+                    break;
+
+                case GraphicsBackend.Metal:
+                    SDL.SDL_Metal_GetDrawableSize(sdlWindow.SDLWindowHandle, out width, out height);
+                    break;
+            }
+
+            return new Size(width, height);
+        }
 
         public void SwapBuffers() => Device.SwapBuffers();
 
