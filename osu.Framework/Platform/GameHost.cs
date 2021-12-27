@@ -9,15 +9,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime;
-using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using osuTK;
-using osuTK.Graphics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
@@ -35,14 +32,11 @@ using osu.Framework.Threading;
 using osu.Framework.Timing;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
 using SixLabors.ImageSharp.Memory;
-using Veldrid;
-using Image = SixLabors.ImageSharp.Image;
 using Size = System.Drawing.Size;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
@@ -472,24 +466,24 @@ namespace osu.Framework.Platform
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
                         Vd.Reset(new System.Numerics.Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
-                    if (false)
-                    {
-                        // depthValue.Reset();
-                        //
-                        // GL.ColorMask(false, false, false, false);
-                        // Vd.SetBlend(BlendingParameters.None);
-                        // Vd.PushDepthInfo(DepthInfo.Default);
-                        //
-                        // // Front pass
-                        // buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
-                        //
-                        // Vd.PopDepthInfo();
-                        // GL.ColorMask(true, true, true, true);
-                        //
-                        // // The back pass doesn't write depth, but needs to depth test properly
-                        // Vd.PushDepthInfo(new DepthInfo(true, false));
-                    }
-                    else
+                    // if (!bypassFrontToBackPass.Value)
+                    // {
+                    //     depthValue.Reset();
+                    //
+                    //     // GL.ColorMask(false, false, false, false);
+                    //     Vd.SetBlend(BlendingParameters.None);
+                    //     Vd.PushDepthInfo(DepthInfo.Default);
+                    //
+                    //     // Front pass
+                    //     buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
+                    //
+                    //     Vd.PopDepthInfo();
+                    //     // GL.ColorMask(true, true, true, true);
+                    //
+                    //     // The back pass doesn't write depth, but needs to depth test properly
+                    //     Vd.PushDepthInfo(new DepthInfo(true, false));
+                    // }
+                    // else
                     {
                         // Disable depth testing
                         Vd.PushDepthInfo(new DepthInfo());
@@ -527,7 +521,7 @@ namespace osu.Framework.Platform
             // if (Window.VerticalSync)
             //     // without glFinish, vsync is basically unplayable due to the extra latency introduced.
             //     // we will likely want to give the user control over this in the future as an advanced setting.
-            //     VeldridGraphicsBackend.Device.WaitForIdle();
+            //     Vd.Device.WaitForIdle();
         }
 
         /// <summary>
@@ -536,37 +530,47 @@ namespace osu.Framework.Platform
         /// <returns>The screenshot as an <see cref="Image{TPixel}"/>.</returns>
         public unsafe async Task<Image<Rgba32>> TakeScreenshotAsync()
         {
-            if (Window == null) throw new InvalidOperationException($"{nameof(Window)} has not been set!");
-
-            using (var completionEvent = new ManualResetEventSlim(false))
-            {
-                int width = Window.ClientSize.Width;
-                int height = Window.ClientSize.Height;
-                var pixelData = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<Rgba32>(width * height);
-
-                DrawThread.Scheduler.Add(() =>
-                {
-                    if (Window is SDL2DesktopWindow win)
-                        win.MakeCurrent();
-                    else if (GraphicsContext.CurrentContext == null)
-                        throw new GraphicsContextMissingException();
-
-                    // todo: uhhhhhhhhhh
-                    var resource = Vd.Device.Map(Vd.Device.SwapchainFramebuffer.ColorTargets.Single().Target, MapMode.Read);
-                    Unsafe.CopyBlock(ref MemoryMarshal.GetReference(MemoryMarshal.Cast<Rgba32, byte>(pixelData.Memory.Span)), ref Unsafe.AsRef<byte>(resource.Data.ToPointer()), resource.SizeInBytes);
-
-                    // ReSharper disable once AccessToDisposedClosure
-                    completionEvent.Set();
-                });
-
-                // this is required as attempting to use a TaskCompletionSource blocks the thread calling SetResult on some configurations.
-                Task.Run(completionEvent.Wait).ConfigureAwait(false);
-
-                var image = Image.LoadPixelData<Rgba32>(pixelData.Memory.Span, width, height);
-                image.Mutate(c => c.Flip(FlipMode.Vertical));
-
-                return image;
-            }
+            // taking screenshots is not possible for some backends with veldrid.
+            return new Image<Rgba32>(Window.ClientSize.Width, Window.ClientSize.Height);
+            // if (Window == null) throw new InvalidOperationException($"{nameof(Window)} has not been set!");
+            //
+            // using (var completionEvent = new ManualResetEventSlim(false))
+            // {
+            //     int width = Window.ClientSize.Width;
+            //     int height = Window.ClientSize.Height;
+            //     var pixelData = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<Rgba32>(width * height);
+            //
+            //     DrawThread.Scheduler.Add(() =>
+            //     {
+            //         if (Window is SDL2DesktopWindow win)
+            //             win.MakeCurrent();
+            //         else if (GraphicsContext.CurrentContext == null)
+            //             throw new GraphicsContextMissingException();
+            //
+            //         var source = Vd.Device.SwapchainFramebuffer.ColorTargets[0].Target;
+            //         var staging = Vd.Factory.CreateTexture(TextureDescription.Texture2D(source.Width, source.Height, source.MipLevels, source.ArrayLayers, source.Format, TextureUsage.Staging));
+            //
+            //         Vd.Commands.CopyTexture(source, staging);
+            //
+            //         var resource = Vd.Device.Map(staging, MapMode.Read);
+            //
+            //         Unsafe.CopyBlock(ref MemoryMarshal.GetReference(MemoryMarshal.Cast<Rgba32, byte>(pixelData.Memory.Span)), ref Unsafe.AsRef<byte>(resource.Data.ToPointer()), resource.SizeInBytes);
+            //
+            //         Vd.Device.Unmap(resource.Resource);
+            //         staging.Dispose();
+            //
+            //         // ReSharper disable once AccessToDisposedClosure
+            //         completionEvent.Set();
+            //     });
+            //
+            //     // this is required as attempting to use a TaskCompletionSource blocks the thread calling SetResult on some configurations.
+            //     Task.Run(completionEvent.Wait).ConfigureAwait(false);
+            //
+            //     var image = MediaTypeNames.Image.LoadPixelData<Rgba32>(pixelData.Memory.Span, width, height);
+            //     image.Mutate(c => c.Flip(FlipMode.Vertical));
+            //
+            //     return image;
+            // }
         }
 
         public ExecutionState ExecutionState
