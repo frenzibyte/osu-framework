@@ -5,6 +5,7 @@ using System;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Renderer.Textures;
 using Veldrid;
+using BlendStateDescription = Veldrid.BlendStateDescription;
 
 namespace osu.Framework.Platform.SDL2
 {
@@ -112,5 +113,38 @@ namespace osu.Framework.Platform.SDL2
                     throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
             }
         }
+
+        public static GraphicsPipelineDescription Clone(this GraphicsPipelineDescription description) => new GraphicsPipelineDescription
+        {
+            DepthStencilState = description.DepthStencilState,
+            RasterizerState = description.RasterizerState,
+            PrimitiveTopology = description.PrimitiveTopology,
+            ResourceBindingModel = description.ResourceBindingModel,
+            BlendState = description.BlendState.Clone(),
+            ShaderSet = description.ShaderSet.Clone(),
+            Outputs = description.Outputs.Clone(),
+            ResourceLayouts = (ResourceLayout[])description.ResourceLayouts.Clone(),
+        };
+
+        public static BlendStateDescription Clone(this BlendStateDescription description) => new BlendStateDescription
+        {
+            BlendFactor = description.BlendFactor,
+            AlphaToCoverageEnabled = description.AlphaToCoverageEnabled,
+            AttachmentStates = (BlendAttachmentDescription[])description.AttachmentStates.Clone(),
+        };
+
+        public static ShaderSetDescription Clone(this ShaderSetDescription description) => new ShaderSetDescription
+        {
+            Shaders = (Shader[])description.Shaders.Clone(),
+            VertexLayouts = (VertexLayoutDescription[])description.VertexLayouts.Clone(),
+            Specializations = (SpecializationConstant[])description.Specializations?.Clone(),
+        };
+
+        public static OutputDescription Clone(this OutputDescription description) => new OutputDescription
+        {
+            DepthAttachment = description.DepthAttachment,
+            SampleCount = description.SampleCount,
+            ColorAttachments = (OutputAttachmentDescription[])description.ColorAttachments.Clone(),
+        };
     }
 }
