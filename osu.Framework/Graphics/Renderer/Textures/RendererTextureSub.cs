@@ -7,9 +7,6 @@ using osuTK;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Textures;
-using Veldrid;
-using Veldrid.OpenGLBinding;
-using Texture = Veldrid.Texture;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Renderer.Textures
@@ -23,8 +20,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
 
         public override RendererTexture Native => parent.Native;
 
-        public override Texture Texture => parent.Texture;
-        public override Sampler Sampler => parent.Sampler;
+        public override TextureResourceSet TextureResourceSet => parent.TextureResourceSet;
 
         public override bool Loaded => parent.Loaded;
 
@@ -88,14 +84,14 @@ namespace osu.Framework.Graphics.Renderer.Textures
             parent.DrawQuad(vertexQuad, drawColour, boundsInParent(textureRect), vertexAction, inflationPercentage: inflationPercentage, blendRangeOverride: blendRangeOverride, boundsInParent(textureCoords));
         }
 
-        internal override bool Bind(TextureUnit unit, WrapMode wrapModeS, WrapMode wrapModeT)
+        internal override bool Bind(WrapMode wrapModeS, WrapMode wrapModeT)
         {
             if (!Available)
                 throw new ObjectDisposedException(ToString(), "Can not bind disposed sub textures.");
 
             Upload();
 
-            return parent.Bind(unit, wrapModeS, wrapModeT);
+            return parent.Bind(wrapModeS, wrapModeT);
         }
 
         internal override bool Upload() => false;

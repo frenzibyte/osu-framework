@@ -8,9 +8,6 @@ using osuTK;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Textures;
-using Veldrid;
-using Veldrid.OpenGLBinding;
-using Texture = Veldrid.Texture;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Renderer.Textures
@@ -72,9 +69,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
 
         public Opacity Opacity { get; protected set; } = Opacity.Mixed;
 
-        public abstract Texture Texture { get; }
-
-        public abstract Sampler Sampler { get; }
+        public abstract TextureResourceSet TextureResourceSet { get; }
 
         public abstract int Height { get; set; }
 
@@ -114,18 +109,16 @@ namespace osu.Framework.Graphics.Renderer.Textures
         /// <summary>
         /// Bind as active texture.
         /// </summary>
-        /// <param name="unit">The texture unit to bind to. Defaults to Texture0.</param>
         /// <returns>True if bind was successful.</returns>
-        public bool Bind(TextureUnit unit = TextureUnit.Texture0) => Bind(unit, WrapModeS, WrapModeT);
+        public bool Bind() => Bind(WrapModeS, WrapModeT);
 
         /// <summary>
         /// Bind as active texture.
         /// </summary>
-        /// <param name="unit">The texture unit to bind to.</param>
         /// <param name="wrapModeS">The texture wrap mode in horizontal direction.</param>
         /// <param name="wrapModeT">The texture wrap mode in vertical direction.</param>
         /// <returns>True if bind was successful.</returns>
-        internal abstract bool Bind(TextureUnit unit, WrapMode wrapModeS, WrapMode wrapModeT);
+        internal abstract bool Bind(WrapMode wrapModeS, WrapMode wrapModeT);
 
         /// <summary>
         /// Uploads pending texture data to the GPU if it exists.

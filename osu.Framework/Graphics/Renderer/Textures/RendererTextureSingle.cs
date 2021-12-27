@@ -19,7 +19,6 @@ using osuTK;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
-using Veldrid.OpenGLBinding;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
 using Texture = Veldrid.Texture;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
@@ -118,6 +117,9 @@ namespace osu.Framework.Graphics.Renderer.Textures
         /// </summary>
         private void unload()
         {
+            textureResourceSet?.Dispose();
+            textureResourceSet = null;
+
             sampler?.Dispose();
             sampler = null;
 
@@ -179,34 +181,21 @@ namespace osu.Framework.Graphics.Renderer.Textures
         }
 
         private Texture texture;
-
-        public override Texture Texture
-        {
-            get
-            {
-                if (!Available)
-                    throw new ObjectDisposedException(ToString(), "Can not obtain instance of a disposed texture.");
-
-                if (texture == null)
-                    throw new InvalidOperationException("Can not obtain instance of a texture before uploading it.");
-
-                return texture;
-            }
-        }
-
         private Sampler sampler;
 
-        public override Sampler Sampler
+        private TextureResourceSet textureResourceSet;
+
+        public override TextureResourceSet TextureResourceSet
         {
             get
             {
                 if (!Available)
-                    throw new ObjectDisposedException(ToString(), "Can not obtain sampler of a disposed texture.");
+                    throw new ObjectDisposedException(ToString(), "Can not obtain resource set of a disposed texture.");
 
-                if (sampler == null)
-                    throw new InvalidOperationException("Can not obtain sampler of a texture before uploading it.");
+                if (textureResourceSet == null)
+                    throw new InvalidOperationException("Can not obtain resource set of a texture before uploading it.");
 
-                return sampler;
+                return textureResourceSet;
             }
         }
 
@@ -400,7 +389,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
             }
         }
 
-        internal override bool Bind(TextureUnit unit, WrapMode wrapModeS, WrapMode wrapModeT)
+        internal override bool Bind(WrapMode wrapModeS, WrapMode wrapModeT)
         {
             if (!Available)
                 throw new ObjectDisposedException(ToString(), "Can not bind a disposed texture.");
@@ -410,7 +399,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
             if (texture == null)
                 return false;
 
-            if (Vd.BindTexture(this, unit, wrapModeS, wrapModeT))
+            if (Vd.BindTexture(this, wrapModeS, wrapModeT))
                 BindCount++;
 
             return true;
@@ -418,7 +407,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
 
         private bool manualMipmaps;
 
-        internal override unsafe bool Upload()
+        internal override bool Upload()
         {
             if (!Available)
                 return false;
@@ -432,9 +421,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
             {
                 using (upload)
                 {
-                    fixed (Rgba32* ptr = upload.Data)
-                        DoUpload(upload, (IntPtr)ptr);
-
+                    DoUpload(upload);
                     didUpload = true;
                 }
             }
@@ -447,6 +434,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
 
         internal override void FlushUploads()
         {
+            /* 512x256, 256x128, 128x64, 64x32, 32x16, 16x8, 8x4, 4x2, 2x1, 1x1 */
             while (tryGetNextUpload(out var upload))
                 upload.Dispose();
         }
@@ -466,7 +454,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
             }
         }
 
-        protected virtual unsafe void DoUpload(ITextureUpload upload, IntPtr dataPointer)
+        protected virtual unsafe void DoUpload(ITextureUpload upload)
         {
             // Do we need to generate a new texture?
             if (texture == null || internalWidth != width || internalHeight != height)
@@ -482,7 +470,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
                     if (!manualMipmaps)
                         usage |= TextureUsage.GenerateMipmaps;
 
-                    var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, MAX_MIPMAP_LEVELS + 1, 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
+                    var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
 
                     var samplerDescription = new SamplerDescription
                     {
@@ -499,26 +487,29 @@ namespace osu.Framework.Graphics.Renderer.Textures
                     texture = Vd.Factory.CreateTexture(textureDescription);
                     sampler = Vd.Factory.CreateSampler(samplerDescription);
 
+                    textureResourceSet = new TextureResourceSet(texture, sampler);
+
                     Vd.BindTexture(this);
                 }
                 else
                     Vd.BindTexture(this);
 
-                if (width == upload.Bounds.Width && height == upload.Bounds.Height || dataPointer == IntPtr.Zero)
+                if (!upload.Data.IsEmpty)
                 {
-                    updateMemoryUsage(upload.Level, (long)width * height * 4);
-
-                    Vd.Device.UpdateTexture(texture, dataPointer, (uint)(upload.Data.Length * sizeof(Rgba32)), 0, 0, 0, (uint)width, (uint)height, 1, (uint)upload.Level, 0);
-                }
-                else
-                {
-                    initializeLevel(upload.Level, width, height);
-
-                    Vd.Device.UpdateTexture(texture, dataPointer, (uint)(upload.Data.Length * sizeof(Rgba32)), (uint)upload.Bounds.X, (uint)upload.Bounds.Y, 0, (uint)upload.Bounds.Width, (uint)upload.Bounds.Height, 1, (uint)upload.Level, 0);
+                    if (width == upload.Bounds.Width && height == upload.Bounds.Height)
+                    {
+                        updateMemoryUsage(upload.Level, (long)width * height * sizeof(Rgba32));
+                        uploadTextureData(0, 0, width, height, upload.Level, upload.Data);
+                    }
+                    else
+                    {
+                        initializeLevel(upload.Level, width, height);
+                        uploadTextureData(upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
+                    }
                 }
             }
             // Just update content of the current texture
-            else if (dataPointer != IntPtr.Zero)
+            else if (!upload.Data.IsEmpty)
             {
                 Vd.BindTexture(this);
 
@@ -540,7 +531,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
 
                 int div = (int)Math.Pow(2, upload.Level);
 
-                Vd.Device.UpdateTexture(texture, dataPointer, (uint)(upload.Data.Length * sizeof(Rgba32)), (uint)(upload.Bounds.X / div), (uint)(upload.Bounds.Y / div), 0, (uint)(upload.Bounds.Width / div), (uint)(upload.Bounds.Height / div), 1, (uint)upload.Level, 0);
+                uploadTextureData(upload.Bounds.X / div, upload.Bounds.Y / div, upload.Bounds.Width / div, upload.Bounds.Height / div, upload.Level, upload.Data);
             }
         }
 
@@ -549,11 +540,21 @@ namespace osu.Framework.Graphics.Renderer.Textures
             using (var image = createBackingImage(width, height))
             using (var pixels = image.CreateReadOnlyPixelSpan())
             {
-                updateMemoryUsage(level, (long)width * height * 4);
-
-                fixed (Rgba32* dataPointer = pixels.Span)
-                    Vd.Device.UpdateTexture(texture, (IntPtr)dataPointer, (uint)(pixels.Span.Length * sizeof(Rgba32)), 0, 0, 0, (uint)width, (uint)height, 1, (uint)level, 0);
+                updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
+                uploadTextureData(0, 0, width, height, level, pixels.Span);
             }
+        }
+
+        private unsafe void uploadTextureData(int x, int y, int width, int height, int level, ReadOnlySpan<Rgba32> data)
+        {
+            var staging = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, texture.Format, TextureUsage.Staging));
+
+            fixed (Rgba32* ptr = data)
+                Vd.Device.UpdateTexture(staging, (IntPtr)ptr, (uint)(data.Length * sizeof(Rgba32)), 0, 0, 0, (uint)width, (uint)height, 1, 0, 0);
+
+            Vd.Commands.CopyTexture(staging, 0, 0, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
+
+            staging.Dispose();
         }
 
         private Image<Rgba32> createBackingImage(int width, int height)
@@ -563,5 +564,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
                 ? new Image<Rgba32>(width, height)
                 : new Image<Rgba32>(width, height, initialisationColour);
         }
+
+        private static int calculateMipmapLevels(int width, int height) => Math.Min(1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2)), MAX_MIPMAP_LEVELS);
     }
 }

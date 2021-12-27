@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Graphics.Primitives;
-using Veldrid.OpenGLBinding;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Renderer.Textures
@@ -19,13 +18,13 @@ namespace osu.Framework.Graphics.Renderer.Textures
             Opacity = Opacity.Opaque;
         }
 
-        internal override bool Bind(TextureUnit unit, WrapMode wrapModeS, WrapMode wrapModeT)
+        internal override bool Bind(WrapMode wrapModeS, WrapMode wrapModeT)
         {
             //we can use the special white space from any atlas texture.
-            if (Vd.AtlasTextureIsBound(unit))
+            if (Vd.AtlasTextureIsBound)
                 return true;
 
-            return base.Bind(unit, wrapModeS, wrapModeT);
+            return base.Bind(wrapModeS, wrapModeT);
         }
     }
 }
