@@ -7,7 +7,6 @@ using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using Veldrid;
-using Veldrid.OpenGLBinding;
 using Texture = Veldrid.Texture;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
@@ -15,7 +14,7 @@ namespace osu.Framework.Graphics.Video
 {
     internal unsafe class VideoTexture : RendererTextureSingle
     {
-        private Texture[] textures;
+        private TextureResourceSet textureResourceSet;
 
         /// <summary>
         /// Whether the latest frame data has been uploaded.
@@ -42,47 +41,40 @@ namespace osu.Framework.Graphics.Video
             base.SetData(upload, wrapModeS, wrapModeT, Opacity = Opacity.Opaque);
         }
 
-        public override Texture Texture => textures?[0];
-
-        public override Sampler Sampler => Vd.Device.LinearSampler;
+        public override TextureResourceSet TextureResourceSet => textureResourceSet;
 
         private int textureSize;
 
         public override int GetByteSize() => textureSize;
 
-        internal override bool Bind(TextureUnit unit, WrapMode wrapModeS, WrapMode wrapModeT)
+        internal override bool Bind(WrapMode wrapModeS, WrapMode wrapModeT)
         {
             if (!Available)
                 throw new ObjectDisposedException(ToString(), "Can not bind a disposed texture.");
 
             Upload();
 
-            if (textures == null)
+            if (textureResourceSet == null)
                 return false;
 
-            bool anyBound = false;
-
-            for (int i = 0; i < textures.Length; i++)
-                anyBound |= Vd.BindTexture(textures[i], Sampler, unit + i, wrapModeS, wrapModeT);
-
-            if (anyBound)
+            if (Vd.BindTexture(textureResourceSet, wrapModeS, wrapModeT))
                 BindCount++;
 
             return true;
         }
 
-        protected override void DoUpload(ITextureUpload upload, IntPtr dataPointer)
+        protected override void DoUpload(ITextureUpload upload)
         {
             if (!(upload is VideoTextureUpload videoUpload))
                 return;
 
             // Do we need to generate a new texture?
-            if (textures == null)
+            if (textureResourceSet == null)
             {
                 Debug.Assert(memoryLease == null);
                 memoryLease = NativeMemoryTracker.AddMemory(this, Width * Height * 3 / 2);
 
-                textures = new Texture[3];
+                var textures = new Texture[3];
 
                 for (int i = 0; i < textures.Length; i++)
                 {
@@ -106,22 +98,22 @@ namespace osu.Framework.Graphics.Video
                     var description = TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R8_UNorm, TextureUsage.Sampled);
 
                     textures[i] = Vd.Factory.CreateTexture(description);
-
-                    Vd.BindTexture(textures[i], Sampler);
                 }
+
+                textureResourceSet = new TextureResourceSet(textures, Vd.Device.LinearSampler);
             }
 
-            for (int i = 0; i < textures.Length; i++)
-            {
-                Vd.BindTexture(textures[i], Sampler);
+            Vd.BindTexture(TextureResourceSet);
 
+            for (int i = 0; i < TextureResourceSet.Textures.Count; i++)
+            {
                 // TODO: this is just fucked.
                 uint size = 0;
 
                 while (videoUpload.Frame->data[(uint)i][size] != 0)
                     size++;
 
-                Vd.Device.UpdateTexture(textures[i], (IntPtr)videoUpload.Frame->data[(uint)i], size, 0, 0, 0, (uint)(videoUpload.Frame->width / (i > 0 ? 2 : 1)), (uint)(videoUpload.Frame->height / (i > 0 ? 2 : 1)), 1, 1, 1);
+                Vd.Device.UpdateTexture(TextureResourceSet.Textures[i], (IntPtr)videoUpload.Frame->data[(uint)i], size, 0, 0, 0, (uint)(videoUpload.Frame->width / (i > 0 ? 2 : 1)), (uint)(videoUpload.Frame->height / (i > 0 ? 2 : 1)), 1, 1, 1);
 
                 // GL.PixelStore(PixelStoreParameter.UnpackRowLength, videoUpload.Frame->linesize[(uint)i]);
                 // GL.TexSubImage2D(TextureTarget2d.Texture2D, 0, 0, 0, videoUpload.Frame->width / (i > 0 ? 2 : 1), videoUpload.Frame->height / (i > 0 ? 2 : 1),
@@ -144,16 +136,14 @@ namespace osu.Framework.Graphics.Video
 
         private void unload()
         {
-            if (textures == null)
+            if (textureResourceSet == null)
                 return;
 
-            for (int i = 0; i < textures.Length; i++)
-            {
-                textures[i]?.Dispose();
-                textures[i] = null;
-            }
+            foreach (var texture in textureResourceSet.Textures)
+                texture.Dispose();
 
-            textures = null;
+            textureResourceSet.Dispose();
+            textureResourceSet = null;
         }
 
         #endregion

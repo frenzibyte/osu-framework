@@ -18,14 +18,8 @@ namespace osu.Framework.Graphics.Video
             video = source;
         }
 
-        private int yLoc, uLoc = 1, vLoc = 2;
-
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {
-            Shader.GetUniform<int>("m_SamplerY").UpdateValue(ref yLoc);
-            Shader.GetUniform<int>("m_SamplerU").UpdateValue(ref uLoc);
-            Shader.GetUniform<int>("m_SamplerV").UpdateValue(ref vLoc);
-
             var yuvCoeff = video.ConversionMatrix;
             Shader.GetUniform<Matrix3>("yuvCoeff").UpdateValue(ref yuvCoeff);
 
