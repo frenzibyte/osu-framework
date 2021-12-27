@@ -39,6 +39,8 @@ namespace osu.Framework.Graphics.Shaders
 
         internal DeviceBuffer UniformBuffer { get; private set; }
 
+        internal ResourceSet UniformResourceSet { get; private set; }
+
         internal Shader(string name, List<ShaderPart> parts)
         {
             this.name = name;
@@ -198,6 +200,7 @@ namespace osu.Framework.Graphics.Shaders
                 bufferSize += 16 - (bufferSize % 16);
 
             UniformBuffer = Vd.Factory.CreateBuffer(new BufferDescription((uint)bufferSize, BufferUsage.UniformBuffer));
+            UniformResourceSet = Vd.CreateUniformResourceSet(UniformBuffer);
         }
 
         private static IUniform createUniform<T>(Shader shader, string name, ref int bufferSize)
@@ -263,6 +266,9 @@ namespace osu.Framework.Graphics.Shaders
                 shaderCompileDelegate?.Cancel();
 
                 GlobalPropertyManager.Unregister(this);
+
+                UniformResourceSet?.Dispose();
+                UniformResourceSet = null;
 
                 UniformBuffer?.Dispose();
                 UniformBuffer = null;
