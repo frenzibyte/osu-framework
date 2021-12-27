@@ -296,7 +296,7 @@ namespace osu.Framework.Graphics
             if (Interlocked.Decrement(ref referenceCount) != 0)
                 return;
 
-            Vd.ScheduleDisposal(() => Dispose(true));
+            Vd.ScheduleDisposal(node => node.Dispose(true), this);
             GC.SuppressFinalize(this);
         }
 

@@ -48,7 +48,10 @@ namespace osu.Framework.Graphics.Renderer.Textures
 
         private bool isDisposed;
 
-        protected virtual void Dispose(bool isDisposing) => Vd.ScheduleDisposal(() => Available = false);
+        protected virtual void Dispose(bool isDisposing)
+        {
+            Vd.ScheduleDisposal(t => t.Available = false, this);
+        }
 
         public void Dispose()
         {

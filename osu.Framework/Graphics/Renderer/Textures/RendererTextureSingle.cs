@@ -109,24 +109,22 @@ namespace osu.Framework.Graphics.Renderer.Textures
             while (tryGetNextUpload(out var upload))
                 upload.Dispose();
 
-            Vd.ScheduleDisposal(unload);
-        }
+            Vd.ScheduleDisposal(texture =>
+            {
+                if (texture.texture == null)
+                    return;
 
-        /// <summary>
-        /// Removes texture from memory.
-        /// </summary>
-        private void unload()
-        {
-            textureResourceSet?.Dispose();
-            textureResourceSet = null;
+                texture.memoryLease?.Dispose();
 
-            sampler?.Dispose();
-            sampler = null;
+                texture.textureResourceSet?.Dispose();
+                texture.textureResourceSet = null;
 
-            texture?.Dispose();
-            texture = null;
+                texture.sampler?.Dispose();
+                texture.sampler = null;
 
-            memoryLease?.Dispose();
+                texture.texture?.Dispose();
+                texture.texture = null;
+            }, this);
         }
 
         #endregion

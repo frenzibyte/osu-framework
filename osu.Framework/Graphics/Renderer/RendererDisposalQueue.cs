@@ -13,13 +13,13 @@ namespace osu.Framework.Graphics.Renderer
     /// </summary>
     internal class RendererDisposalQueue
     {
-        private readonly List<PendingDisposal> newDisposals;
-        private readonly List<PendingDisposal> pendingDisposals;
+        private readonly List<IPendingDisposal> newDisposals;
+        private readonly List<IPendingDisposal> pendingDisposals;
 
         public RendererDisposalQueue()
         {
-            newDisposals = new List<PendingDisposal>();
-            pendingDisposals = new List<PendingDisposal>();
+            newDisposals = new List<IPendingDisposal>();
+            pendingDisposals = new List<IPendingDisposal>();
         }
 
         /// <summary>
@@ -28,10 +28,11 @@ namespace osu.Framework.Graphics.Renderer
         /// By default the disposal will run <see cref="Vd.MAX_DRAW_NODES"/> frames after enqueueing.
         /// </summary>
         /// <param name="disposalAction">The disposal action to be executed.</param>
-        public void ScheduleDisposal(Action disposalAction)
+        /// <param name="target">The target.</param>
+        public void ScheduleDisposal<T>(Action<T> disposalAction, T target)
         {
             lock (newDisposals)
-                newDisposals.Add(new PendingDisposal(disposalAction));
+                newDisposals.Add(new PendingDisposal<T>(disposalAction, target));
         }
 
         /// <summary>
@@ -59,7 +60,7 @@ namespace osu.Framework.Graphics.Renderer
 
                 if (item.RemainingFrameDelay-- == 0)
                 {
-                    item.Action();
+                    item.Run();
                     lastExecutedDisposal = i;
                 }
             }
@@ -75,16 +76,29 @@ namespace osu.Framework.Graphics.Renderer
             pendingDisposals.RemoveRange(0, lastExecutedDisposal + 1);
         }
 
-        private class PendingDisposal
+        private class PendingDisposal<T> : IPendingDisposal
         {
-            public int RemainingFrameDelay = Vd.MAX_DRAW_NODES;
+            public int RemainingFrameDelay { get; set; }
 
-            public readonly Action Action;
+            private readonly Action<T> action;
 
-            public PendingDisposal(Action action)
+            private readonly T target;
+
+            public PendingDisposal(Action<T> disposeAction, T target)
             {
-                Action = action;
+                action = disposeAction;
+                this.target = target;
+                RemainingFrameDelay = Vd.MAX_DRAW_NODES;
             }
+
+            public void Run() => action(target);
+        }
+
+        private interface IPendingDisposal
+        {
+            void Run();
+
+            int RemainingFrameDelay { get; set; }
         }
     }
 }

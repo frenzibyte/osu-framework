@@ -243,12 +243,12 @@ namespace osu.Framework.Platform.SDL2
 
         private static readonly RendererDisposalQueue disposal_queue = new RendererDisposalQueue();
 
-        internal static void ScheduleDisposal(Action disposalAction)
+        internal static void ScheduleDisposal<T>(Action<T> disposalAction, T target)
         {
             if (host != null && host.TryGetTarget(out _))
-                disposal_queue.ScheduleDisposal(disposalAction);
+                disposal_queue.ScheduleDisposal(disposalAction, target);
             else
-                disposalAction.Invoke();
+                disposalAction.Invoke(target);
         }
 
         private static void checkPendingDisposals()
@@ -829,7 +829,7 @@ namespace osu.Framework.Platform.SDL2
             while (frame_buffer_stack.Peek() == frameBuffer)
                 UnbindFrameBuffer(frameBuffer);
 
-            ScheduleDisposal(frameBuffer.Dispose);
+            ScheduleDisposal(f => f.Dispose(), frameBuffer);
         }
 
         void IGraphicsBackend.MakeCurrent()

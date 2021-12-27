@@ -248,7 +248,7 @@ namespace osu.Framework.Graphics.Shaders
 
         ~Shader()
         {
-            Vd.ScheduleDisposal(() => Dispose(false));
+            Vd.ScheduleDisposal(s => s.Dispose(false), this);
         }
 
         public void Dispose()

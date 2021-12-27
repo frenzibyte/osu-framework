@@ -109,7 +109,7 @@ namespace osu.Framework.Graphics
 
         public void Dispose()
         {
-            Vd.ScheduleDisposal(() => Dispose(true));
+            Vd.ScheduleDisposal(d => d.Dispose(true), this);
             GC.SuppressFinalize(this);
         }
 

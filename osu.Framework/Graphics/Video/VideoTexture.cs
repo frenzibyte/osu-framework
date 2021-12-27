@@ -131,19 +131,17 @@ namespace osu.Framework.Graphics.Video
 
             memoryLease?.Dispose();
 
-            Vd.ScheduleDisposal(unload);
-        }
+            Vd.ScheduleDisposal(v =>
+            {
+                if (v.textureResourceSet == null)
+                    return;
 
-        private void unload()
-        {
-            if (textureResourceSet == null)
-                return;
+                foreach (var texture in textureResourceSet.Textures)
+                    texture.Dispose();
 
-            foreach (var texture in textureResourceSet.Textures)
-                texture.Dispose();
-
-            textureResourceSet.Dispose();
-            textureResourceSet = null;
+                textureResourceSet.Dispose();
+                textureResourceSet = null;
+            }, this);
         }
 
         #endregion

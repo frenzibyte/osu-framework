@@ -119,7 +119,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
         ~FrameBuffer()
         {
-            Vd.ScheduleDisposal(() => Dispose(false));
+            Vd.ScheduleDisposal(b => b.Dispose(false), this);
         }
 
         public void Dispose()

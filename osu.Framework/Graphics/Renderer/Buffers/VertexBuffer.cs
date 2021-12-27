@@ -66,7 +66,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
         ~VertexBuffer()
         {
-            Vd.ScheduleDisposal(() => Dispose(false));
+            Vd.ScheduleDisposal(v => v.Dispose(false), this);
         }
 
         public void Dispose()
