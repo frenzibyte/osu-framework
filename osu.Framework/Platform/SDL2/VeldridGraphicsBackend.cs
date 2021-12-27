@@ -22,10 +22,8 @@ using osuTK;
 using SDL2;
 using Veldrid;
 using Veldrid.OpenGL;
-using Veldrid.OpenGLBinding;
 using static osu.Framework.Threading.ScheduledDelegate;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
-using Shader = osu.Framework.Graphics.Shaders.Shader;
 using Vector2 = System.Numerics.Vector2;
 
 namespace osu.Framework.Platform.SDL2
@@ -33,7 +31,7 @@ namespace osu.Framework.Platform.SDL2
     /// <summary>
     /// Implementation of that uses Veldrid bindings.
     /// </summary>
-    public class VeldridGraphicsBackend : IGraphicsBackend
+    public partial class VeldridGraphicsBackend : IGraphicsBackend
     {
         /// <summary>
         /// Maximum number of <see cref="DrawNode"/>s a <see cref="Drawable"/> can draw with.
@@ -52,27 +50,16 @@ namespace osu.Framework.Platform.SDL2
         /// </summary>
         private const int vbo_free_check_interval = 300;
 
-        // ReSharper disable once RedundantExplicitParamsArrayCreation
-        private static readonly ResourceLayoutDescription shader_resource_layout = new ResourceLayoutDescription(new[]
-        {
-            new ResourceLayoutElementDescription("m_Texture", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
-            new ResourceLayoutElementDescription("m_Sampler", ResourceKind.Sampler, ShaderStages.Fragment),
-            new ResourceLayoutElementDescription("m_Uniforms", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment),
-        });
-
         private SDL2DesktopWindow sdlWindow;
 
         public static GraphicsDevice Device { get; private set; }
 
         public static ResourceFactory Factory => Device.ResourceFactory;
 
-        public static VeldridResourceSet ResourceSet { get; private set; }
-
         public static ref readonly MaskingInfo CurrentMaskingInfo => ref currentMaskingInfo;
         private static MaskingInfo currentMaskingInfo;
 
         public static CommandList Commands { get; private set; }
-        public static Pipeline Pipeline { get; private set; }
 
         private static GraphicsPipelineDescription pipelineDescription;
 
@@ -180,17 +167,16 @@ namespace osu.Framework.Platform.SDL2
 
             DefaultFrameBuffer = Device.SwapchainFramebuffer;
 
-            ResourceSet = new VeldridResourceSet(shader_resource_layout);
-
             pipelineDescription = new GraphicsPipelineDescription
             {
                 BlendState = BlendStateDescription.SingleOverrideBlend,
                 DepthStencilState = new DepthStencilStateDescription(true, true, ComparisonKind.Less),
                 RasterizerState = new RasterizerStateDescription(FaceCullMode.Back, PolygonFillMode.Solid, FrontFace.CounterClockwise, false, false),
-                ResourceLayouts = new[] { ResourceSet.ResourceLayout },
                 ShaderSet = new ShaderSetDescription(Array.Empty<VertexLayoutDescription>(), Array.Empty<Veldrid.Shader>()),
                 Outputs = DefaultFrameBuffer.OutputDescription,
             };
+
+            initialiseResources(ref pipelineDescription);
 
             Commands = Factory.CreateCommandList();
 
@@ -367,9 +353,8 @@ namespace osu.Framework.Platform.SDL2
                     break;
             }
 
-            last_bound_textures.AsSpan().Clear();
-
-            lastBoundBuffer = null;
+            // boundTextureSet = defaultTextureSet;
+            boundVertexBuffer = null;
         }
 
         private static ClearInfo currentClearInfo;
@@ -382,42 +367,16 @@ namespace osu.Framework.Platform.SDL2
             if (clearInfo.Colour != currentClearInfo.Colour)
                 Commands.ClearColorTarget(0, clearInfo.Colour.ToRgbaFloat());
 
-            if (clearInfo.Depth != currentClearInfo.Depth || clearInfo.Stencil != currentClearInfo.Stencil)
-                Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
+            if (frame_buffer_stack.Peek().DepthTarget != null)
+            {
+                if (clearInfo.Depth != currentClearInfo.Depth || clearInfo.Stencil != currentClearInfo.Stencil)
+                    Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
+            }
 
             currentClearInfo = clearInfo;
 
             PopScissorState();
             PopDepthInfo();
-        }
-
-        private static readonly Stack<bool> scissor_state_stack = new Stack<bool>();
-
-        private static bool currentScissorState;
-
-        public static void PushScissorState(bool enabled)
-        {
-            scissor_state_stack.Push(enabled);
-            setScissorState(enabled);
-        }
-
-        public static void PopScissorState()
-        {
-            Trace.Assert(scissor_state_stack.Count > 1);
-
-            scissor_state_stack.Pop();
-
-            setScissorState(scissor_state_stack.Peek());
-        }
-
-        private static void setScissorState(bool enabled)
-        {
-            if (enabled == currentScissorState)
-                return;
-
-            currentScissorState = enabled;
-
-            pipelineDescription.RasterizerState.ScissorTestEnabled = enabled;
         }
 
         /// <summary>
@@ -446,11 +405,11 @@ namespace osu.Framework.Platform.SDL2
                 expensive_operation_queue.Enqueue(operation);
         }
 
-        private static DeviceBuffer lastBoundBuffer;
+        private static DeviceBuffer boundVertexBuffer;
 
         public static bool BindVertexBuffer(DeviceBuffer buffer, VertexLayoutDescription layout)
         {
-            if (buffer == lastBoundBuffer)
+            if (buffer == boundVertexBuffer)
                 return false;
 
             Commands.SetVertexBuffer(0, buffer);
@@ -459,7 +418,7 @@ namespace osu.Framework.Platform.SDL2
 
             FrameStatistics.Increment(StatisticsCounterType.VBufBinds);
 
-            lastBoundBuffer = buffer;
+            boundVertexBuffer = buffer;
             return true;
         }
 
@@ -505,86 +464,6 @@ namespace osu.Framework.Platform.SDL2
             }
 
             vertex_buffers_in_use.RemoveAll(b => !b.InUse);
-        }
-
-        private static readonly (Texture texture, Sampler sampler, bool isAtlas)[] last_bound_textures = new (Texture, Sampler, bool)[16];
-
-        internal static int GetTextureUnitId(TextureUnit unit) => (int)unit - (int)TextureUnit.Texture0;
-        internal static bool AtlasTextureIsBound(TextureUnit unit) => last_bound_textures[GetTextureUnitId(unit)].isAtlas;
-
-        /// <summary>
-        /// Binds a texture to draw with.
-        /// </summary>
-        /// <param name="texture">The texture to bind.</param>
-        /// <param name="unit">The texture unit to bind it to.</param>
-        /// <param name="wrapModeS">The texture wrap mode in horizontal direction.</param>
-        /// <param name="wrapModeT">The texture wrap mode in vertical direction.</param>
-        /// <returns>true if the provided texture was not already bound (causing a binding change).</returns>
-        public static bool BindTexture(RendererTexture texture, TextureUnit unit = TextureUnit.Texture0, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
-        {
-            bool didBind = BindTexture(texture?.Texture, texture?.Sampler, unit, wrapModeS, wrapModeT);
-            last_bound_textures[GetTextureUnitId(unit)].isAtlas = texture is RendererTextureAtlas;
-
-            return didBind;
-        }
-
-        internal static WrapMode CurrentWrapModeS;
-        internal static WrapMode CurrentWrapModeT;
-
-        /// <summary>
-        /// Binds a texture to draw with.
-        /// </summary>
-        /// <param name="texture">The texture to bind.</param>
-        /// <param name="sampler">The sampler to bind with the texture.</param>
-        /// <param name="unit">The texture unit to bind it to.</param>
-        /// <param name="wrapModeS">The texture wrap mode in horizontal direction.</param>
-        /// <param name="wrapModeT">The texture wrap mode in vertical direction.</param>
-        /// <returns>true if the provided texture was not already bound (causing a binding change).</returns>
-        internal static bool BindTexture(Texture texture, Sampler sampler, TextureUnit unit = TextureUnit.Texture0, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
-        {
-            int index = GetTextureUnitId(unit);
-
-            if (wrapModeS != CurrentWrapModeS)
-            {
-                GlobalPropertyManager.Set(GlobalProperty.WrapModeS, (int)wrapModeS);
-                CurrentWrapModeS = wrapModeS;
-            }
-
-            if (wrapModeT != CurrentWrapModeT)
-            {
-                GlobalPropertyManager.Set(GlobalProperty.WrapModeT, (int)wrapModeT);
-                CurrentWrapModeT = wrapModeT;
-            }
-
-            if (last_bound_textures[index].texture == texture && last_bound_textures[index].sampler == sampler)
-                return false;
-
-            FlushCurrentBatch();
-
-            ResourceSet.SetResource(ResourceKind.TextureReadOnly, texture);
-            ResourceSet.SetResource(ResourceKind.Sampler, sampler);
-
-            last_bound_textures[index] = (texture, sampler, false);
-
-            FrameStatistics.Increment(StatisticsCounterType.TextureBinds);
-            return true;
-        }
-
-        private static BlendingParameters lastBlendingParameters;
-
-        /// <summary>
-        /// Sets the blending function to draw with.
-        /// </summary>
-        /// <param name="blendingParameters">The info we should use to update the active state.</param>
-        public static void SetBlend(BlendingParameters blendingParameters)
-        {
-            if (lastBlendingParameters == blendingParameters)
-                return;
-
-            FlushCurrentBatch();
-
-            pipelineDescription.BlendState = new BlendStateDescription(default, blendingParameters.ToBlendAttachment());
-            lastBlendingParameters = blendingParameters;
         }
 
         private static readonly Stack<RectangleI> viewport_stack = new Stack<RectangleI>();
@@ -873,71 +752,23 @@ namespace osu.Framework.Platform.SDL2
         }
 
         /// <summary>
-        /// Applies a new depth information.
-        /// </summary>
-        /// <param name="depthInfo">The depth information.</param>
-        public static void PushDepthInfo(DepthInfo depthInfo)
-        {
-            depth_stack.Push(depthInfo);
-
-            if (CurrentDepthInfo.Equals(depthInfo))
-                return;
-
-            CurrentDepthInfo = depthInfo;
-            setDepthInfo(CurrentDepthInfo);
-        }
-
-        /// <summary>
-        /// Applies the last depth information.
-        /// </summary>
-        public static void PopDepthInfo()
-        {
-            Trace.Assert(depth_stack.Count > 1);
-
-            depth_stack.Pop();
-            DepthInfo depthInfo = depth_stack.Peek();
-
-            if (CurrentDepthInfo.Equals(depthInfo))
-                return;
-
-            CurrentDepthInfo = depthInfo;
-            setDepthInfo(CurrentDepthInfo);
-        }
-
-        private static void setDepthInfo(DepthInfo depthInfo)
-        {
-            FlushCurrentBatch();
-
-            pipelineDescription.DepthStencilState.DepthTestEnabled = depthInfo.DepthTest;
-            pipelineDescription.DepthStencilState.DepthWriteEnabled = depthInfo.WriteDepth;
-            pipelineDescription.DepthStencilState.DepthComparison = depthInfo.Function;
-        }
-
-        /// <summary>
         /// Sets the current draw depth.
         /// The draw depth is written to every vertex added to <see cref="VertexBuffer{T}"/>s.
         /// </summary>
         /// <param name="drawDepth">The draw depth.</param>
         internal static void SetDrawDepth(float drawDepth) => BackbufferDrawDepth = drawDepth;
 
-        private static GraphicsPipelineDescription lastPipelineDescription;
-
         public static void DrawVertices(PrimitiveTopology topology, int verticesStart, int verticesCount)
         {
             pipelineDescription.PrimitiveTopology = topology;
 
-            if (!pipelineDescription.Equals(lastPipelineDescription))
-            {
-                Pipeline?.Dispose();
-                Pipeline = Factory.CreateGraphicsPipeline(pipelineDescription);
-            }
+            var pipeline = getPipeline(pipelineDescription);
 
-            Commands.SetPipeline(Pipeline);
-            Commands.SetGraphicsResourceSet(0, ResourceSet.GetResourceSet());
+            Commands.SetPipeline(pipeline);
+            Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, currentShader.UniformResourceSet);
+            Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, boundTextureSet);
 
             Commands.DrawIndexed((uint)verticesCount, 1, (uint)verticesStart, 0, 0);
-
-            lastPipelineDescription = pipelineDescription;
         }
 
         /// <summary>
@@ -955,7 +786,9 @@ namespace osu.Framework.Platform.SDL2
             if (!alreadyBound)
             {
                 FlushCurrentBatch();
+
                 Commands.SetFramebuffer(frameBuffer);
+                pipelineDescription.Outputs = frameBuffer.OutputDescription;
 
                 GlobalPropertyManager.Set(GlobalProperty.BackbufferDraw, UsingBackbuffer);
             }
@@ -977,7 +810,9 @@ namespace osu.Framework.Platform.SDL2
             frame_buffer_stack.Pop();
 
             FlushCurrentBatch();
+
             Commands.SetFramebuffer(frame_buffer_stack.Peek());
+            pipelineDescription.Outputs = frame_buffer_stack.Peek().OutputDescription;
 
             GlobalPropertyManager.Set(GlobalProperty.BackbufferDraw, UsingBackbuffer);
             GlobalPropertyManager.Set(GlobalProperty.GammaCorrection, UsingBackbuffer);
@@ -995,91 +830,6 @@ namespace osu.Framework.Platform.SDL2
                 UnbindFrameBuffer(frameBuffer);
 
             ScheduleDisposal(frameBuffer.Dispose);
-        }
-
-        private static Shader currentShader;
-
-        private static readonly Stack<Shader> shader_stack = new Stack<Shader>();
-
-        public static void BindShader(Shader shader)
-        {
-            ThreadSafety.EnsureDrawThread();
-
-            shader_stack.Push(shader);
-
-            if (shader == currentShader)
-                return;
-
-            FrameStatistics.Increment(StatisticsCounterType.ShaderBinds);
-
-            setShader(shader);
-        }
-
-        public static void UnbindShader(Shader shader)
-        {
-            ThreadSafety.EnsureDrawThread();
-
-            if (shader != currentShader)
-                throw new InvalidOperationException("Attempting to unbind shader while not current.");
-
-            shader_stack.Pop();
-
-            // check if the stack is empty, and if so don't restore the previous shader.
-            if (shader_stack.Count == 0)
-                return;
-
-            setShader(shader_stack.Peek());
-        }
-
-        private static void setShader(Shader shader)
-        {
-            FlushCurrentBatch();
-
-            pipelineDescription.ShaderSet.Shaders = shader?.Shaders ?? Array.Empty<Veldrid.Shader>();
-            ResourceSet.SetResource(ResourceKind.UniformBuffer, shader?.UniformBuffer);
-
-            currentShader = shader;
-        }
-
-        internal static void UpdateUniform<T>(IUniformWithValue<T> uniform)
-            where T : struct, IEquatable<T>
-        {
-            if (uniform.Owner == currentShader)
-                FlushCurrentBatch();
-
-            switch (uniform)
-            {
-                case IUniformWithValue<bool> _:
-                case IUniformWithValue<int> _:
-                case IUniformWithValue<float> _:
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location, uniform.GetValue());
-                    break;
-
-                case IUniformWithValue<Vector2> _:
-                case IUniformWithValue<Vector3> _:
-                case IUniformWithValue<Vector4> _:
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location, ref uniform.GetValueByRef());
-                    break;
-
-                case IUniformWithValue<Matrix3> matrix3:
-                {
-                    ref var value = ref matrix3.GetValueByRef();
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 0, ref value.Row0);
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 16, ref value.Row1);
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 32, ref value.Row2);
-                    break;
-                }
-
-                case IUniformWithValue<Matrix4> matrix4:
-                {
-                    ref var value = ref matrix4.GetValueByRef();
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 0, ref value.Row0);
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 16, ref value.Row1);
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 32, ref value.Row2);
-                    Commands.UpdateBuffer(uniform.Owner.UniformBuffer, (uint)uniform.Location + 48, ref value.Row3);
-                    break;
-                }
-            }
         }
 
         void IGraphicsBackend.MakeCurrent()
