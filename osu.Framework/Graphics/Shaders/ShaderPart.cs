@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Veldrid;
@@ -25,7 +26,7 @@ namespace osu.Framework.Graphics.Shaders
         internal static readonly Regex SHADER_ATTRIBUTE_LOCATION_REGEX = new Regex(@"(layout\(location\s=\s)(-?\d+)(\)\s(?>attribute|in).*)", RegexOptions.Multiline);
 
         private static readonly Regex include_regex = new Regex("^\\s*#\\s*include\\s+[\"<](.*)[\">]");
-        private static readonly Regex shader_resource_regex = new Regex(@"^\s*(?>uniform)\s+(?:lowp|mediump|highp)\s+?(texture2D|sampler)\s+\w+;", RegexOptions.Multiline);
+        private static readonly Regex shader_resource_regex = new Regex(@"^\s*(?>uniform)\s+(?:(?:lowp|mediump|highp)\s+)?(texture2D|sampler)\s+\w+;", RegexOptions.Multiline);
         private static readonly Regex shader_uniform_regex = new Regex(@"^\s*(?>uniform)\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(\w+);", RegexOptions.Multiline);
 
         private ShaderPart(string name, ShaderStages type, string code, List<ShaderUniformInfo> uniforms)
@@ -121,24 +122,23 @@ namespace osu.Framework.Graphics.Shaders
 
             while (resourceMatch.Success)
             {
-                ResourceKind kind;
+                int index;
 
                 switch (resourceMatch.Groups[1].Value)
                 {
                     case "texture2D":
-                        kind = ResourceKind.TextureReadOnly;
+                        index = Array.FindIndex(Vd.TEXTURE_LAYOUT.Elements, e => e.Kind == ResourceKind.TextureReadOnly);
                         break;
 
                     case "sampler":
-                        kind = ResourceKind.Sampler;
+                        index = Array.FindIndex(Vd.TEXTURE_LAYOUT.Elements, e => e.Kind == ResourceKind.Sampler);
                         break;
 
                     default:
                         throw new ArgumentOutOfRangeException(nameof(code));
                 }
 
-                Vd.ResourceSet.GetLayout(kind, out int index);
-                code = code.Replace(resourceMatch.Value, $"layout(binding = {index}) {resourceMatch.Value}");
+                code = code.Replace(resourceMatch.Value, $"layout(set = {Vd.TEXTURE_RESOURCE_SLOT}, binding = {index}) {resourceMatch.Value}");
 
                 resourceMatch = resourceMatch.NextMatch();
             }
@@ -174,10 +174,10 @@ namespace osu.Framework.Graphics.Shaders
             if (uniforms.Count == 0)
                 return code;
 
-            var uniformLayout = Vd.ResourceSet.GetLayout(ResourceKind.UniformBuffer, out int uniformIndex);
+            string uniformBufferName = Vd.UNIFORM_LAYOUT.Elements.Single().Name;
 
             var uniformBuilder = new StringBuilder();
-            uniformBuilder.AppendLine($"layout(std140, binding = {uniformIndex}) uniform {uniformLayout.Name}");
+            uniformBuilder.AppendLine($"layout(std140, set = {Vd.UNIFORM_RESOURCE_SLOT}, binding = 0) uniform {uniformBufferName}");
             uniformBuilder.AppendLine("{");
 
             foreach (var uniform in uniforms)
