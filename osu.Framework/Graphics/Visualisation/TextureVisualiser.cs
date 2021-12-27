@@ -159,10 +159,12 @@ namespace osu.Framework.Graphics.Visualisation
                         return;
                     }
 
-                    titleText.Text = $"{texture.Texture}. {texture.Width}x{texture.Height} ";
+                    titleText.Text = $"{texture.Width}x{texture.Height} ";
                     footerText.Text = Precision.AlmostBigger(usage.AverageUsagesPerFrame, 1) ? $"{usage.AverageUsagesPerFrame:N0} binds" : string.Empty;
                 }
-                catch { }
+                catch
+                {
+                }
             }
         }
 
