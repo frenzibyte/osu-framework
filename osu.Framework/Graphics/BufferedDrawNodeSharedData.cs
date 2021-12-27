@@ -47,8 +47,8 @@ namespace osu.Framework.Graphics
         /// <summary>
         /// Creates a new <see cref="BufferedDrawNodeSharedData"/> with no effect buffers.
         /// </summary>
-        public BufferedDrawNodeSharedData(PixelFormat[] formats = null, bool pixelSnapping = false, bool clipToRootNode = false)
-            : this(0, formats, pixelSnapping, clipToRootNode)
+        public BufferedDrawNodeSharedData(PixelFormat[] colorFormats = null, PixelFormat? depthFormat = null, bool pixelSnapping = false, bool clipToRootNode = false)
+            : this(0, colorFormats, depthFormat, pixelSnapping, clipToRootNode)
         {
         }
 
@@ -56,12 +56,13 @@ namespace osu.Framework.Graphics
         /// Creates a new <see cref="BufferedDrawNodeSharedData"/> with a specific amount of effect buffers.
         /// </summary>
         /// <param name="effectBufferCount">The number of effect buffers.</param>
-        /// <param name="formats">The render buffer formats to attach to each frame buffer.</param>
+        /// <param name="colorFormats">The color formats to attach to each frame buffer.</param>
+        /// <param name="depthFormat">The depth format to attach to each frame buffer.</param>
         /// <param name="pixelSnapping">Whether the frame buffer position should be snapped to the nearest pixel when blitting.
         /// This amounts to setting the texture filtering mode to "nearest".</param>
         /// <param name="clipToRootNode">Whether the frame buffer should be clipped to be contained in the root node..</param>
         /// <exception cref="ArgumentOutOfRangeException">If <paramref name="effectBufferCount"/> is less than 0.</exception>
-        public BufferedDrawNodeSharedData(int effectBufferCount, PixelFormat[] formats = null, bool pixelSnapping = false, bool clipToRootNode = false)
+        public BufferedDrawNodeSharedData(int effectBufferCount, PixelFormat[] colorFormats = null, PixelFormat? depthFormat = null, bool pixelSnapping = false, bool clipToRootNode = false)
         {
             if (effectBufferCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(effectBufferCount), "Must be positive.");
@@ -72,11 +73,11 @@ namespace osu.Framework.Graphics
 
             ClipToRootNode = clipToRootNode;
 
-            MainBuffer = new FrameBuffer(formats, filterMode);
+            MainBuffer = new FrameBuffer(colorFormats, depthFormat, filterMode);
             effectBuffers = new FrameBuffer[effectBufferCount];
 
             for (int i = 0; i < effectBufferCount; i++)
-                effectBuffers[i] = new FrameBuffer(formats, filterMode);
+                effectBuffers[i] = new FrameBuffer(colorFormats, depthFormat, filterMode);
         }
 
         private int currentEffectBuffer = -1;

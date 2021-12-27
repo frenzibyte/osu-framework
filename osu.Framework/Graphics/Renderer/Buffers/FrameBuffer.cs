@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Collections.Generic;
 using Veldrid;
 using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Textures;
@@ -20,16 +19,17 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
         private bool isInitialised;
 
+        private readonly PixelFormat[] colorFormats;
+        private readonly PixelFormat? depthFormat;
         private readonly FilteringMode filteringMode;
-        private readonly PixelFormat[] renderBufferFormats;
 
-        private readonly List<Texture> colorTargets = new List<Texture>();
-
+        private Texture[] colorTargets;
         private Texture depthTarget;
 
-        public FrameBuffer(PixelFormat[] renderBufferFormats = null, FilteringMode filteringMode = FilteringMode.Linear)
+        public FrameBuffer(PixelFormat[] colorFormats = null, PixelFormat? depthFormat = null, FilteringMode filteringMode = FilteringMode.Linear)
         {
-            this.renderBufferFormats = renderBufferFormats;
+            this.colorFormats = colorFormats;
+            this.depthFormat = depthFormat;
             this.filteringMode = filteringMode;
         }
 
@@ -61,29 +61,35 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
         private void initialise()
         {
-            if (renderBufferFormats != null)
+            setupRenderTargets();
+
+            frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(depthTarget, colorTargets));
+
+            Vd.BindFrameBuffer(frameBuffer);
+            // Vd.BindTexture((RendererTexture)null);
+        }
+
+        private void setupRenderTargets()
+        {
+            Texture = new FrameBufferTexture(Size, filteringMode);
+
+            colorTargets = new Texture[1 + (colorFormats?.Length ?? 0)];
+            colorTargets[0] = Texture.TextureResourceSet.Texture;
+
+            if (colorFormats != null)
             {
-                foreach (var format in renderBufferFormats)
+                for (int i = 0; i < colorFormats.Length; i++)
                 {
-                    // todo: this should just be separated, rather than bullshit.
-                    bool isDepthStencil = format == PixelFormat.R16_UNorm || format == PixelFormat.D24_UNorm_S8_UInt || format == PixelFormat.D32_Float_S8_UInt;
-                    var usage = isDepthStencil ? TextureUsage.DepthStencil : TextureUsage.RenderTarget;
-
-                    var description = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, format, usage);
-                    var texture = Vd.Factory.CreateTexture(description);
-
-                    if (isDepthStencil)
-                        depthTarget = texture;
-                    else
-                        colorTargets.Add(texture);
+                    var description = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, colorFormats[i], TextureUsage.RenderTarget);
+                    colorTargets[1 + i] = Vd.Factory.CreateTexture(description);
                 }
             }
 
-            frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(depthTarget, colorTargets.ToArray()));
-            Texture = new FrameBufferTexture(Size, filteringMode);
-
-            Vd.BindFrameBuffer(frameBuffer);
-            Vd.BindTexture((RendererTexture)null);
+            if (depthFormat != null)
+            {
+                var description = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, depthFormat.Value, TextureUsage.DepthStencil);
+                depthTarget = Vd.Factory.CreateTexture(description);
+            }
         }
 
         /// <summary>
@@ -107,16 +113,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
         /// <summary>
         /// Unbinds the framebuffer.
         /// </summary>
-        public void Unbind()
-        {
-            // // See: https://community.arm.com/developer/tools-software/graphics/b/blog/posts/mali-performance-2-how-to-correctly-handle-framebuffers
-            // // Unbinding renderbuffers causes an invalidation of the relevant attachment of this framebuffer on embedded devices, causing the renderbuffers to remain transient.
-            // // This must be done _before_ the framebuffer is flushed via the framebuffer unbind process, otherwise the renderbuffer may be copied to system memory.
-            // foreach (var buffer in attachedRenderBuffers)
-            //     buffer.Unbind();
-
-            Vd.UnbindFrameBuffer(frameBuffer);
-        }
+        public void Unbind() => Vd.UnbindFrameBuffer(frameBuffer);
 
         #region Disposal
 

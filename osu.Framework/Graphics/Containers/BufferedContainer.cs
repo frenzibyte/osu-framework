@@ -26,8 +26,8 @@ namespace osu.Framework.Graphics.Containers
     public class BufferedContainer : BufferedContainer<Drawable>
     {
         /// <inheritdoc />
-        public BufferedContainer(PixelFormat[] formats = null, bool pixelSnapping = false, bool cachedFrameBuffer = false)
-            : base(formats, pixelSnapping, cachedFrameBuffer)
+        public BufferedContainer(PixelFormat[] colorFormats = null, PixelFormat? depthFormat = null, bool pixelSnapping = false, bool cachedFrameBuffer = false)
+            : base(colorFormats, depthFormat, pixelSnapping, cachedFrameBuffer)
         {
         }
     }
@@ -243,7 +243,8 @@ namespace osu.Framework.Graphics.Containers
         /// <summary>
         /// Constructs an empty buffered container.
         /// </summary>
-        /// <param name="formats">The render buffer formats attached to the frame buffers of this <see cref="BufferedContainer"/>.</param>
+        /// <param name="colorFormats">The color formats to attach to each frame buffer.</param>
+        /// <param name="depthFormat">The depth format to attach to each frame buffer.</param>
         /// <param name="pixelSnapping">
         /// Whether the frame buffer position should be snapped to the nearest pixel when blitting.
         /// This amounts to setting the texture filtering mode to "nearest".
@@ -253,11 +254,11 @@ namespace osu.Framework.Graphics.Containers
         /// or the size of the container (i.e. framebuffer) changes.
         /// When disabled, drawing will be clipped to the game window bounds. Enabling can allow drawing larger than (or outside) the game window bounds.
         /// </param>
-        public BufferedContainer(PixelFormat[] formats = null, bool pixelSnapping = false, bool cachedFrameBuffer = false)
+        public BufferedContainer(PixelFormat[] colorFormats = null, PixelFormat? depthFormat = null, bool pixelSnapping = false, bool cachedFrameBuffer = false)
         {
             UsingCachedFrameBuffer = cachedFrameBuffer;
 
-            sharedData = new BufferedContainerDrawNodeSharedData(formats, pixelSnapping, !cachedFrameBuffer);
+            sharedData = new BufferedContainerDrawNodeSharedData(colorFormats, depthFormat, pixelSnapping, !cachedFrameBuffer);
 
             AddLayout(screenSpaceSizeBacking);
         }

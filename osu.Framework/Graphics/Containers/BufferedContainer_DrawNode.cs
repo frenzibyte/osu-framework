@@ -128,8 +128,8 @@ namespace osu.Framework.Graphics.Containers
 
         private class BufferedContainerDrawNodeSharedData : BufferedDrawNodeSharedData
         {
-            public BufferedContainerDrawNodeSharedData(PixelFormat[] formats, bool pixelSnapping, bool clipToRootNode)
-                : base(2, formats, pixelSnapping, clipToRootNode)
+            public BufferedContainerDrawNodeSharedData(PixelFormat[] colorFormats, PixelFormat? depthFormat, bool pixelSnapping, bool clipToRootNode)
+                : base(2, colorFormats, depthFormat, pixelSnapping, clipToRootNode)
             {
             }
         }
