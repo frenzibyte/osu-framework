@@ -45,10 +45,10 @@ namespace osu.Framework.Platform.SDL2
         internal static ulong ResetId { get; private set; }
 
         /// <summary>
-        /// The interval (in frames) before checking whether VBOs should be freed.
+        /// The interval (in frames) before checking whether device resources should be freed.
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
-        private const int vbo_free_check_interval = 300;
+        internal const int RESOURCES_FREE_CHECK_INTERVAL = 300;
 
         private SDL2DesktopWindow sdlWindow;
 
@@ -109,6 +109,9 @@ namespace osu.Framework.Platform.SDL2
         private static readonly List<IVertexBatch> batch_reset_list = new List<IVertexBatch>();
 
         private static readonly List<IVertexBuffer> vertex_buffers_in_use = new List<IVertexBuffer>();
+
+        private static readonly VeldridStagingBufferPool staging_buffer_pool = new VeldridStagingBufferPool();
+        private static readonly VeldridStagingTexturePool staging_texture_pool = new VeldridStagingTexturePool();
 
         public static bool IsInitialized { get; private set; }
 
@@ -277,14 +280,6 @@ namespace osu.Framework.Platform.SDL2
                 }
             }
 
-            if (SubmittedCommandsCompletion.Signaled)
-            {
-                VeldridStagingBufferPool.Release();
-                VeldridStagingTexturePool.Release();
-
-                SubmittedCommandsCompletion.Reset();
-            }
-
             lastActiveBatch = null;
             lastBlendingParameters = new BlendingParameters();
 
@@ -300,6 +295,13 @@ namespace osu.Framework.Platform.SDL2
             depth_stack.Clear();
             scissor_state_stack.Clear();
             scissor_offset_stack.Clear();
+
+            if (SubmittedCommandsCompletion.Signaled)
+            {
+                staging_buffer_pool.ReleaseAllUsedResources();
+                staging_texture_pool.ReleaseAllUsedResources();
+                SubmittedCommandsCompletion.Reset();
+            }
 
             BindFrameBuffer(DefaultFrameBuffer);
 
@@ -328,7 +330,7 @@ namespace osu.Framework.Platform.SDL2
 
             Commands.ClearColorTarget(0, RgbaFloat.Black);
 
-            freeUnusedVertexBuffers();
+            freeUnusedResources();
 
             stat_texture_uploads_queued.Value = texture_upload_queue.Count;
             stat_texture_uploads_dequeued.Value = 0;
@@ -416,18 +418,21 @@ namespace osu.Framework.Platform.SDL2
         /// <param name="buffer">The <see cref="IVertexBuffer"/> in use.</param>
         internal static void RegisterVertexBufferUse(IVertexBuffer buffer) => vertex_buffers_in_use.Add(buffer);
 
-        private static void freeUnusedVertexBuffers()
+        private static void freeUnusedResources()
         {
-            if (ResetId % vbo_free_check_interval != 0)
+            if (ResetId % RESOURCES_FREE_CHECK_INTERVAL != 0)
                 return;
 
             foreach (var buf in vertex_buffers_in_use)
             {
-                if (buf.InUse && ResetId - buf.LastUseResetId > vbo_free_check_interval)
+                if (buf.InUse && ResetId - buf.LastUseResetId > RESOURCES_FREE_CHECK_INTERVAL)
                     buf.Free();
             }
 
             vertex_buffers_in_use.RemoveAll(b => !b.InUse);
+
+            staging_buffer_pool.FreeUnusedResources();
+            staging_texture_pool.FreeUnusedResources();
         }
 
         private static readonly Stack<Vector2I> scissor_offset_stack = new Stack<Vector2I>();
