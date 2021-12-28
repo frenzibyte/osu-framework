@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Renderer;
@@ -53,6 +54,16 @@ namespace osu.Framework.Platform.SDL2
 
                 Commands = null;
             });
+        }
+
+        public static void UpdateBuffer<T>(DeviceBuffer buffer, int offset, ref T value, int? size = null)
+            where T : struct, IEquatable<T>
+        {
+            size ??= Marshal.SizeOf<T>();
+
+            var staging = VeldridStagingBufferPool.Get(size.Value);
+            Device.UpdateBuffer(staging, 0, ref value, (uint)size);
+            Commands.CopyBuffer(staging, 0, buffer, (uint)offset, (uint)size);
         }
 
         public static unsafe void UpdateTexture<T>(Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data)

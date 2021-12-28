@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Shaders;
@@ -186,39 +185,29 @@ namespace osu.Framework.Platform.SDL2
                 case IUniformWithValue<Matrix3> matrix3:
                 {
                     ref var value = ref matrix3.GetValueByRef();
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 0, ref value.Row0);
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 16, ref value.Row1);
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 32, ref value.Row2);
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 0, ref value.Row0);
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 16, ref value.Row1);
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 32, ref value.Row2);
                     break;
                 }
 
                 case IUniformWithValue<Matrix4> matrix4:
                 {
                     ref var value = ref matrix4.GetValueByRef();
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 0, ref value.Row0);
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 16, ref value.Row1);
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 32, ref value.Row2);
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 48, ref value.Row3);
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 0, ref value.Row0);
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 16, ref value.Row1);
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 32, ref value.Row2);
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location + 48, ref value.Row3);
                     break;
                 }
 
                 default:
-                    updateBuffer(uniform.Owner.UniformBuffer, uniform.Location, ref uniform.GetValueByRef());
+                    UpdateBuffer(uniform.Owner.UniformBuffer, uniform.Location, ref uniform.GetValueByRef());
                     break;
             }
         }
 
         public static ResourceSet CreateUniformResourceSet(DeviceBuffer buffer) => Factory.CreateResourceSet(new ResourceSetDescription(uniformLayout, buffer));
-
-        private static void updateBuffer<T>(DeviceBuffer buffer, int location, ref T value)
-            where T : struct, IEquatable<T>
-        {
-            int size = Marshal.SizeOf<T>();
-
-            var staging = StagingBufferPool.Get(size);
-            Device.UpdateBuffer(staging, 0, ref value);
-            Commands.CopyBuffer(staging, 0, buffer, (uint)location, (uint)size);
-        }
 
         #endregion
     }

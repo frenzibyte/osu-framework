@@ -133,7 +133,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
             Bind(false);
 
             int countVertices = endIndex - startIndex;
-            Vd.Commands.UpdateBuffer(buffer, (uint)(startIndex * STRIDE), ref getMemory().Span[startIndex], (uint)(countVertices * STRIDE));
+            Vd.UpdateBuffer(buffer, startIndex * STRIDE, ref getMemory().Span[startIndex], countVertices * STRIDE);
 
             Unbind();
 
