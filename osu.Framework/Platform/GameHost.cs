@@ -523,10 +523,10 @@ namespace osu.Framework.Platform
         {
             Window.SwapBuffers();
 
-            // if (Window.VerticalSync)
-            //     // without glFinish, vsync is basically unplayable due to the extra latency introduced.
-            //     // we will likely want to give the user control over this in the future as an advanced setting.
-            //     Vd.Device.WaitForIdle();
+            if (Window.VerticalSync)
+                // without glFinish, vsync is basically unplayable due to the extra latency introduced.
+                // we will likely want to give the user control over this in the future as an advanced setting.
+                Vd.Device.WaitForIdle();
         }
 
         /// <summary>
