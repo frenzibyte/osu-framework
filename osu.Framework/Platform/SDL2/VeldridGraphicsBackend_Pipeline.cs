@@ -111,15 +111,15 @@ namespace osu.Framework.Platform.SDL2
 
         #endregion
 
-        private static readonly GlobalStatistic<int> stat_graphics_pipeline_created = GlobalStatistics.Get<int>("Veldrid", "Number of pipelines created");
+        private static readonly GlobalStatistic<int> stat_graphics_pipeline_created = GlobalStatistics.Get<int>("Veldrid", "Graphics pipelines created");
 
-        private static readonly Dictionary<GraphicsPipelineDescription, Pipeline> pipelines = new Dictionary<GraphicsPipelineDescription, Pipeline>();
+        private static readonly Dictionary<GraphicsPipelineDescription, Pipeline> pipeline_cache = new Dictionary<GraphicsPipelineDescription, Pipeline>();
 
-        private static Pipeline getPipeline(GraphicsPipelineDescription description)
+        private static Pipeline fetchPipeline(GraphicsPipelineDescription description)
         {
-            if (!pipelines.TryGetValue(description, out var pipeline))
+            if (!pipeline_cache.TryGetValue(description, out var pipeline))
             {
-                pipelines[description.Clone()] = pipeline = Factory.CreateGraphicsPipeline(description);
+                pipeline_cache[description.Clone()] = pipeline = Factory.CreateGraphicsPipeline(description);
                 stat_graphics_pipeline_created.Value++;
             }
 

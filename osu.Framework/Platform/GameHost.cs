@@ -444,8 +444,17 @@ namespace osu.Framework.Platform
             if (Root == null)
                 return;
 
-            Vd.Commands.Begin();
+            using (Vd.BeginCommands())
+                drawFrame();
 
+            using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
+            {
+                Swap();
+            }
+        }
+
+        private void drawFrame(Action postReset = null)
+        {
             while (ExecutionState == ExecutionState.Running)
             {
                 using (var buffer = DrawRoots.Get(UsageType.Read))
@@ -465,6 +474,8 @@ namespace osu.Framework.Platform
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
                         Vd.Reset(new System.Numerics.Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+
+                    postReset?.Invoke();
 
                     // if (!bypassFrontToBackPass.Value)
                     // {
@@ -500,15 +511,6 @@ namespace osu.Framework.Platform
             }
 
             Vd.FlushCurrentBatch();
-
-            Vd.Commands.End();
-
-            Vd.Device.SubmitCommands(Vd.Commands);
-
-            using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
-            {
-                Swap();
-            }
         }
 
         /// <summary>
