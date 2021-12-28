@@ -19,12 +19,15 @@ namespace osu.Framework.Platform.SDL2
 
         public static CommandList Commands { get; private set; }
 
-        public static Fence CompletionFence { get; private set; }
+        /// <summary>
+        /// A <see cref="Fence"/> signaled when the recently submitted <see cref="Commands"/> completes execution.
+        /// </summary>
+        public static Fence SubmittedCommandsCompletion { get; private set; }
 
         private void initialiseCommands()
         {
             globalCommands = Factory.CreateCommandList();
-            CompletionFence = Factory.CreateFence(false);
+            SubmittedCommandsCompletion = Factory.CreateFence(false);
         }
 
         /// <summary>
@@ -43,12 +46,10 @@ namespace osu.Framework.Platform.SDL2
             Commands = commands = globalCommands;
             Commands.Begin();
 
-            CompletionFence.Reset();
-
             return new ValueInvokeOnDisposal<CommandList>(commands, c =>
             {
                 Commands.End();
-                Device.SubmitCommands(Commands, CompletionFence);
+                Device.SubmitCommands(Commands, SubmittedCommandsCompletion);
 
                 Commands = null;
             });

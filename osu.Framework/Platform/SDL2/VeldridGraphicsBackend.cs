@@ -277,8 +277,13 @@ namespace osu.Framework.Platform.SDL2
                 }
             }
 
-            if (CompletionFence.Signaled)
-                StagingBufferPool.Release();
+            if (SubmittedCommandsCompletion.Signaled)
+            {
+                VeldridStagingBufferPool.Release();
+                VeldridStagingTexturePool.Release();
+
+                SubmittedCommandsCompletion.Reset();
+            }
 
             lastActiveBatch = null;
             lastBlendingParameters = new BlendingParameters();
