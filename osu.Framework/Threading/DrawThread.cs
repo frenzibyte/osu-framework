@@ -30,7 +30,8 @@ namespace osu.Framework.Threading
             {
                 window.MakeCurrent();
 
-                Vd.Reset(new System.Numerics.Vector2(window.ClientSize.Width, window.ClientSize.Height));
+                using (Vd.BeginCommands())
+                    Vd.Reset(new System.Numerics.Vector2(window.ClientSize.Width, window.ClientSize.Height));
             }
         }
 

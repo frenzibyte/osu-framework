@@ -19,12 +19,13 @@ namespace osu.Framework.Platform.SDL2
 
         public static CommandList Commands { get; private set; }
 
+        public static Fence CompletionFence { get; private set; }
+
         private void initialiseCommands()
         {
             globalCommands = Factory.CreateCommandList();
+            CompletionFence = Factory.CreateFence(false);
         }
-
-        private static bool duringCommandSequence;
 
         /// <summary>
         /// Starts a sequence of commands to a <see cref="CommandList"/>.
@@ -33,31 +34,23 @@ namespace osu.Framework.Platform.SDL2
         public static IDisposable BeginCommands() => BeginCommands(out _);
 
         /// <summary>
-        /// Starts a sequence of commands to a <see cref="CommandList"/>.
+        /// Starts a sequence of commands to send to a <see cref="CommandList"/>.
         /// </summary>
         /// <param name="commands">The command list.</param>
         /// <returns>An <see cref="InvokeOnDisposal"/> to be used in a <see langword="using"/> statement.</returns>
         public static IDisposable BeginCommands(out CommandList commands)
         {
-            var oldCommands = Commands;
-
-            commands = !duringCommandSequence ? globalCommands : Factory.CreateCommandList();
-
-            Commands = commands;
+            Commands = commands = globalCommands;
             Commands.Begin();
 
-            duringCommandSequence = true;
+            CompletionFence.Reset();
 
-            return new ValueInvokeOnDisposal<CommandList>(oldCommands, c =>
+            return new ValueInvokeOnDisposal<CommandList>(commands, c =>
             {
                 Commands.End();
-                Device.SubmitCommands(Commands);
+                Device.SubmitCommands(Commands, CompletionFence);
 
-                Commands.Dispose();
-                Commands = c;
-
-                if (Commands == null)
-                    duringCommandSequence = false;
+                Commands = null;
             });
         }
 

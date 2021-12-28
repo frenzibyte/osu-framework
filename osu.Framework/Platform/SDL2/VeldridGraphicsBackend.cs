@@ -174,10 +174,8 @@ namespace osu.Framework.Platform.SDL2
                 Outputs = DefaultFrameBuffer.OutputDescription,
             };
 
-            initialiseResources(ref pipelineDescription);
             initialiseCommands();
-
-            Commands = Factory.CreateCommandList();
+            initialiseResources(ref pipelineDescription);
 
             IsInitialized = true;
 
@@ -278,6 +276,9 @@ namespace osu.Framework.Platform.SDL2
                     break;
                 }
             }
+
+            if (CompletionFence.Signaled)
+                StagingBufferPool.Release();
 
             lastActiveBatch = null;
             lastBlendingParameters = new BlendingParameters();
