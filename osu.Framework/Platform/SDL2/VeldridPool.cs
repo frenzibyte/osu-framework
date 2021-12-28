@@ -11,8 +11,8 @@ namespace osu.Framework.Platform.SDL2
     internal abstract class VeldridPool<T>
         where T : class, IDisposable
     {
-        protected readonly List<(ulong useId, T resource)> AvailableResources = new List<(ulong, T)>();
-        protected readonly List<(ulong useId, T resource)> UsedResources = new List<(ulong, T)>();
+        protected readonly HashSet<(ulong useId, T resource)> AvailableResources = new HashSet<(ulong, T)>();
+        protected readonly HashSet<(ulong useId, T resource)> UsedResources = new HashSet<(ulong, T)>();
 
         private readonly GlobalStatistic<int> statAvailableCount;
         private readonly GlobalStatistic<int> statUsedCount;
@@ -50,7 +50,9 @@ namespace osu.Framework.Platform.SDL2
         /// </summary>
         public void ReleaseAllUsedResources()
         {
-            AvailableResources.AddRange(UsedResources);
+            foreach (var used in UsedResources)
+                AvailableResources.Add(used);
+
             statAvailableCount.Value = AvailableResources.Count;
 
             UsedResources.Clear();
@@ -59,14 +61,16 @@ namespace osu.Framework.Platform.SDL2
 
         public void FreeUnusedResources()
         {
-            for (int i = 0; i < AvailableResources.Count; i++)
+            AvailableResources.RemoveWhere(available =>
             {
-                if (Vd.ResetId - AvailableResources[i].useId <= Vd.RESOURCES_FREE_CHECK_INTERVAL)
-                    continue;
+                if (Vd.ResetId - available.useId > Vd.RESOURCES_FREE_CHECK_INTERVAL)
+                {
+                    available.resource.Dispose();
+                    return true;
+                }
 
-                AvailableResources[i].resource.Dispose();
-                AvailableResources.Remove(AvailableResources[i--]);
-            }
+                return false;
+            });
         }
     }
 }
