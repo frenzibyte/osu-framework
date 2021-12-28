@@ -131,11 +131,11 @@ namespace osu.Framework.Graphics.Video
                 if (v.textureResourceSet == null)
                     return;
 
-                foreach (var texture in textureResourceSet.Textures)
+                foreach (var texture in v.textureResourceSet.Textures)
                     texture.Dispose();
 
-                textureResourceSet.Dispose();
-                textureResourceSet = null;
+                v.textureResourceSet.Dispose();
+                v.textureResourceSet = null;
             }, this);
         }
 
