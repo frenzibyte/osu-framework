@@ -497,12 +497,12 @@ namespace osu.Framework.Graphics.Renderer.Textures
                     if (width == upload.Bounds.Width && height == upload.Bounds.Height)
                     {
                         updateMemoryUsage(upload.Level, (long)width * height * sizeof(Rgba32));
-                        uploadTextureData(0, 0, width, height, upload.Level, upload.Data);
+                        Vd.UpdateTexture(texture, 0, 0, width, height, upload.Level, upload.Data);
                     }
                     else
                     {
                         initializeLevel(upload.Level, width, height);
-                        uploadTextureData(upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
+                        Vd.UpdateTexture(texture, upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
                     }
                 }
             }
@@ -529,7 +529,7 @@ namespace osu.Framework.Graphics.Renderer.Textures
 
                 int div = (int)Math.Pow(2, upload.Level);
 
-                uploadTextureData(upload.Bounds.X / div, upload.Bounds.Y / div, upload.Bounds.Width / div, upload.Bounds.Height / div, upload.Level, upload.Data);
+                Vd.UpdateTexture(texture, upload.Bounds.X / div, upload.Bounds.Y / div, upload.Bounds.Width / div, upload.Bounds.Height / div, upload.Level, upload.Data);
             }
         }
 
@@ -539,20 +539,8 @@ namespace osu.Framework.Graphics.Renderer.Textures
             using (var pixels = image.CreateReadOnlyPixelSpan())
             {
                 updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
-                uploadTextureData(0, 0, width, height, level, pixels.Span);
+                Vd.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
             }
-        }
-
-        private unsafe void uploadTextureData(int x, int y, int width, int height, int level, ReadOnlySpan<Rgba32> data)
-        {
-            var staging = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, texture.Format, TextureUsage.Staging));
-
-            fixed (Rgba32* ptr = data)
-                Vd.Device.UpdateTexture(staging, (IntPtr)ptr, (uint)(data.Length * sizeof(Rgba32)), 0, 0, 0, (uint)width, (uint)height, 1, 0, 0);
-
-            Vd.Commands.CopyTexture(staging, 0, 0, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
-
-            staging.Dispose();
         }
 
         private Image<Rgba32> createBackingImage(int width, int height)

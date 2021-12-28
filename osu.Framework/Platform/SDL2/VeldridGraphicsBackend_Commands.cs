@@ -55,6 +55,17 @@ namespace osu.Framework.Platform.SDL2
             });
         }
 
+        public static unsafe void UpdateTexture<T>(Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data)
+            where T : unmanaged
+        {
+            var staging = VeldridStagingTexturePool.Get(width, height, texture.Format);
+
+            fixed (T* ptr = data)
+                Device.UpdateTexture(staging, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), 0, 0, 0, (uint)width, (uint)height, 1, 0, 0);
+
+            Commands.CopyTexture(staging, 0, 0, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
+        }
+
         private static ClearInfo currentClearInfo;
 
         public static void Clear(ClearInfo clearInfo)
