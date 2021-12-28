@@ -36,7 +36,10 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
+using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Memory;
+using Veldrid;
+using Image = SixLabors.ImageSharp.Image;
 using Size = System.Drawing.Size;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
@@ -530,49 +533,55 @@ namespace osu.Framework.Platform
         /// Takes a screenshot of the game. The returned <see cref="Image{TPixel}"/> must be disposed by the caller when applicable.
         /// </summary>
         /// <returns>The screenshot as an <see cref="Image{TPixel}"/>.</returns>
-        public unsafe async Task<Image<Rgba32>> TakeScreenshotAsync()
+        public async Task<Image<Rgba32>> TakeScreenshotAsync()
         {
-            // taking screenshots is not possible for some backends with veldrid.
-            return new Image<Rgba32>(Window.ClientSize.Width, Window.ClientSize.Height);
-            // if (Window == null) throw new InvalidOperationException($"{nameof(Window)} has not been set!");
-            //
-            // using (var completionEvent = new ManualResetEventSlim(false))
-            // {
-            //     int width = Window.ClientSize.Width;
-            //     int height = Window.ClientSize.Height;
-            //     var pixelData = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<Rgba32>(width * height);
-            //
-            //     DrawThread.Scheduler.Add(() =>
-            //     {
-            //         if (Window is SDL2DesktopWindow win)
-            //             win.MakeCurrent();
-            //         else if (GraphicsContext.CurrentContext == null)
-            //             throw new GraphicsContextMissingException();
-            //
-            //         var source = Vd.Device.SwapchainFramebuffer.ColorTargets[0].Target;
-            //         var staging = Vd.Factory.CreateTexture(TextureDescription.Texture2D(source.Width, source.Height, source.MipLevels, source.ArrayLayers, source.Format, TextureUsage.Staging));
-            //
-            //         Vd.Commands.CopyTexture(source, staging);
-            //
-            //         var resource = Vd.Device.Map(staging, MapMode.Read);
-            //
-            //         Unsafe.CopyBlock(ref MemoryMarshal.GetReference(MemoryMarshal.Cast<Rgba32, byte>(pixelData.Memory.Span)), ref Unsafe.AsRef<byte>(resource.Data.ToPointer()), resource.SizeInBytes);
-            //
-            //         Vd.Device.Unmap(resource.Resource);
-            //         staging.Dispose();
-            //
-            //         // ReSharper disable once AccessToDisposedClosure
-            //         completionEvent.Set();
-            //     });
-            //
-            //     // this is required as attempting to use a TaskCompletionSource blocks the thread calling SetResult on some configurations.
-            //     Task.Run(completionEvent.Wait).ConfigureAwait(false);
-            //
-            //     var image = MediaTypeNames.Image.LoadPixelData<Rgba32>(pixelData.Memory.Span, width, height);
-            //     image.Mutate(c => c.Flip(FlipMode.Vertical));
-            //
-            //     return image;
-            // }
+            if (Window == null) throw new InvalidOperationException($"{nameof(Window)} has not been set!");
+
+            using (var completionEvent = new ManualResetEventSlim(false))
+            {
+                int width = Window.ClientSize.Width;
+                int height = Window.ClientSize.Height;
+                var pixelData = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<Bgra32>(width * height);
+
+                DrawThread.Scheduler.Add(() =>
+                {
+                    unsafe
+                    {
+                        var format = Vd.DefaultFrameBuffer.ColorTargets.Single().Target.Format;
+                        var target = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, format, TextureUsage.RenderTarget));
+                        var frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(null, target));
+                        var staging = Vd.Factory.CreateTexture(TextureDescription.Texture2D(target.Width, target.Height, 1, 1, target.Format, TextureUsage.Staging));
+
+                        // ReSharper disable AccessToDisposedClosure
+                        using (Vd.BeginCommands(out var commands))
+                        {
+                            drawFrame(() => Vd.BindFrameBuffer(frameBuffer));
+
+                            commands.CopyTexture(target, staging);
+                        }
+
+                        var resource = Vd.Device.Map(staging, MapMode.Read);
+
+                        fixed (void* ptr = pixelData.Memory.Span)
+                            Buffer.MemoryCopy(resource.Data.ToPointer(), ptr, pixelData.Memory.Length * sizeof(Bgra32), resource.SizeInBytes);
+
+                        Vd.Device.Unmap(resource.Resource);
+
+                        staging.Dispose();
+                        frameBuffer.Dispose();
+                        target.Dispose();
+
+                        // ReSharper disable once AccessToDisposedClosure
+                        completionEvent.Set();
+                    }
+                });
+
+                // this is required as attempting to use a TaskCompletionSource blocks the thread calling SetResult on some configurations.
+                await Task.Run(completionEvent.Wait).ConfigureAwait(false);
+
+                using (Image<Bgra32> image = Image.LoadPixelData<Bgra32>(pixelData.Memory.Span, width, height))
+                    return image.CloneAs<Rgba32>(image.GetConfiguration());
+            }
         }
 
         public ExecutionState ExecutionState
