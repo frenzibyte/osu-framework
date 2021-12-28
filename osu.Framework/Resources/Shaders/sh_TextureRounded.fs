@@ -2,7 +2,7 @@
 #include "sh_Masking.h"
 #include "sh_TextureWrapping.h"
 
-layout(location = 2) out mediump vec2 v_TexCoord;
+layout(location = 2) in mediump vec2 v_TexCoord;
 
 uniform lowp texture2D m_Texture;
 uniform lowp sampler m_Sampler;
