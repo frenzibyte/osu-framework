@@ -95,9 +95,7 @@ namespace osu.Framework.Graphics.Video
                         textureSize += width * height;
                     }
 
-                    var description = TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R8_UNorm, TextureUsage.Sampled);
-
-                    textures[i] = Vd.Factory.CreateTexture(description);
+                    textures[i] = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R8_UNorm, TextureUsage.Sampled));
                 }
 
                 textureResourceSet = new TextureResourceSet(textures, Vd.Device.LinearSampler);
@@ -107,13 +105,10 @@ namespace osu.Framework.Graphics.Video
 
             for (int i = 0; i < TextureResourceSet.Textures.Count; i++)
             {
-                // TODO: this is just fucked.
-                uint size = 0;
-
-                while (videoUpload.Frame->data[(uint)i][size] != 0)
-                    size++;
-
-                Vd.Device.UpdateTexture(TextureResourceSet.Textures[i], (IntPtr)videoUpload.Frame->data[(uint)i], size, 0, 0, 0, (uint)(videoUpload.Frame->width / (i > 0 ? 2 : 1)), (uint)(videoUpload.Frame->height / (i > 0 ? 2 : 1)), 1, 1, 1);
+                int width = videoUpload.Frame->width / (i > 0 ? 2 : 1);
+                int height = videoUpload.Frame->height / (i > 0 ? 2 : 1);
+                var data = new ReadOnlySpan<byte>(videoUpload.Frame->data[(uint)i], width * height);
+                Vd.UpdateTexture(TextureResourceSet.Textures[i], 0, 0, width, height, 0, data);
 
                 // GL.PixelStore(PixelStoreParameter.UnpackRowLength, videoUpload.Frame->linesize[(uint)i]);
                 // GL.TexSubImage2D(TextureTarget2d.Texture2D, 0, 0, 0, videoUpload.Frame->width / (i > 0 ? 2 : 1), videoUpload.Frame->height / (i > 0 ? 2 : 1),
