@@ -77,14 +77,10 @@ namespace osu.Framework.Platform.SDL2
             PushDepthInfo(new DepthInfo(writeDepth: true));
             PushScissorState(false);
 
-            if (clearInfo.Colour != currentClearInfo.Colour)
-                Commands.ClearColorTarget(0, clearInfo.Colour.ToRgbaFloat());
+            Commands.ClearColorTarget(0, clearInfo.Colour.ToRgbaFloat());
 
             if (frame_buffer_stack.Peek().DepthTarget != null)
-            {
-                if (clearInfo.Depth != currentClearInfo.Depth || clearInfo.Stencil != currentClearInfo.Stencil)
-                    Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
-            }
+                Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
 
             currentClearInfo = clearInfo;
 
