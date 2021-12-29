@@ -4,11 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Statistics;
 using osuTK;
+using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using Shader = osu.Framework.Graphics.Shaders.Shader;
 
@@ -41,9 +43,64 @@ namespace osu.Framework.Platform.SDL2
             description.ResourceLayouts[UNIFORM_RESOURCE_SLOT] = uniformLayout;
 
             var defaultTexture = Factory.CreateTexture(TextureDescription.Texture2D(1, 1, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, TextureUsage.Sampled));
-            var defaultSampler = Device.LinearSampler;
-            defaultTextureSet = new TextureResourceSet(defaultTexture, defaultSampler);
+
+            using (BeginCommands())
+                UpdateTexture(defaultTexture, 0, 0, 1, 1, 0, new ReadOnlySpan<Rgba32>(new[] { new Rgba32(0, 0, 0) }));
+
+            defaultTextureSet = new TextureResourceSet(defaultTexture, Device.LinearSampler);
         }
+
+        #region Buffers
+
+        private static DeviceBuffer boundVertexBuffer;
+
+        /// <summary>
+        /// Binds a vertex buffer with the specified <see cref="VertexLayoutDescription"/> to the <see cref="Commands"/> list.
+        /// </summary>
+        /// <param name="buffer">The vertex buffer.</param>
+        /// <param name="layout">The vertex layout.</param>
+        /// <returns>Whether the vertex buffer has been bound, otherwise the vertex buffer has already been bound.</returns>
+        public static bool BindVertexBuffer(DeviceBuffer buffer, VertexLayoutDescription layout)
+        {
+            if (buffer == boundVertexBuffer)
+                return false;
+
+            Commands.SetVertexBuffer(0, buffer);
+
+            pipelineDescription.ShaderSet.VertexLayouts = new[] { layout };
+
+            FrameStatistics.Increment(StatisticsCounterType.VBufBinds);
+
+            boundVertexBuffer = buffer;
+            return true;
+        }
+
+        /// <summary>
+        /// Binds an index buffer with the specified <see cref="IndexFormat"/> to the <see cref="Commands"/> list.
+        /// </summary>
+        /// <param name="buffer">The index buffer.</param>
+        /// <param name="format">The index format.</param>
+        public static void BindIndexBuffer(DeviceBuffer buffer, IndexFormat format) => Commands.SetIndexBuffer(buffer, format);
+
+        /// <summary>
+        /// Updates a <see cref="DeviceBuffer"/> region with the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="buffer">The <see cref="DeviceBuffer"/> to update.</param>
+        /// <param name="offset">The offset of the update region in bytes.</param>
+        /// <param name="value">The value to upload.</param>
+        /// <param name="size">The value size in bytes, otherwise the value type size will be used.</param>
+        /// <typeparam name="T">The value type.</typeparam>
+        public static void UpdateBuffer<T>(DeviceBuffer buffer, int offset, ref T value, int? size = null)
+            where T : struct, IEquatable<T>
+        {
+            size ??= Marshal.SizeOf<T>();
+
+            var staging = staging_buffer_pool.Get(size.Value);
+            Device.UpdateBuffer(staging, 0, ref value, (uint)size);
+            Commands.CopyBuffer(staging, 0, buffer, (uint)offset, (uint)size);
+        }
+
+        #endregion
 
         #region Textures
 
@@ -101,9 +158,31 @@ namespace osu.Framework.Platform.SDL2
         }
 
         /// <summary>
-        /// Resets bound textures and binds a default texture to draw with.
+        /// Unbinds any bound texture set and binds a default texture set.
         /// </summary>
-        internal static void ResetTexture() => BindTexture(defaultTextureSet);
+        internal static void BindDefaultTexture() => BindTexture(defaultTextureSet);
+
+        /// <summary>
+        /// Updates a <see cref="Texture"/> with a <paramref name="data"/> at the specified coordinates.
+        /// </summary>
+        /// <param name="texture">The <see cref="Texture"/> to update.</param>
+        /// <param name="x">The X coordinate of the update region.</param>
+        /// <param name="y">The Y coordinate of the update region.</param>
+        /// <param name="width">The width of the update region.</param>
+        /// <param name="height">The height of the update region.</param>
+        /// <param name="level">The texture level.</param>
+        /// <param name="data">The textural data.</param>
+        /// <typeparam name="T">The pixel type.</typeparam>
+        public static unsafe void UpdateTexture<T>(Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data)
+            where T : unmanaged
+        {
+            var staging = staging_texture_pool.Get(width, height, texture.Format);
+
+            fixed (T* ptr = data)
+                Device.UpdateTexture(staging, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), 0, 0, 0, (uint)width, (uint)height, 1, 0, 0);
+
+            Commands.CopyTexture(staging, 0, 0, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
+        }
 
         private static readonly Dictionary<int, ResourceLayout> texture_layouts = new Dictionary<int, ResourceLayout>();
 

@@ -4,12 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Renderer;
 using osu.Framework.Graphics.Shaders;
-using osu.Framework.Statistics;
 using Veldrid;
 
 namespace osu.Framework.Platform.SDL2
@@ -56,26 +54,18 @@ namespace osu.Framework.Platform.SDL2
             });
         }
 
-        public static void UpdateBuffer<T>(DeviceBuffer buffer, int offset, ref T value, int? size = null)
-            where T : struct, IEquatable<T>
+        public static void DrawVertices(PrimitiveTopology topology, int verticesStart, int verticesCount)
         {
-            size ??= Marshal.SizeOf<T>();
+            pipelineDescription.PrimitiveTopology = topology;
 
-            var staging = staging_buffer_pool.Get(size.Value);
-            Device.UpdateBuffer(staging, 0, ref value, (uint)size);
-            Commands.CopyBuffer(staging, 0, buffer, (uint)offset, (uint)size);
+            Commands.SetPipeline(fetchPipeline(pipelineDescription));
+            Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, currentShader.UniformResourceSet);
+            Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, boundTextureSet);
+
+            Commands.DrawIndexed((uint)verticesCount, 1, (uint)verticesStart, 0, 0);
         }
 
-        public static unsafe void UpdateTexture<T>(Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data)
-            where T : unmanaged
-        {
-            var staging = staging_texture_pool.Get(width, height, texture.Format);
-
-            fixed (T* ptr = data)
-                Device.UpdateTexture(staging, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), 0, 0, 0, (uint)width, (uint)height, 1, 0, 0);
-
-            Commands.CopyTexture(staging, 0, 0, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
-        }
+        #region Clear
 
         private static ClearInfo currentClearInfo;
 
@@ -99,24 +89,9 @@ namespace osu.Framework.Platform.SDL2
             PopDepthInfo();
         }
 
-        private static DeviceBuffer boundVertexBuffer;
+        #endregion
 
-        public static bool BindVertexBuffer(DeviceBuffer buffer, VertexLayoutDescription layout)
-        {
-            if (buffer == boundVertexBuffer)
-                return false;
-
-            Commands.SetVertexBuffer(0, buffer);
-
-            pipelineDescription.ShaderSet.VertexLayouts = new[] { layout };
-
-            FrameStatistics.Increment(StatisticsCounterType.VBufBinds);
-
-            boundVertexBuffer = buffer;
-            return true;
-        }
-
-        public static void BindIndexBuffer(DeviceBuffer buffer, IndexFormat format) => Commands.SetIndexBuffer(buffer, format);
+        #region Viewport
 
         private static readonly Stack<RectangleI> viewport_stack = new Stack<RectangleI>();
 
@@ -174,6 +149,10 @@ namespace osu.Framework.Platform.SDL2
             Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, 0, 1));
         }
 
+        #endregion
+
+        #region Scissor
+
         /// <summary>
         /// Applies a new scissor rectangle.
         /// </summary>
@@ -226,16 +205,9 @@ namespace osu.Framework.Platform.SDL2
             Commands.SetScissorRect(0, (uint)scissor.X, (uint)(Viewport.Height - scissor.Bottom), (uint)scissor.Width, (uint)scissor.Height);
         }
 
-        public static void DrawVertices(PrimitiveTopology topology, int verticesStart, int verticesCount)
-        {
-            pipelineDescription.PrimitiveTopology = topology;
+        #endregion
 
-            Commands.SetPipeline(fetchPipeline(pipelineDescription));
-            Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, currentShader.UniformResourceSet);
-            Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, boundTextureSet);
-
-            Commands.DrawIndexed((uint)verticesCount, 1, (uint)verticesStart, 0, 0);
-        }
+        #region Framebuffer
 
         /// <summary>
         /// Binds a framebuffer.
@@ -297,5 +269,7 @@ namespace osu.Framework.Platform.SDL2
 
             ScheduleDisposal(f => f.Dispose(), frameBuffer);
         }
+
+        #endregion
     }
 }
