@@ -42,6 +42,9 @@ namespace osu.Framework.Platform.SDL2
         /// <returns>An <see cref="InvokeOnDisposal"/> to be used in a <see langword="using"/> statement.</returns>
         public static IDisposable BeginCommands(out CommandList commands)
         {
+            if (Commands != null)
+                throw new InvalidOperationException("A command list has already begun accepting commands.");
+
             Commands = commands = globalCommands;
             Commands.Begin();
 
