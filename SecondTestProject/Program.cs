@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.IO;
 using osu.Framework;
 using osu.Framework.Configuration;
 using osu.Framework.Development;
@@ -11,10 +10,9 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
 using osuTK.Graphics;
-using Texture = osu.Framework.Graphics.Textures.Texture;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
-namespace FirstTestProject
+namespace SecondTestProject
 {
     public static class Program
     {
@@ -30,29 +28,34 @@ namespace FirstTestProject
             window.Visible = true;
             window.Title = "osu!framework (running under Veldrid)";
 
-            var shaderManager = new ShaderManager(new NamespacedResourceStore<byte[]>(new DllResourceStore(typeof(Game).Assembly), "Resources/Shaders"));
+            var resources = new NamespacedResourceStore<byte[]>(new DllResourceStore(typeof(Game).Assembly), "Resources");
 
-            var texture = Texture.FromStream(File.OpenRead("/Users/salman/Desktop/osu-framework-veldrid/osu.Framework.Tests/Resources/Textures/sample-texture.png"));
+            var shaderManager = new ShaderManager(new NamespacedResourceStore<byte[]>(resources, "Shaders"));
+
+            var fonts = new FontStore(useAtlas: true);
+            fonts.AddStore(new TimedExpiryGlyphStore(resources, "Fonts/Roboto/Roboto-Regular"));
+
+            // var texture = Texture.FromStream(File.OpenRead("/Users/salman/Desktop/osu-framework-veldrid/osu.Framework.Tests/Resources/Textures/sample-texture.png"));
+            var texture = fonts.Get("Roboto-Regular", 'A')?.Texture;
             var shader = shaderManager.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
 
             window.Update += () =>
             {
                 ThreadSafety.IsDrawThread = true;
 
-                Vd.Commands.Begin();
+                using (Vd.BeginCommands())
+                {
+                    Vd.Reset(new System.Numerics.Vector2(window.Size.Width, window.Size.Height));
 
-                Vd.Reset(new System.Numerics.Vector2(window.Size.Width, window.Size.Height));
+                    shader.Bind();
 
-                shader.Bind();
+                    texture!.DrawQuad(new Quad(0, 0, 500, 500), Color4.White);
 
-                texture.DrawQuad(new Quad(-0.75f, -0.75f, 1.5f, 1.5f), Color4.White);
+                    Vd.FlushCurrentBatch();
 
-                Vd.FlushCurrentBatch();
+                    shader.Unbind();
+                }
 
-                shader.Unbind();
-
-                Vd.Commands.End();
-                Vd.Device.SubmitCommands(Vd.Commands);
                 Vd.Device.SwapBuffers();
 
                 ThreadSafety.IsDrawThread = false;

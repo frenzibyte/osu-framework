@@ -19,7 +19,7 @@ using Image = SixLabors.ImageSharp.Image;
 
 namespace FirstTestProject
 {
-    public static class FirstProgram
+    public static class Program
     {
         private static SDL2DesktopWindow window;
 
