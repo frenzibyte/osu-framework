@@ -13,7 +13,7 @@ using Veldrid;
 namespace osu.Framework.Graphics.Renderer.Vertices
 {
     /// <summary>
-    /// Helper method that provides functionality to enable and bind vertex attributes.
+    /// Helper methods for retrieving the stride and layout of a vertex structure.
     /// </summary>
     public static class VertexUtils<T>
         where T : struct, IVertex
@@ -23,13 +23,15 @@ namespace osu.Framework.Graphics.Renderer.Vertices
         /// </summary>
         public static readonly int STRIDE = Marshal.SizeOf(default(T));
 
-        public static VertexLayoutDescription Layout => new VertexLayoutDescription(elements.ToArray());
+        public static VertexLayoutDescription Layout { get; }
 
         private static readonly List<VertexElementDescription> elements = new List<VertexElementDescription>();
 
         static VertexUtils()
         {
             getVertexElementsFromAttributes(typeof(T), 0);
+
+            Layout = new VertexLayoutDescription(elements.ToArray());
         }
 
         private static void getVertexElementsFromAttributes(Type type, int currentOffset)
