@@ -70,22 +70,12 @@ namespace osu.Framework.Platform.SDL2
 
         #region Clear
 
-        private static ClearInfo currentClearInfo;
-
         public static void Clear(ClearInfo clearInfo)
         {
-            PushDepthInfo(new DepthInfo(writeDepth: true));
-            PushScissorState(false);
-
             Commands.ClearColorTarget(0, clearInfo.Colour.ToRgbaFloat());
 
             if (frame_buffer_stack.Peek().DepthTarget != null)
                 Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
-
-            currentClearInfo = clearInfo;
-
-            PopScissorState();
-            PopDepthInfo();
         }
 
         #endregion
