@@ -66,7 +66,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
             frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(depthTarget, colorTargets));
 
             Vd.BindFrameBuffer(frameBuffer);
-            // Vd.BindTexture((RendererTexture)null);
+            Vd.BindDefaultTexture();
         }
 
         private void setupRenderTargets()
