@@ -33,6 +33,11 @@ namespace osu.Framework.Threading
         public bool HasPendingTasks => TotalPendingTasks > 0;
 
         /// <summary>
+        /// The total tasks this scheduler instance has run.
+        /// </summary>
+        public int TotalTasksRun { get; private set; }
+
+        /// <summary>
         /// The total number of <see cref="ScheduledDelegate"/>s tracked by this instance for future execution.
         /// </summary>
         internal int TotalPendingTasks => runQueue.Count + timedTasks.Count + perUpdateTasks.Count;
@@ -41,11 +46,10 @@ namespace osu.Framework.Threading
         /// The base thread is assumed to be the thread on which the constructor is run.
         /// </summary>
         public Scheduler()
+            : this(null, new StopwatchClock(true))
         {
-            var currentThread = Thread.CurrentThread;
-            isCurrentThread = () => Thread.CurrentThread == currentThread;
-
-            clock = new StopwatchClock(true);
+            var constructedThread = Thread.CurrentThread;
+            isCurrentThread = () => Thread.CurrentThread == constructedThread;
         }
 
         /// <summary>
@@ -106,6 +110,8 @@ namespace osu.Framework.Threading
             {
                 //todo: error handling
                 sd.RunTaskInternal();
+
+                TotalTasksRun++;
 
                 if (++countRun == countToRun)
                     break;
@@ -212,6 +218,32 @@ namespace osu.Framework.Threading
         /// </summary>
         /// <remarks>If scheduled, the task will be run on the next <see cref="Update"/> independent of the current clock time.</remarks>
         /// <param name="task">The work to be done.</param>
+        /// <param name="data">The data to be passed to the task.</param>
+        /// <param name="forceScheduled">If set to false, the task will be executed immediately if we are on the main thread.</param>
+        /// <returns>The scheduled task, or <c>null</c> if the task was executed immediately.</returns>
+        [CanBeNull]
+        public ScheduledDelegate Add<T>([NotNull] Action<T> task, T data, bool forceScheduled = true)
+        {
+            if (!forceScheduled && IsMainThread)
+            {
+                //We are on the main thread already - don't need to schedule.
+                task.Invoke(data);
+                return null;
+            }
+
+            var del = new ScheduledDelegateWithData<T>(task, data);
+
+            lock (queueLock)
+                runQueue.Enqueue(del);
+
+            return del;
+        }
+
+        /// <summary>
+        /// Add a task to be scheduled.
+        /// </summary>
+        /// <remarks>If scheduled, the task will be run on the next <see cref="Update"/> independent of the current clock time.</remarks>
+        /// <param name="task">The work to be done.</param>
         /// <param name="forceScheduled">If set to false, the task will be executed immediately if we are on the main thread.</param>
         /// <returns>The scheduled task, or <c>null</c> if the task was executed immediately.</returns>
         [CanBeNull]
@@ -251,6 +283,25 @@ namespace osu.Framework.Threading
         /// Add a task which will be run after a specified delay from the current clock time.
         /// </summary>
         /// <param name="task">The work to be done.</param>
+        /// <param name="data">The data to be passed to the task.</param>
+        /// <param name="timeUntilRun">Milliseconds until run.</param>
+        /// <param name="repeat">Whether this task should repeat.</param>
+        /// <returns>Whether this is the first queue attempt of this work.</returns>
+        public ScheduledDelegate AddDelayed<T>([NotNull] Action<T> task, T data, double timeUntilRun, bool repeat = false)
+        {
+            // We are locking here already to make sure we have no concurrent access to currentTime
+            lock (queueLock)
+            {
+                ScheduledDelegate del = new ScheduledDelegateWithData<T>(task, data, currentTime + timeUntilRun, repeat ? timeUntilRun : -1);
+                Add(del);
+                return del;
+            }
+        }
+
+        /// <summary>
+        /// Add a task which will be run after a specified delay from the current clock time.
+        /// </summary>
+        /// <param name="task">The work to be done.</param>
         /// <param name="timeUntilRun">Milliseconds until run.</param>
         /// <param name="repeat">Whether this task should repeat.</param>
         /// <returns>The scheduled task.</returns>
@@ -264,6 +315,32 @@ namespace osu.Framework.Threading
                 Add(del);
                 return del;
             }
+        }
+
+        /// <summary>
+        /// Adds a task which will only be run once per frame, no matter how many times it was scheduled in the previous frame.
+        /// </summary>
+        /// <remarks>The task will be run on the next <see cref="Update"/> independent of the current clock time.</remarks>
+        /// <param name="task">The work to be done.</param>
+        /// <param name="data">The data to be passed to the task. Note that duplicate schedules may result in previous data never being run.</param>
+        /// <returns>Whether this is the first queue attempt of this work.</returns>
+        public bool AddOnce<T>([NotNull] Action<T> task, T data)
+        {
+            lock (queueLock)
+            {
+                var existing = runQueue.OfType<ScheduledDelegateWithData<T>>().SingleOrDefault(sd => sd.Task == task);
+
+                if (existing != null)
+                {
+                    // ensure the single queued instance always has the most recent data.
+                    existing.Data = data;
+                    return false;
+                }
+
+                runQueue.Enqueue(new ScheduledDelegateWithData<T>(task, data));
+            }
+
+            return true;
         }
 
         /// <summary>

@@ -22,7 +22,7 @@ uniform bool hirange;
 
 void main(void)
 {
-    vec4 sum = pow(texture2D(m_Sampler, v_TexCoord), vec4(2.0));
+    vec4 sum = pow(texture(m_Sampler, v_TexCoord), vec4(2.0));
 
     //Accumulate the colour from 12 neighbouring pixels
     sum += pow(texture(m_Sampler, v_TexCoord + (vec2(-0.326212, -0.405805) * mag)), vec4(2.0));
