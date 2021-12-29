@@ -143,7 +143,7 @@ namespace osu.Framework.Platform.SDL2
                 Debug = true,
             };
 
-            Device = createDevice(options, sdlWindow, window.ClientSize);
+            Device = CreateDevice(options, sdlWindow, window.ClientSize);
 
             Logger.Log($@"{Device.BackendType} Initialised
                           {Device.BackendType} ComputeShader: {Device.Features.ComputeShader}
@@ -182,15 +182,26 @@ namespace osu.Framework.Platform.SDL2
             reset_scheduler.AddDelayed(checkPendingDisposals, 0, true);
         }
 
-        private GraphicsDevice createDevice(GraphicsDeviceOptions options, SDL2DesktopWindow sdlWindow, Size initialSize)
+        protected virtual GraphicsDevice CreateDevice(GraphicsDeviceOptions options, SDL2DesktopWindow sdlWindow, Size initialSize)
         {
+            var swapchainDescription = new SwapchainDescription
+            {
+                Width = (uint)initialSize.Width,
+                Height = (uint)initialSize.Height,
+                ColorSrgb = options.SwapchainSrgbFormat,
+                DepthFormat = options.SwapchainDepthFormat,
+                SyncToVerticalBlank = options.SyncToVerticalBlank,
+            };
+
             switch (RuntimeInfo.OS)
             {
                 case RuntimeInfo.Platform.Windows:
-                    return GraphicsDevice.CreateD3D11(options, sdlWindow.WindowHandle, (uint)initialSize.Width, (uint)initialSize.Height);
+                    swapchainDescription.Source = SwapchainSource.CreateWin32(sdlWindow.WindowHandle, IntPtr.Zero);
+                    return GraphicsDevice.CreateD3D11(options, swapchainDescription);
 
                 case RuntimeInfo.Platform.macOS:
-                    return GraphicsDevice.CreateMetal(options, sdlWindow.WindowHandle);
+                    swapchainDescription.Source = SwapchainSource.CreateNSWindow(sdlWindow.WindowHandle);
+                    return GraphicsDevice.CreateMetal(options, swapchainDescription);
 
                 case RuntimeInfo.Platform.Linux:
                     SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
