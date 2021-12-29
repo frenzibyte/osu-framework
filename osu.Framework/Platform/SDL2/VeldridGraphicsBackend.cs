@@ -295,13 +295,6 @@ namespace osu.Framework.Platform.SDL2
             scissor_state_stack.Clear();
             scissor_offset_stack.Clear();
 
-            if (CompletedCommandsExecution.Signaled)
-            {
-                staging_buffer_pool.ReleaseAllUsedResources();
-                staging_texture_pool.ReleaseAllUsedResources();
-                CompletedCommandsExecution.Reset();
-            }
-
             BindFrameBuffer(DefaultFrameBuffer);
 
             Scissor = RectangleI.Empty;
@@ -330,6 +323,7 @@ namespace osu.Framework.Platform.SDL2
             Commands.ClearColorTarget(0, RgbaFloat.Black);
 
             freeUnusedResources();
+            releaseAllUsedResources();
 
             stat_texture_uploads_queued.Value = texture_upload_queue.Count;
             stat_texture_uploads_dequeued.Value = 0;
@@ -417,6 +411,9 @@ namespace osu.Framework.Platform.SDL2
         /// <param name="buffer">The <see cref="IVertexBuffer"/> in use.</param>
         internal static void RegisterVertexBufferUse(IVertexBuffer buffer) => vertex_buffers_in_use.Add(buffer);
 
+        /// <summary>
+        /// Frees resources unused after a while of frames.
+        /// </summary>
         private static void freeUnusedResources()
         {
             if (ResetId % RESOURCES_FREE_CHECK_INTERVAL != 0)
@@ -432,6 +429,19 @@ namespace osu.Framework.Platform.SDL2
 
             staging_buffer_pool.FreeUnusedResources();
             staging_texture_pool.FreeUnusedResources();
+        }
+
+        /// <summary>
+        /// Releases resources marked as used to become available for subsequent consumption.
+        /// </summary>
+        private static void releaseAllUsedResources()
+        {
+            // recent submitted command list hasn't completed execution yet, some commands may be still relying on the used resources.
+            if (!CompletedCommandsExecution.Signaled)
+                return;
+
+            staging_buffer_pool.ReleaseAllUsedResources();
+            staging_texture_pool.ReleaseAllUsedResources();
         }
 
         private static readonly Stack<Vector2I> scissor_offset_stack = new Stack<Vector2I>();
