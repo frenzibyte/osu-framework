@@ -19,7 +19,6 @@ using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
 using osuTK;
-using osuTK.Graphics;
 using SDL2;
 using Veldrid;
 using Veldrid.OpenGL;
@@ -324,8 +323,7 @@ namespace osu.Framework.Platform.SDL2
             }, true);
 
             PushDepthInfo(DepthInfo.Default);
-
-            Commands.ClearColorTarget(0, RgbaFloat.Black);
+            Clear(new ClearInfo(Colour4.Black));
 
             freeUnusedResources();
             releaseAllUsedResources();
