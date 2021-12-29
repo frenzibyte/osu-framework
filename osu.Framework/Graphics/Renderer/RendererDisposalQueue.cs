@@ -9,7 +9,7 @@ using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 namespace osu.Framework.Graphics.Renderer
 {
     /// <summary>
-    /// Helper class used to manage GL disposals in a thread-safe manner.
+    /// Helper class used to manage renderer disposals in a thread-safe manner.
     /// </summary>
     internal class RendererDisposalQueue
     {

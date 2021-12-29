@@ -76,8 +76,7 @@ namespace osu.Framework.Platform.SDL2
 
         public static bool IsEmbedded { get; internal set; }
 
-        public static int MaxTextureSize { get; private set; } = 4096; // default value is to allow roughly normal flow in cases we don't have a GL context, like headless CI.
-        public static int MaxRenderBufferSize { get; private set; } = 4096; // default value is to allow roughly normal flow in cases we don't have a GL context, like headless CI.
+        public static int MaxTextureSize { get; private set; } = 4096;
 
         /// <summary>
         /// The maximum number of texture uploads to dequeue and upload per frame.
@@ -395,7 +394,7 @@ namespace osu.Framework.Platform.SDL2
         /// <summary>
         /// Sets the last vertex batch used for drawing.
         /// <para>
-        /// This is done so that various methods that change GL state can force-draw the batch
+        /// This is done so that various methods that change renderer state can force-draw the batch
         /// before continuing with the state change.
         /// </para>
         /// </summary>

@@ -475,7 +475,7 @@ namespace osu.Framework.Platform
                         continue;
                     }
 
-                    using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
+                    using (drawMonitor.BeginCollecting(PerformanceCollectionType.Reset))
                         Vd.Reset(new System.Numerics.Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
                     postReset?.Invoke();
@@ -758,7 +758,7 @@ namespace osu.Framework.Platform
                         Window.KeymapChanged += readableKeyCombinationProvider.OnKeymapChanged;
 
                         //we need to ensure all threads have stopped before the window is closed (mainly the draw thread
-                        //to avoid GL operations running post-cleanup).
+                        //to avoid renderer operations running post-cleanup).
                         Window.Exited += threadRunner.Stop;
 
                         Window.Run();

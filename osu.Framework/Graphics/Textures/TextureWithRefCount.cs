@@ -33,7 +33,7 @@ namespace osu.Framework.Graphics.Textures
             }
         }
 
-        // The base property invokes the overridden TextureGL property, which will throw an exception if not available
+        // The base property invokes the overridden RendererTexture property, which will throw an exception if not available
         // So this property is redirected to reference the intended member
         public sealed override bool Available => base.RendererTexture.Available;
 

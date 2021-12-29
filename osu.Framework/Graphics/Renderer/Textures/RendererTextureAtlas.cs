@@ -10,7 +10,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace osu.Framework.Graphics.Renderer.Textures
 {
     /// <summary>
-    /// A TextureGL which is acting as the backing for an atlas.
+    /// A renderer texture which is acting as the backing for an atlas.
     /// </summary>
     internal class RendererTextureAtlas : RendererTextureSingle
     {

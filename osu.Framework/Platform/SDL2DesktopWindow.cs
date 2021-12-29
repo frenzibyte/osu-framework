@@ -514,13 +514,18 @@ namespace osu.Framework.Platform
 
         /// <summary>
         /// Requests that the graphics backend become the current context.
-        /// May not be required for some backends.
         /// </summary>
+        /// <remarks>
+        /// This may not be required for some backends.
+        /// </remarks>
         public void MakeCurrent() => graphicsBackend.MakeCurrent();
 
         /// <summary>
         /// Requests that the current context be cleared.
         /// </summary>
+        /// <remarks>
+        /// This may not be required for some backends.
+        /// </remarks>
         public void ClearCurrent() => graphicsBackend.ClearCurrent();
 
         private void enqueueJoystickAxisInput(JoystickAxisSource axisSource, short axisValue)
@@ -1043,7 +1048,7 @@ namespace osu.Framework.Platform
         private void updateWindowStateAndSize()
         {
             // this reset is required even on changing from one fullscreen resolution to another.
-            // if it is not included, the GL context will not get the correct size.
+            // if it is not included, the renderer will not get the correct size.
             // this is mentioned by multiple sources as an SDL issue, which seems to resolve by similar means (see https://discourse.libsdl.org/t/sdl-setwindowsize-does-not-work-in-fullscreen/20711/4).
             SDL.SDL_SetWindowBordered(SDLWindowHandle, SDL.SDL_bool.SDL_TRUE);
             SDL.SDL_SetWindowFullscreen(SDLWindowHandle, (uint)SDL.SDL_bool.SDL_FALSE);
