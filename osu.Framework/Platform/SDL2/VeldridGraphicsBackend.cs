@@ -19,6 +19,7 @@ using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
 using osuTK;
+using osuTK.Graphics;
 using SDL2;
 using Veldrid;
 using Veldrid.OpenGL;
@@ -165,15 +166,13 @@ namespace osu.Framework.Platform.SDL2
                           {Device.BackendType} CommandListDebugMarkers: {Device.Features.CommandListDebugMarkers}
                           {Device.BackendType} BufferRangeBinding: {Device.Features.BufferRangeBinding}");
 
-            DefaultFrameBuffer = Device.SwapchainFramebuffer;
-
             pipelineDescription = new GraphicsPipelineDescription
             {
                 BlendState = BlendStateDescription.SingleOverrideBlend,
                 DepthStencilState = new DepthStencilStateDescription(true, true, ComparisonKind.Less),
                 RasterizerState = new RasterizerStateDescription(FaceCullMode.Back, PolygonFillMode.Solid, FrontFace.CounterClockwise, false, false),
                 ShaderSet = new ShaderSetDescription(Array.Empty<VertexLayoutDescription>(), Array.Empty<Veldrid.Shader>()),
-                Outputs = DefaultFrameBuffer.OutputDescription,
+                Outputs = Device.SwapchainFramebuffer.OutputDescription,
             };
 
             initialiseCommands();
@@ -260,6 +259,8 @@ namespace osu.Framework.Platform.SDL2
         private static readonly GlobalStatistic<int> stat_texture_uploads_dequeued = GlobalStatistics.Get<int>("Veldrid", "Texture uploads dequeued");
         private static readonly GlobalStatistic<int> stat_texture_uploads_performed = GlobalStatistics.Get<int>("Veldrid", "Texture uploads performed");
 
+        private static Vector2 currentSize;
+
         public static void Reset(Vector2 size)
         {
             ResetId++;
@@ -295,14 +296,18 @@ namespace osu.Framework.Platform.SDL2
             scissor_state_stack.Clear();
             scissor_offset_stack.Clear();
 
-            BindFrameBuffer(DefaultFrameBuffer);
+            if (size != currentSize)
+            {
+                Device.MainSwapchain.Resize((uint)size.X, (uint)size.Y);
+                currentSize = size;
+            }
+
+            BindFrameBuffer(DefaultFrameBuffer = Device.SwapchainFramebuffer);
 
             Scissor = RectangleI.Empty;
             ScissorOffset = Vector2I.Zero;
             Viewport = RectangleI.Empty;
             Ortho = RectangleF.Empty;
-
-            Device.MainSwapchain.Resize((uint)size.X, (uint)size.Y);
 
             PushScissorState(false);
             PushViewport(new RectangleI(0, 0, (int)size.X, (int)size.Y));
