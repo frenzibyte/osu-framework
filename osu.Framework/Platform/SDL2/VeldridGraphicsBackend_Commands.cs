@@ -21,12 +21,12 @@ namespace osu.Framework.Platform.SDL2
         /// <summary>
         /// A <see cref="Fence"/> signaled when the recently submitted <see cref="Commands"/> completes execution.
         /// </summary>
-        public static Fence SubmittedCommandsCompletion { get; private set; }
+        public static Fence CompletedCommandsExecution { get; private set; }
 
         private void initialiseCommands()
         {
             globalCommands = Factory.CreateCommandList();
-            SubmittedCommandsCompletion = Factory.CreateFence(false);
+            CompletedCommandsExecution = Factory.CreateFence(false);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace osu.Framework.Platform.SDL2
             return new ValueInvokeOnDisposal<CommandList>(commands, c =>
             {
                 Commands.End();
-                Device.SubmitCommands(Commands, SubmittedCommandsCompletion);
+                Device.SubmitCommands(Commands, CompletedCommandsExecution);
 
                 Commands = null;
             });

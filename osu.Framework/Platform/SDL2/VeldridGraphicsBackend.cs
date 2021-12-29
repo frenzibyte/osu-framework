@@ -295,11 +295,11 @@ namespace osu.Framework.Platform.SDL2
             scissor_state_stack.Clear();
             scissor_offset_stack.Clear();
 
-            if (SubmittedCommandsCompletion.Signaled)
+            if (CompletedCommandsExecution.Signaled)
             {
                 staging_buffer_pool.ReleaseAllUsedResources();
                 staging_texture_pool.ReleaseAllUsedResources();
-                SubmittedCommandsCompletion.Reset();
+                CompletedCommandsExecution.Reset();
             }
 
             BindFrameBuffer(DefaultFrameBuffer);
