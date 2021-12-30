@@ -113,8 +113,7 @@ namespace osu.Framework.Platform.SDL2
 
             Viewport = actualRect;
 
-            // TODO: depth might need to be -1 to 1 rather than 0 to 1, idk
-            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, 0, 1));
+            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, Device.IsDepthRangeZeroToOne ? 0 : -1, 1));
         }
 
         /// <summary>
@@ -134,8 +133,7 @@ namespace osu.Framework.Platform.SDL2
 
             Viewport = actualRect;
 
-            // TODO: depth might need to be -1 to 1 rather than 0 to 1, idk
-            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, 0, 1));
+            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, Device.IsDepthRangeZeroToOne ? 0 : -1, 1));
         }
 
         #endregion
