@@ -53,6 +53,7 @@ namespace osu.Framework.Platform.SDL2
         #region Buffers
 
         private static DeviceBuffer boundVertexBuffer;
+        private static VertexLayoutDescription boundVertexLayout;
 
         /// <summary>
         /// Binds a vertex buffer with the specified <see cref="VertexLayoutDescription"/> to the <see cref="Commands"/> list.
@@ -67,11 +68,13 @@ namespace osu.Framework.Platform.SDL2
 
             Commands.SetVertexBuffer(0, buffer);
 
-            pipelineDescription.ShaderSet.VertexLayouts = new[] { layout };
+            if (currentShader.VertexLayout.Elements == null || currentShader.VertexLayout.Elements.Length == 0)
+                pipelineDescription.ShaderSet.VertexLayouts = new[] { layout };
 
             FrameStatistics.Increment(StatisticsCounterType.VBufBinds);
 
             boundVertexBuffer = buffer;
+            boundVertexLayout = layout;
             return true;
         }
 
@@ -249,6 +252,9 @@ namespace osu.Framework.Platform.SDL2
             FlushCurrentBatch();
 
             pipelineDescription.ShaderSet.Shaders = shader.Shaders;
+
+            if (shader.VertexLayout.Elements?.Length > 0)
+                pipelineDescription.ShaderSet.VertexLayouts = new[] { shader.VertexLayout };
 
             currentShader = shader;
         }

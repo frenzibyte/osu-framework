@@ -61,11 +61,27 @@ namespace osu.Framework.Platform.SDL2
         {
             pipelineDescription.PrimitiveTopology = topology;
 
+            validateShaderLayout();
+
             Commands.SetPipeline(fetchPipeline(pipelineDescription));
             Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, currentShader.UniformResourceSet);
             Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, boundTextureSet);
 
             Commands.DrawIndexed((uint)verticesCount, 1, (uint)verticesStart, 0, 0);
+        }
+
+        private static void validateShaderLayout()
+        {
+            var shaderVertexLayout = pipelineDescription.ShaderSet.VertexLayouts[0];
+
+            Debug.Assert(shaderVertexLayout.Elements.Length == boundVertexLayout.Elements.Length);
+
+            for (int i = 0; i < shaderVertexLayout.Elements.Length; i++)
+            {
+                Debug.Assert(shaderVertexLayout.Elements[i].Format == boundVertexLayout.Elements[i].Format &&
+                             shaderVertexLayout.Elements[i].Semantic == boundVertexLayout.Elements[i].Semantic &&
+                             shaderVertexLayout.Elements[i].Offset == boundVertexLayout.Elements[i].Offset);
+            }
         }
 
         #region Clear
