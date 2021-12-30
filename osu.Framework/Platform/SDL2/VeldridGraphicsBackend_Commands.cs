@@ -259,20 +259,6 @@ namespace osu.Framework.Platform.SDL2
             GlobalPropertyManager.Set(GlobalProperty.GammaCorrection, UsingBackbuffer);
         }
 
-        /// <summary>
-        /// Deletes a frame buffer.
-        /// </summary>
-        /// <param name="frameBuffer">The frame buffer to delete.</param>
-        internal static void DeleteFrameBuffer(Framebuffer frameBuffer)
-        {
-            if (frameBuffer == null) return;
-
-            while (frame_buffer_stack.Peek() == frameBuffer)
-                UnbindFrameBuffer(frameBuffer);
-
-            ScheduleDisposal(f => f.Dispose(), frameBuffer);
-        }
-
         #endregion
     }
 }

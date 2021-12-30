@@ -140,7 +140,24 @@ namespace osu.Framework.Graphics.Renderer.Buffers
                 Texture?.Dispose();
                 Texture = null;
 
-                Vd.DeleteFrameBuffer(frameBuffer);
+                Vd.UnbindFrameBuffer(frameBuffer);
+
+                Vd.ScheduleDisposal(f =>
+                {
+                    for (int i = 0; i < f.colorTargets.Length; i++)
+                    {
+                        f.colorTargets[i].Dispose();
+                        f.colorTargets[i] = null;
+                    }
+
+                    f.colorTargets = null;
+
+                    f.depthTarget?.Dispose();
+                    f.depthTarget = null;
+
+                    f.frameBuffer.Dispose();
+                    f.frameBuffer = null;
+                }, this);
             }
 
             isDisposed = true;
