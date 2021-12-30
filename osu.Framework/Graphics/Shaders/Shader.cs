@@ -12,6 +12,7 @@ using Veldrid.SPIRV;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 using VdShader = Veldrid.Shader;
 using static osu.Framework.Threading.ScheduledDelegate;
+using Encoding = System.Text.Encoding;
 
 namespace osu.Framework.Graphics.Shaders
 {
@@ -40,6 +41,8 @@ namespace osu.Framework.Graphics.Shaders
         internal DeviceBuffer UniformBuffer { get; private set; }
 
         internal ResourceSet UniformResourceSet { get; private set; }
+
+        internal VertexLayoutDescription VertexLayout { get; private set; }
 
         internal Shader(string name, List<ShaderPart> parts)
         {
@@ -124,14 +127,43 @@ namespace osu.Framework.Graphics.Shaders
             var descriptions = new List<ShaderDescription>();
 
             foreach (var part in parts)
-                descriptions.Add(new ShaderDescription(part.Type, part.GetData(uniformInfo), "main"));
+                descriptions.Add(new ShaderDescription(part.Type, part.GetData(uniformInfo), Vd.Device.BackendType == GraphicsBackend.Metal ? "main0" : "main"));
 
             var vertex = descriptions.Single(s => s.Stage == ShaderStages.Vertex);
             var fragment = descriptions.Single(s => s.Stage == ShaderStages.Fragment);
 
             try
             {
-                Shaders = Vd.Factory.CreateFromSpirv(vertex, fragment, new CrossCompileOptions(Vd.Device.IsDepthRangeZeroToOne, false));
+                if (Vd.Device.BackendType == GraphicsBackend.Vulkan)
+                {
+                    vertex.ShaderBytes = ensureSpirv(vertex);
+                    fragment.ShaderBytes = ensureSpirv(fragment);
+                }
+                else
+                {
+                    var result = SpirvCompilation.CompileVertexFragment(vertex.ShaderBytes, fragment.ShaderBytes, getCompilationTarget(Vd.Device.BackendType), new CrossCompileOptions(Vd.Device.IsDepthRangeZeroToOne, false));
+
+                    switch (Vd.Device.BackendType)
+                    {
+                        case GraphicsBackend.Direct3D11:
+                        case GraphicsBackend.OpenGL:
+                        case GraphicsBackend.OpenGLES:
+                            vertex.ShaderBytes = Encoding.ASCII.GetBytes(result.VertexShader);
+                            fragment.ShaderBytes = Encoding.ASCII.GetBytes(result.FragmentShader);
+                            break;
+
+                        case GraphicsBackend.Metal:
+                            vertex.EntryPoint = "main0";
+                            vertex.ShaderBytes = Encoding.UTF8.GetBytes(result.VertexShader);
+                            fragment.EntryPoint = "main0";
+                            fragment.ShaderBytes = Encoding.UTF8.GetBytes(result.FragmentShader);
+                            break;
+                    }
+
+                    VertexLayout = new VertexLayoutDescription(result.Reflection.VertexElements);
+                }
+
+                Shaders = new[] { Vd.Factory.CreateShader(vertex), Vd.Factory.CreateShader(fragment) };
             }
             catch (SpirvCompilationException sce)
             {
@@ -284,6 +316,35 @@ namespace osu.Framework.Graphics.Shaders
         }
 
         #endregion
+
+        private static CrossCompileTarget getCompilationTarget(GraphicsBackend backend)
+        {
+            switch (backend)
+            {
+                case GraphicsBackend.Direct3D11:
+                    return CrossCompileTarget.HLSL;
+
+                case GraphicsBackend.OpenGL:
+                    return CrossCompileTarget.GLSL;
+
+                case GraphicsBackend.Metal:
+                    return CrossCompileTarget.MSL;
+
+                case GraphicsBackend.OpenGLES:
+                    return CrossCompileTarget.ESSL;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(backend), backend, null);
+            }
+        }
+
+        private static byte[] ensureSpirv(ShaderDescription description)
+        {
+            if (description.ShaderBytes[0] == 3 && description.ShaderBytes[1] == 2 && description.ShaderBytes[2] == 35 && description.ShaderBytes[3] == 7)
+                return description.ShaderBytes;
+
+            return SpirvCompilation.CompileGlslToSpirv(Encoding.UTF8.GetString(description.ShaderBytes), null, description.Stage, new GlslCompileOptions(description.Debug)).SpirvBytes;
+        }
 
         public class ShaderCompilationFailedException : Exception
         {
