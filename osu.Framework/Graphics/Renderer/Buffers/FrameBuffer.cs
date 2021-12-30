@@ -7,7 +7,6 @@ using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Textures;
 using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 using Vector2 = osuTK.Vector2;
-using Texture = Veldrid.Texture;
 
 namespace osu.Framework.Graphics.Renderer.Buffers
 {
@@ -22,9 +21,6 @@ namespace osu.Framework.Graphics.Renderer.Buffers
         private readonly PixelFormat[] colorFormats;
         private readonly PixelFormat? depthFormat;
         private readonly FilteringMode filteringMode;
-
-        private Texture[] colorTargets;
-        private Texture depthTarget;
 
         public FrameBuffer(PixelFormat[] colorFormats = null, PixelFormat? depthFormat = null, FilteringMode filteringMode = FilteringMode.Linear)
         {
@@ -61,35 +57,32 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
         private void initialise()
         {
-            setupRenderTargets();
+            var description = new FramebufferDescription();
 
-            frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(depthTarget, colorTargets));
-
-            Vd.BindFrameBuffer(frameBuffer);
-            Vd.BindDefaultTexture();
-        }
-
-        private void setupRenderTargets()
-        {
             Texture = new FrameBufferTexture(Size, filteringMode);
 
-            colorTargets = new Texture[1 + (colorFormats?.Length ?? 0)];
-            colorTargets[0] = Texture.TextureResourceSet.Texture;
+            description.ColorTargets = new FramebufferAttachmentDescription[1 + (colorFormats?.Length ?? 0)];
+            description.ColorTargets[0] = new FramebufferAttachmentDescription(Texture.TextureResourceSet.Texture, 0);
 
             if (colorFormats != null)
             {
                 for (int i = 0; i < colorFormats.Length; i++)
                 {
-                    var description = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, colorFormats[i], TextureUsage.RenderTarget);
-                    colorTargets[1 + i] = Vd.Factory.CreateTexture(description);
+                    var targetDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, colorFormats[i], TextureUsage.RenderTarget);
+                    description.ColorTargets[1 + i] = new FramebufferAttachmentDescription(Vd.Factory.CreateTexture(targetDescription), 0);
                 }
             }
 
             if (depthFormat != null)
             {
-                var description = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, depthFormat.Value, TextureUsage.DepthStencil);
-                depthTarget = Vd.Factory.CreateTexture(description);
+                var targetDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, depthFormat.Value, TextureUsage.DepthStencil);
+                description.DepthTarget = new FramebufferAttachmentDescription(Vd.Factory.CreateTexture(targetDescription), 0);
             }
+
+            frameBuffer = Vd.Factory.CreateFramebuffer(description);
+
+            Vd.BindFrameBuffer(frameBuffer);
+            Vd.BindDefaultTexture();
         }
 
         /// <summary>
@@ -144,16 +137,10 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
                 Vd.ScheduleDisposal(f =>
                 {
-                    for (int i = 0; i < f.colorTargets.Length; i++)
-                    {
-                        f.colorTargets[i].Dispose();
-                        f.colorTargets[i] = null;
-                    }
+                    for (int i = 0; i < f.frameBuffer.ColorTargets.Count; i++)
+                        f.frameBuffer.ColorTargets[i].Target.Dispose();
 
-                    f.colorTargets = null;
-
-                    f.depthTarget?.Dispose();
-                    f.depthTarget = null;
+                    f.frameBuffer.DepthTarget?.Target.Dispose();
 
                     f.frameBuffer.Dispose();
                     f.frameBuffer = null;
