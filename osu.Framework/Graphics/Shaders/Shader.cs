@@ -131,7 +131,7 @@ namespace osu.Framework.Graphics.Shaders
 
             try
             {
-                Shaders = Vd.Factory.CreateFromSpirv(vertex, fragment, new CrossCompileOptions(Vd.Device.IsDepthRangeZeroToOne, !Vd.Device.IsClipSpaceYInverted));
+                Shaders = Vd.Factory.CreateFromSpirv(vertex, fragment, new CrossCompileOptions(Vd.Device.IsDepthRangeZeroToOne, false));
             }
             catch (SpirvCompilationException sce)
             {

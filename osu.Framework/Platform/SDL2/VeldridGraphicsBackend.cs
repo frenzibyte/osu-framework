@@ -532,7 +532,8 @@ namespace osu.Framework.Platform.SDL2
 
         private static void setProjectionMatrix(RectangleF rectangle)
         {
-            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(rectangle.X, rectangle.X + rectangle.Width, rectangle.Y, rectangle.Y + rectangle.Height, -1f, 1f);
+            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(rectangle.Left, rectangle.Right, rectangle.Bottom, rectangle.Top, Device.IsDepthRangeZeroToOne ? 0f : -1f, 1f);
+
             GlobalPropertyManager.Set(GlobalProperty.ProjMatrix, ProjectionMatrix);
         }
 
