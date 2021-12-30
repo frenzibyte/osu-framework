@@ -204,7 +204,7 @@ namespace osu.Framework.Platform.SDL2
                     return GraphicsDevice.CreateMetal(options, swapchainDescription);
 
                 case RuntimeInfo.Platform.Linux:
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
 
                     IntPtr context = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
                     if (context == IntPtr.Zero)
