@@ -7,9 +7,6 @@ using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
 
 namespace osu.Framework.Platform.SDL2
 {
-    /// <summary>
-    /// A staging <see cref="Texture"/> pool for temporary consumption.
-    /// </summary>
     internal class VeldridStagingTexturePool : VeldridPool<Texture>
     {
         public VeldridStagingTexturePool()
