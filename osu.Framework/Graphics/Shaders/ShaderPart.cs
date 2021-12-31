@@ -15,6 +15,8 @@ namespace osu.Framework.Graphics.Shaders
 {
     internal class ShaderPart
     {
+        internal const int BACKBUFFER_ATTRIBUTE_OFFSET = 1;
+
         internal string Name { get; }
 
         internal ShaderStages Type { get; }
@@ -97,9 +99,6 @@ namespace osu.Framework.Graphics.Shaders
 
             string backbufferCode = loadFile(manager.LoadRaw("sh_Backbuffer_Internal.h"), false, ShaderStages.Vertex, manager, uniforms);
 
-            Match backbufferLocationMatch = SHADER_ATTRIBUTE_LOCATION_REGEX.Match(backbufferCode);
-            int backbufferAttributeOffset = -int.Parse(backbufferLocationMatch.Groups[2].Value);
-
             backbufferCode = backbufferCode.Replace("{{ real_main }}", realMainName);
             code = Regex.Replace(code, @"void main\((.*)\)", $"void {realMainName}()") + backbufferCode + '\n';
 
@@ -108,7 +107,7 @@ namespace osu.Framework.Graphics.Shaders
             while (attributeLocationMatch.Success)
             {
                 int.TryParse(attributeLocationMatch.Groups[2].Value, out int location);
-                code = code.Replace(attributeLocationMatch.Value, SHADER_ATTRIBUTE_LOCATION_REGEX.Replace(attributeLocationMatch.Value, m => m.Groups[1] + $"{location + backbufferAttributeOffset}" + m.Groups[3]));
+                code = code.Replace(attributeLocationMatch.Value, SHADER_ATTRIBUTE_LOCATION_REGEX.Replace(attributeLocationMatch.Value, m => m.Groups[1] + $"{location + BACKBUFFER_ATTRIBUTE_OFFSET}" + m.Groups[3]));
 
                 attributeLocationMatch = attributeLocationMatch.NextMatch();
             }

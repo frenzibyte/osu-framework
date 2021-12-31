@@ -18,7 +18,8 @@ namespace osu.Framework.Graphics.Shaders
 {
     public class Shader : IShader, IDisposable
     {
-        private readonly string name;
+        public readonly string Name;
+
         private readonly List<ShaderPart> parts;
 
         private readonly ScheduledDelegate shaderCompileDelegate;
@@ -46,8 +47,9 @@ namespace osu.Framework.Graphics.Shaders
 
         internal Shader(string name, List<ShaderPart> parts)
         {
-            this.name = name;
             this.parts = parts;
+
+            Name = name;
 
             Vd.ScheduleExpensiveOperation(shaderCompileDelegate = new ScheduledDelegate(compile));
         }
@@ -167,7 +169,7 @@ namespace osu.Framework.Graphics.Shaders
             }
             catch (SpirvCompilationException sce)
             {
-                throw new ShaderCompilationFailedException(name, sce.Message);
+                throw new ShaderCompilationFailedException(Name, sce.Message);
             }
         }
 
@@ -239,7 +241,7 @@ namespace osu.Framework.Graphics.Shaders
             where T : struct, IEquatable<T>
         {
             int uniformSize = Marshal.SizeOf<T>();
-            int baseAlignment = 0;
+            int baseAlignment;
 
             // see https://www.khronos.org/registry/OpenGL/specs/gl/glspec45.core.pdf#page=159.
             if (typeof(T) == typeof(Vector3))
@@ -272,7 +274,7 @@ namespace osu.Framework.Graphics.Shaders
             return new Uniform<T>(shader, name, location);
         }
 
-        public override string ToString() => $@"{name} Shader (Compiled: {Shaders != null})";
+        public override string ToString() => $@"{Name} Shader (Compiled: {Shaders != null})";
 
         #region IDisposable Support
 

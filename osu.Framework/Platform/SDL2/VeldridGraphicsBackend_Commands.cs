@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Renderer;
@@ -72,15 +73,20 @@ namespace osu.Framework.Platform.SDL2
 
         private static void validateShaderLayout()
         {
-            var shaderVertexLayout = pipelineDescription.ShaderSet.VertexLayouts[0];
+            var vertexShaderLayout = pipelineDescription.ShaderSet.VertexLayouts.Single();
 
-            Debug.Assert(shaderVertexLayout.Elements.Length == boundVertexLayout.Elements.Length);
+            if (vertexShaderLayout.Elements.Length != boundVertexLayout.Elements.Length)
+                throw new VertexLayoutMismatchException(currentShader.Name, vertexShaderLayout, boundVertexLayout, $"Length mismatch ({vertexShaderLayout.Elements.Length} != {boundVertexLayout.Elements.Length}).");
 
-            for (int i = 0; i < shaderVertexLayout.Elements.Length; i++)
+            for (int i = 0; i < vertexShaderLayout.Elements.Length; i++)
             {
-                Debug.Assert(shaderVertexLayout.Elements[i].Format == boundVertexLayout.Elements[i].Format &&
-                             shaderVertexLayout.Elements[i].Semantic == boundVertexLayout.Elements[i].Semantic &&
-                             shaderVertexLayout.Elements[i].Offset == boundVertexLayout.Elements[i].Offset);
+                var shaderElement = vertexShaderLayout.Elements[i];
+                var bufferElement = boundVertexLayout.Elements[i];
+
+                if (shaderElement.Format != bufferElement.Format)
+                {
+                    throw new VertexLayoutMismatchException(currentShader.Name, vertexShaderLayout, boundVertexLayout, $"Element {i - ShaderPart.BACKBUFFER_ATTRIBUTE_OFFSET} in vertex shader with format ({shaderElement.Format}) does not match corresponding element in vertex buffer layout ({bufferElement.Format}).");
+                }
             }
         }
 
@@ -260,5 +266,15 @@ namespace osu.Framework.Platform.SDL2
         }
 
         #endregion
+
+        private class VertexLayoutMismatchException : Exception
+        {
+            public VertexLayoutMismatchException(string shaderName, VertexLayoutDescription shaderLayout, VertexLayoutDescription bufferLayout, string message)
+                : base($"Vertex input layout mismatch between bound shader '{shaderName}' ({getDisplayString(shaderLayout)}) and bound vertex buffer ({getDisplayString(bufferLayout)}): {message}")
+            {
+            }
+
+            private static string getDisplayString(VertexLayoutDescription layout) => string.Join(", ", layout.Elements.Skip(ShaderPart.BACKBUFFER_ATTRIBUTE_OFFSET).Select(l => l.Format));
+        }
     }
 }
