@@ -90,12 +90,5 @@ namespace osu.Framework.Platform.SDL2
 
             statAvailableCount.Value = AvailableResources.Count;
         }
-
-        /// <summary>
-        /// Invoked when a used device resource will be marked back as available.
-        /// </summary>
-        protected virtual void OnResourceRelease(T resource)
-        {
-        }
     }
 }
