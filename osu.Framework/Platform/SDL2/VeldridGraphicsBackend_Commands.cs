@@ -19,15 +19,9 @@ namespace osu.Framework.Platform.SDL2
 
         public static CommandList Commands { get; private set; }
 
-        /// <summary>
-        /// A <see cref="Fence"/> signaled when the recently submitted <see cref="Commands"/> completes execution.
-        /// </summary>
-        public static Fence CompletedCommandsExecution { get; private set; }
-
         private void initialiseCommands()
         {
             globalCommands = Factory.CreateCommandList();
-            CompletedCommandsExecution = Factory.CreateFence(false);
         }
 
         /// <summary>
@@ -52,7 +46,7 @@ namespace osu.Framework.Platform.SDL2
             return new ValueInvokeOnDisposal<CommandList>(commands, c =>
             {
                 Commands.End();
-                Device.SubmitCommands(Commands, CompletedCommandsExecution);
+                Device.SubmitCommands(Commands, commands_execution_fence_pool.Get());
 
                 Commands = null;
             });

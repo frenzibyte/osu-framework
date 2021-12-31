@@ -48,7 +48,7 @@ namespace osu.Framework.Platform.SDL2
         /// The interval (in frames) before checking whether device resources should be freed.
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
-        internal const int RESOURCES_FREE_CHECK_INTERVAL = 300;
+        private const int resources_free_check_interval = 300;
 
         private SDL2DesktopWindow sdlWindow;
 
@@ -109,6 +109,7 @@ namespace osu.Framework.Platform.SDL2
 
         private static readonly List<IVertexBuffer> vertex_buffers_in_use = new List<IVertexBuffer>();
 
+        private static readonly VeldridFencePool commands_execution_fence_pool = new VeldridFencePool();
         private static readonly VeldridStagingBufferPool staging_buffer_pool = new VeldridStagingBufferPool();
         private static readonly VeldridStagingTexturePool staging_texture_pool = new VeldridStagingTexturePool();
 
@@ -295,6 +296,7 @@ namespace osu.Framework.Platform.SDL2
 
             foreach (var b in batch_reset_list)
                 b.ResetCounters();
+
             batch_reset_list.Clear();
 
             viewport_stack.Clear();
@@ -337,7 +339,7 @@ namespace osu.Framework.Platform.SDL2
             Clear(new ClearInfo(Colour4.Black));
 
             freeUnusedResources();
-            releaseAllUsedResources();
+            releaseUsedResources();
 
             stat_texture_uploads_queued.Value = texture_upload_queue.Count;
             stat_texture_uploads_dequeued.Value = 0;
@@ -430,32 +432,32 @@ namespace osu.Framework.Platform.SDL2
         /// </summary>
         private static void freeUnusedResources()
         {
-            if (ResetId % RESOURCES_FREE_CHECK_INTERVAL != 0)
+            if (ResetId % resources_free_check_interval != 0)
                 return;
 
             foreach (var buf in vertex_buffers_in_use)
             {
-                if (buf.InUse && ResetId - buf.LastUseResetId > RESOURCES_FREE_CHECK_INTERVAL)
+                if (buf.InUse && ResetId - buf.LastUseResetId > resources_free_check_interval)
                     buf.Free();
             }
 
             vertex_buffers_in_use.RemoveAll(b => !b.InUse);
 
-            staging_buffer_pool.FreeUnusedResources();
-            staging_texture_pool.FreeUnusedResources();
+            commands_execution_fence_pool.FreeUnusedResources(resources_free_check_interval);
+            staging_buffer_pool.FreeUnusedResources(resources_free_check_interval);
+            staging_texture_pool.FreeUnusedResources(resources_free_check_interval);
         }
 
         /// <summary>
         /// Releases resources marked as used to become available for subsequent consumption.
         /// </summary>
-        private static void releaseAllUsedResources()
+        private static void releaseUsedResources()
         {
-            // recent submitted command list hasn't completed execution yet, some commands may be still relying on the used resources.
-            if (!CompletedCommandsExecution.Signaled)
-                return;
+            ulong latestSignaledUseID = commands_execution_fence_pool.LatestSignaledUseID;
 
-            staging_buffer_pool.ReleaseAllUsedResources();
-            staging_texture_pool.ReleaseAllUsedResources();
+            commands_execution_fence_pool.ReleaseUsedResources(latestSignaledUseID);
+            staging_buffer_pool.ReleaseUsedResources(latestSignaledUseID);
+            staging_texture_pool.ReleaseUsedResources(latestSignaledUseID);
         }
 
         private static readonly Stack<Vector2I> scissor_offset_stack = new Stack<Vector2I>();
