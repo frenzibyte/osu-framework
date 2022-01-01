@@ -64,12 +64,15 @@ namespace osu.Framework.Graphics.Renderer.Pooling
                 if (index >= 0)
                     AvailableResources[index] = (Vd.ResetId, resource);
                 else
+                {
                     AvailableResources.Add((Vd.ResetId, resource));
+                    statAvailableCount.Value++;
+                }
             }
             else
             {
-                AvailableResources.Remove((useId, resource));
-                statAvailableCount.Value--;
+                if (AvailableResources.Remove((useId, resource)))
+                    statAvailableCount.Value--;
 
                 UsedResources.Add((Vd.ResetId, resource));
                 statUsedCount.Value++;
