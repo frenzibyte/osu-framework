@@ -36,7 +36,7 @@ using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osuTK.Input;
 using Container = osu.Framework.Graphics.Containers.Container;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {

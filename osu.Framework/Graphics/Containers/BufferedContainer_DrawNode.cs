@@ -11,7 +11,7 @@ using System;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Utils;
 using PixelFormat = Veldrid.PixelFormat;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Containers
 {

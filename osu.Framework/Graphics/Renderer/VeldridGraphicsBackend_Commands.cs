@@ -7,11 +7,10 @@ using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer;
 using osu.Framework.Graphics.Shaders;
 using Veldrid;
 
-namespace osu.Framework.Platform.SDL2
+namespace osu.Framework.Graphics.Renderer
 {
     public partial class VeldridGraphicsBackend
     {

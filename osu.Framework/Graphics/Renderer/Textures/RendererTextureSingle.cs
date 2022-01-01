@@ -14,14 +14,13 @@ using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Lists;
 using osu.Framework.Platform;
-using osu.Framework.Platform.SDL2;
 using osuTK;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
 using Texture = Veldrid.Texture;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Renderer.Textures
 {

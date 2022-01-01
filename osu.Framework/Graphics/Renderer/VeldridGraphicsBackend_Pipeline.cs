@@ -3,12 +3,10 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using osu.Framework.Graphics;
-using osu.Framework.Graphics.Renderer;
 using osu.Framework.Statistics;
 using Veldrid;
 
-namespace osu.Framework.Platform.SDL2
+namespace osu.Framework.Graphics.Renderer
 {
     public partial class VeldridGraphicsBackend
     {

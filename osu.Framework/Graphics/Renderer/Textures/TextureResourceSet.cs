@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Veldrid;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Renderer.Textures
 {

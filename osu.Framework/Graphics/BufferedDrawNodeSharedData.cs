@@ -5,7 +5,7 @@ using System;
 using osu.Framework.Graphics.Renderer.Buffers;
 using osu.Framework.Graphics.Renderer.Textures;
 using Veldrid;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {

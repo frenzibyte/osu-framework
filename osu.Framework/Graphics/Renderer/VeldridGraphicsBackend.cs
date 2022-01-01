@@ -7,14 +7,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using osu.Framework.Development;
-using osu.Framework.Graphics;
 using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.Renderer;
-using osu.Framework.Graphics.Renderer.Buffers;
-using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Renderer.Buffers;
+using osu.Framework.Graphics.Renderer.Pooling;
+using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Logging;
+using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
@@ -26,7 +26,7 @@ using static osu.Framework.Threading.ScheduledDelegate;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
 using Vector2 = System.Numerics.Vector2;
 
-namespace osu.Framework.Platform.SDL2
+namespace osu.Framework.Graphics.Renderer
 {
     /// <summary>
     /// Implementation of that uses Veldrid bindings.
@@ -109,9 +109,9 @@ namespace osu.Framework.Platform.SDL2
 
         private static readonly List<IVertexBuffer> vertex_buffers_in_use = new List<IVertexBuffer>();
 
-        private static readonly VeldridFencePool commands_execution_fence_pool = new VeldridFencePool();
-        private static readonly VeldridStagingBufferPool staging_buffer_pool = new VeldridStagingBufferPool();
-        private static readonly VeldridStagingTexturePool staging_texture_pool = new VeldridStagingTexturePool();
+        private static readonly RendererFencePool commands_execution_fence_pool = new RendererFencePool();
+        private static readonly RendererStagingBufferPool staging_buffer_pool = new RendererStagingBufferPool();
+        private static readonly RendererStagingTexturePool staging_texture_pool = new RendererStagingTexturePool();
 
         public static bool IsInitialized { get; private set; }
 

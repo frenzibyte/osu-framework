@@ -7,7 +7,7 @@ using osuTK;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Textures;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Renderer.Textures
 {

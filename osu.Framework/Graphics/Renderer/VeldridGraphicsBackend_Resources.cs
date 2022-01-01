@@ -14,7 +14,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using Shader = osu.Framework.Graphics.Shaders.Shader;
 
-namespace osu.Framework.Platform.SDL2
+namespace osu.Framework.Graphics.Renderer
 {
     public partial class VeldridGraphicsBackend
     {
@@ -182,9 +182,10 @@ namespace osu.Framework.Platform.SDL2
             var staging = staging_texture_pool.Get(width, height, texture.Format);
 
             fixed (T* ptr = data)
-                Device.UpdateTexture(staging, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), 0, 0, 0, (uint)width, (uint)height, 1, 0, 0);
+                Device.UpdateTexture(staging.Texture, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), staging.X, staging.Y, 0, (uint)width, (uint)height, 1, 0, 0);
 
-            Commands.CopyTexture(staging, 0, 0, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
+            // Logger.Log($"Blitting from {x}x{y} to {width}x{height} textural data at level {level} to a texture with {texture.Width}x{texture.Height} dimensions.", LoggingTarget.Runtime, LogLevel.Important);
+            Commands.CopyTexture(staging.Texture, staging.X, staging.Y, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
         }
 
         private static readonly Dictionary<int, ResourceLayout> texture_layouts = new Dictionary<int, ResourceLayout>();

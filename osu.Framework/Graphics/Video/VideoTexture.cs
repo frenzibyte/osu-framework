@@ -8,7 +8,7 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using Veldrid;
 using Texture = Veldrid.Texture;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Video
 {

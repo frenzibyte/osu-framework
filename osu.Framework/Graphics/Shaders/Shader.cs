@@ -9,7 +9,7 @@ using osu.Framework.Threading;
 using osuTK;
 using Veldrid;
 using Veldrid.SPIRV;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 using VdShader = Veldrid.Shader;
 using static osu.Framework.Threading.ScheduledDelegate;
 using Encoding = System.Text.Encoding;

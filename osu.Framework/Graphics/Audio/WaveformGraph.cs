@@ -19,7 +19,7 @@ using osu.Framework.Utils;
 using osu.Framework.Threading;
 using osuTK.Graphics;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Audio
 {

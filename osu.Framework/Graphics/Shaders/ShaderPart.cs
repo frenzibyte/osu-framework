@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Veldrid;
 using Encoding = System.Text.Encoding;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shaders
 {

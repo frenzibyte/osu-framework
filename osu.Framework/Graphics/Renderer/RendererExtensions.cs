@@ -2,12 +2,11 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics;
 using osu.Framework.Graphics.Renderer.Textures;
 using Veldrid;
 using BlendStateDescription = Veldrid.BlendStateDescription;
 
-namespace osu.Framework.Platform.SDL2
+namespace osu.Framework.Graphics.Renderer
 {
     public static class VeldridExtensions
     {

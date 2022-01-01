@@ -13,7 +13,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Shaders;
 using Veldrid;
 using Texture = osu.Framework.Graphics.Textures.Texture;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Lines
 {

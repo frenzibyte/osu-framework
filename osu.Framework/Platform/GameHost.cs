@@ -41,7 +41,7 @@ using SixLabors.ImageSharp.Memory;
 using Veldrid;
 using Image = SixLabors.ImageSharp.Image;
 using Size = System.Drawing.Size;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Platform
 {

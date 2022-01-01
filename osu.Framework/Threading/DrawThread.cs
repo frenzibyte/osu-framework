@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using osu.Framework.Development;
 using osu.Framework.Platform;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Threading
 {

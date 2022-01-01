@@ -3,11 +3,11 @@
 
 using System;
 using Veldrid;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
-namespace osu.Framework.Platform.SDL2
+namespace osu.Framework.Graphics.Renderer.Pooling
 {
-    internal class VeldridFencePool : VeldridPool<Fence>
+    internal class RendererFencePool : RendererPool<Fence>
     {
         /// <summary>
         /// The latest use ID of the used fences that have been signaled.
@@ -16,31 +16,29 @@ namespace osu.Framework.Platform.SDL2
         {
             get
             {
-                ulong latestUseID = 0;
+                ulong id = 0;
 
                 foreach (var used in UsedResources)
                 {
                     if (used.resource.Signaled)
-                        latestUseID = Math.Max(used.useId, latestUseID);
+                        id = Math.Max(used.useId, id);
                 }
 
-                return latestUseID;
+                return id;
             }
         }
 
-        public VeldridFencePool()
+        public RendererFencePool()
             : base("Synchronisation fences")
         {
         }
 
-        /// <summary>
-        /// Returns a synchronisation fence from the pool.
-        /// </summary>
-        public Fence Get()
+        protected override bool CanReuseResource(Fence fence)
         {
-            var fence = Get(_ => true, () => Vd.Factory.CreateFence(false));
             fence.Reset();
-            return fence;
+            return true;
         }
+
+        protected override Fence CreateResource() => Vd.Factory.CreateFence(false);
     }
 }

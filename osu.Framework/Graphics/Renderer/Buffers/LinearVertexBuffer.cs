@@ -4,7 +4,7 @@
 using System;
 using osu.Framework.Graphics.Renderer.Vertices;
 using Veldrid;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Renderer.Buffers
 {

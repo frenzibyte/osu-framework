@@ -13,7 +13,7 @@ using System;
 using System.Runtime.CompilerServices;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Renderer.Vertices;
-using Vd = osu.Framework.Platform.SDL2.VeldridGraphicsBackend;
+using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Containers
 {

@@ -38,6 +38,17 @@ namespace osu.Framework.Graphics.Primitives
             Height = height;
         }
 
+        /// <summary>Initializes a new instance of the <see cref="RectangleI"/> class with the specified location and size.</summary>
+        /// <param name="size">A <see cref="Vector2I"/> that represents the width and height of the rectangular region. </param>
+        /// <param name="location">A <see cref="Vector2I"/> that represents the upper-left corner of the rectangular region. </param>
+        public RectangleI(Vector2I location, Vector2I size)
+        {
+            X = location.X;
+            Y = location.Y;
+            Width = size.X;
+            Height = size.Y;
+        }
+
         /// <summary>Gets or sets the coordinates of the upper-left corner of this <see cref="RectangleI"/> structure.</summary>
         /// <returns>A <see cref="osuTK.Vector2"/> that represents the upper-left corner of this <see cref="RectangleI"/> structure.</returns>
         /// <filterpriority>1</filterpriority>
@@ -229,6 +240,16 @@ namespace osu.Framework.Graphics.Primitives
         /// <param name="x">The amount to offset the location horizontally. </param>
         /// <filterpriority>1</filterpriority>
         public RectangleI Offset(int x, int y) => new RectangleI(X + x, Y + y, Width, Height);
+
+        /// <summary>
+        /// Constructs a <see cref="RectangleI"/> from left, top, right, and bottom coordinates.
+        /// </summary>
+        /// <param name="left">The left coordinate.</param>
+        /// <param name="top">The top coordinate.</param>
+        /// <param name="right">The right coordinate.</param>
+        /// <param name="bottom">The bottom coordinate.</param>
+        /// <returns>The <see cref="RectangleI"/>.</returns>
+        public static RectangleI FromLTRB(int left, int top, int right, int bottom) => new RectangleI(left, top, right - left, bottom - top);
 
         public static implicit operator RectangleI(RectangleF r) => r.AABB;
 
