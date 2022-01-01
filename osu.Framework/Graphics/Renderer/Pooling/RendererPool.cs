@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using osu.Framework.Logging;
 using osu.Framework.Statistics;
 using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
@@ -102,11 +101,17 @@ namespace osu.Framework.Graphics.Renderer.Pooling
 
         public virtual void ReleaseUsedResources(ulong untilId)
         {
+            if (typeof(IRendererPool).IsAssignableFrom(typeof(TResource)))
+            {
+                foreach (var available in AvailableResources)
+                    ((IRendererPool)available.resource).ReleaseUsedResources(untilId);
+
+                foreach (var used in UsedResources)
+                    ((IRendererPool)used.resource).ReleaseUsedResources(untilId);
+            }
+
             int released = UsedResources.RemoveAll(used =>
             {
-                if (used.resource is IRendererPool pool)
-                    pool.ReleaseUsedResources(untilId);
-
                 if (used.useId <= untilId)
                 {
                     AvailableResources.Add(used);
