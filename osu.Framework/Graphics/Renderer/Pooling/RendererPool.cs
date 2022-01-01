@@ -16,11 +16,20 @@ namespace osu.Framework.Graphics.Renderer.Pooling
     public abstract class RendererPool<TRequest, TResource> : IRendererPool
         where TRequest : struct
     {
+        /// <summary>
+        /// The list of available or partially-used <typeparamref name="TResource"/>s for use in pool.
+        /// </summary>
         protected readonly List<(ulong useId, TResource resource)> AvailableResources = new List<(ulong, TResource)>();
+
+        /// <summary>
+        /// The list of fully used <typeparamref name="TResource"/>s.
+        /// </summary>
         protected readonly List<(ulong useId, TResource resource)> UsedResources = new List<(ulong, TResource)>();
 
         private readonly GlobalStatistic<int> statAvailableCount;
         private readonly GlobalStatistic<int> statUsedCount;
+
+        public bool HasResources => AvailableResources.Count > 0 || UsedResources.Count > 0;
 
         /// <summary>
         /// Creates a new <see cref="RendererPool{TRequest, TResource}"/>.
@@ -46,7 +55,7 @@ namespace osu.Framework.Graphics.Renderer.Pooling
             {
                 var available = AvailableResources[i];
 
-                if (CanReuseResource(request, available.resource))
+                if (CanUseResource(request, available.resource))
                 {
                     useId = available.useId;
                     resource = available.resource;
@@ -81,11 +90,11 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         }
 
         /// <summary>
-        /// Whether an existing <typeparamref name="TResource"/> can be reused for the specified <typeparamref name="TRequest"/>.
+        /// Whether an existing <typeparamref name="TResource"/> can be used for the specified <typeparamref name="TRequest"/>.
         /// </summary>
         /// <param name="request">The <typeparamref name="TRequest"/> to reuse the resource for.</param>
         /// <param name="resource">The <typeparamref name="TResource"/> to reuse.</param>
-        protected virtual bool CanReuseResource(TRequest request, TResource resource) => true;
+        protected virtual bool CanUseResource(TRequest request, TResource resource) => true;
 
         /// <summary>
         /// Whether a <typeparamref name="TResource"/> can still be used for subsequent requests.
@@ -129,21 +138,22 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         {
             int freed = AvailableResources.RemoveAll(available =>
             {
+                if (Vd.ResetId - available.useId <= resourceFreeInterval)
+                    return false;
+
                 if (available.resource is IRendererPool pool)
+                {
                     pool.FreeUnusedResources(resourceFreeInterval);
 
-                if (Vd.ResetId - available.useId > resourceFreeInterval)
-                {
-                    if (available.resource is IDisposable disposableResource)
-                        disposableResource.Dispose();
-
-                    return true;
+                    if (pool.HasResources)
+                        return false;
                 }
 
-                return false;
-            });
+                if (available.resource is IDisposable disposableResource)
+                    disposableResource.Dispose();
 
-            Logger.Log($"Frame #{Vd.ResetId}: Freed {freed} of {statAvailableCount.Name.ToLower()}");
+                return true;
+            });
 
             statAvailableCount.Value -= freed;
             return freed > 0;
@@ -163,9 +173,9 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         /// Whether an existing <typeparamref name="TResource"/> can be reused.
         /// </summary>
         /// <param name="resource">The <typeparamref name="TResource"/> to reuse.</param>
-        protected virtual bool CanReuseResource(TResource resource) => base.CanReuseResource(default, resource);
+        protected virtual bool CanUseResource(TResource resource) => base.CanUseResource(default, resource);
 
-        protected sealed override bool CanReuseResource(EmptyRequest _, TResource resource) => CanReuseResource(resource);
+        protected sealed override bool CanUseResource(EmptyRequest _, TResource resource) => CanUseResource(resource);
 
         /// <summary>
         /// Creates a new <typeparamref name="TResource"/>.

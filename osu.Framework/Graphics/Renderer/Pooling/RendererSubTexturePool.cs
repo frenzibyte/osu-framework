@@ -47,7 +47,7 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         /// <param name="height">The texture region height.</param>
         public TextureRegion Get(int width, int height) => base.Get(new Request { Width = width, Height = height });
 
-        protected override bool CanReuseResource(Request request, TextureRegion region) => region.Width >= request.Width && region.Height >= request.Height;
+        protected override bool CanUseResource(Request request, TextureRegion region) => region.Width >= request.Width && region.Height >= request.Height;
 
         protected override TextureRegion CreateResource(Request request)
         {

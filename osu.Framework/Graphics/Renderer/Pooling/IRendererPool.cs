@@ -9,6 +9,11 @@ namespace osu.Framework.Graphics.Renderer.Pooling
     internal interface IRendererPool
     {
         /// <summary>
+        /// Whether this pool has any resources available or in use.
+        /// </summary>
+        bool HasResources { get; }
+
+        /// <summary>
         /// Releases all resources that were marked as used up the specified use ID, and mark them as available.
         /// </summary>
         /// <param name="untilId">The latest use ID in which used resources can be released.</param>

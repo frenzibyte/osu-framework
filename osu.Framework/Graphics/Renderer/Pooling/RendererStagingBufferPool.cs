@@ -19,7 +19,7 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         /// <param name="size">The required buffer size.</param>
         public DeviceBuffer Get(int size) => Get(new Request { Size = size });
 
-        protected override bool CanReuseResource(Request request, DeviceBuffer resource) => request.Size <= resource.SizeInBytes;
+        protected override bool CanUseResource(Request request, DeviceBuffer resource) => request.Size <= resource.SizeInBytes;
 
         protected override DeviceBuffer CreateResource(Request request)
         {

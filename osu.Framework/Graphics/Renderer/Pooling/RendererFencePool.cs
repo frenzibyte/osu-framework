@@ -33,7 +33,7 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         {
         }
 
-        protected override bool CanReuseResource(Fence fence)
+        protected override bool CanUseResource(Fence fence)
         {
             fence.Reset();
             return true;
