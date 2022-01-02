@@ -265,10 +265,10 @@ namespace osu.Framework.Graphics.Renderer
             disposal_queue.CheckPendingDisposals();
         }
 
-        private static readonly GlobalStatistic<int> stat_expensive_operations_queued = GlobalStatistics.Get<int>("Veldrid", "Expensive operation queue length");
-        private static readonly GlobalStatistic<int> stat_texture_uploads_queued = GlobalStatistics.Get<int>("Veldrid", "Texture upload queue length");
-        private static readonly GlobalStatistic<int> stat_texture_uploads_dequeued = GlobalStatistics.Get<int>("Veldrid", "Texture uploads dequeued");
-        private static readonly GlobalStatistic<int> stat_texture_uploads_performed = GlobalStatistics.Get<int>("Veldrid", "Texture uploads performed");
+        private static readonly GlobalStatistic<int> stat_expensive_operations_queued = GlobalStatistics.Get<int>("Renderer", "Expensive operation queue length");
+        private static readonly GlobalStatistic<int> stat_texture_uploads_queued = GlobalStatistics.Get<int>("Renderer", "Texture upload queue length");
+        private static readonly GlobalStatistic<int> stat_texture_uploads_dequeued = GlobalStatistics.Get<int>("Renderer", "Texture uploads dequeued");
+        private static readonly GlobalStatistic<int> stat_texture_uploads_performed = GlobalStatistics.Get<int>("Renderer", "Texture uploads performed");
 
         private static Vector2 currentSize;
 

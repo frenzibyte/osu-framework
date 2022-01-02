@@ -109,7 +109,7 @@ namespace osu.Framework.Graphics.Renderer
 
         #endregion
 
-        private static readonly GlobalStatistic<int> stat_graphics_pipeline_created = GlobalStatistics.Get<int>("Veldrid", "Graphics pipelines created");
+        private static readonly GlobalStatistic<int> stat_graphics_pipeline_created = GlobalStatistics.Get<int>("Renderer", "Graphics pipelines created");
 
         private static readonly Dictionary<GraphicsPipelineDescription, Pipeline> pipeline_cache = new Dictionary<GraphicsPipelineDescription, Pipeline>();
 
