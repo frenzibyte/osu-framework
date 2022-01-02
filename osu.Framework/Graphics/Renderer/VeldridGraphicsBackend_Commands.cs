@@ -51,7 +51,7 @@ namespace osu.Framework.Graphics.Renderer
             });
         }
 
-        public static void DrawVertices(PrimitiveTopology topology, int verticesStart, int verticesCount)
+        public static void DrawVertices(PrimitiveTopology topology, int indexStart, int indicesCount)
         {
             pipelineDescription.PrimitiveTopology = topology;
 
@@ -61,7 +61,7 @@ namespace osu.Framework.Graphics.Renderer
             Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, currentShader.UniformResourceSet);
             Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, boundTextureSet);
 
-            Commands.DrawIndexed((uint)verticesCount, 1, (uint)verticesStart, 0, 0);
+            Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
         }
 
         private static void validateShaderLayout()
