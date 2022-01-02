@@ -141,7 +141,7 @@ namespace osu.Framework.Graphics.Renderer
                 PreferDepthRangeZeroToOne = true,
                 PreferStandardClipSpaceYDirection = true,
                 ResourceBindingModel = ResourceBindingModel.Improved,
-                Debug = true,
+                Debug = DebugUtils.IsDebugBuild,
             };
 
             Device = CreateDevice(options, sdlWindow, window.ClientSize);

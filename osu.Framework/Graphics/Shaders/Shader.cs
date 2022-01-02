@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using osu.Framework.Development;
 using osu.Framework.Threading;
 using osuTK;
 using Veldrid;
@@ -129,7 +130,7 @@ namespace osu.Framework.Graphics.Shaders
             var descriptions = new List<ShaderDescription>();
 
             foreach (var part in parts)
-                descriptions.Add(new ShaderDescription(part.Type, part.GetData(uniformInfo), Vd.Device.BackendType == GraphicsBackend.Metal ? "main0" : "main"));
+                descriptions.Add(new ShaderDescription(part.Type, part.GetData(uniformInfo), Vd.Device.BackendType == GraphicsBackend.Metal ? "main0" : "main", DebugUtils.IsDebugBuild));
 
             var vertex = descriptions.Single(s => s.Stage == ShaderStages.Vertex);
             var fragment = descriptions.Single(s => s.Stage == ShaderStages.Fragment);
