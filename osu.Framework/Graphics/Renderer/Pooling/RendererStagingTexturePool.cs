@@ -30,7 +30,7 @@ namespace osu.Framework.Graphics.Renderer.Pooling
 
         protected override bool CanUseResource(Request request, RendererSubTexturePool pool) => pool.Texture.Format == request.Format && pool.CanAllocateRegion(request.Width, request.Height);
 
-        protected override bool IsResourceStillAvailable(RendererSubTexturePool pool) => pool.HasAvailableSpace;
+        protected override bool CanResourceRemainAvailable(Request request, RendererSubTexturePool pool) => !pool.ReachesPoolEnd(request.Width, request.Height);
 
         protected override RendererSubTexturePool CreateResource(Request request)
         {

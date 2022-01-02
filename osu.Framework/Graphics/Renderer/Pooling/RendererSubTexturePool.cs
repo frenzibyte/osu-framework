@@ -29,16 +29,18 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         private int nextEmptyRow;
 
         /// <summary>
-        /// Whether this pool has any available space for allocating.
+        /// Whether this pool can allocate a new region with the specified size.
         /// </summary>
-        public bool HasAvailableSpace => nextEmptyRow < Texture.Height;
+        /// <param name="width">The width to check with.</param>
+        /// <param name="height">The height to check with.</param>
+        public bool CanAllocateRegion(int width, int height) => (currentPosition.X + width <= Texture.Width && currentPosition.Y + height <= Texture.Height) || (width <= Texture.Width && nextEmptyRow + height <= Texture.Height);
 
         /// <summary>
-        /// Whether this pool can allocate a new <see cref="TextureRegion"/> with the specified size.
+        /// Whether the specified size will make the pool reach its end.
         /// </summary>
-        /// <param name="width">The texture region width.</param>
-        /// <param name="height">The texture region height.</param>
-        public bool CanAllocateRegion(int width, int height) => width <= Texture.Width && nextEmptyRow + height <= Texture.Height;
+        /// <param name="width">The width to check with.</param>
+        /// <param name="height">The height to check with.</param>
+        public bool ReachesPoolEnd(int width, int height) => (currentPosition.X + width == Texture.Width && currentPosition.Y + height == Texture.Height) || (width == Texture.Width && nextEmptyRow + height == Texture.Height);
 
         /// <summary>
         /// Returns a <see cref="TextureRegion"/> from the pool.

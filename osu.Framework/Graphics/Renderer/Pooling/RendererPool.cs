@@ -17,14 +17,14 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         where TRequest : struct
     {
         /// <summary>
-        /// The list of available or partially-used <typeparamref name="TResource"/>s for use in pool.
+        /// The list of available or partially-used <typeparamref name="TResource"/>s for use in pool, in order of usage.
         /// </summary>
-        protected readonly List<(ulong useId, TResource resource)> AvailableResources = new List<(ulong, TResource)>();
+        protected readonly LinkedList<(ulong useId, TResource resource)> AvailableResources = new LinkedList<(ulong, TResource)>();
 
         /// <summary>
-        /// The list of fully used <typeparamref name="TResource"/>s.
+        /// The list of fully used <typeparamref name="TResource"/>s, in order of usage.
         /// </summary>
-        protected readonly List<(ulong useId, TResource resource)> UsedResources = new List<(ulong, TResource)>();
+        protected readonly LinkedList<(ulong useId, TResource resource)> UsedResources = new LinkedList<(ulong, TResource)>();
 
         private readonly GlobalStatistic<int> statAvailableCount;
         private readonly GlobalStatistic<int> statUsedCount;
@@ -47,46 +47,39 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         /// <param name="request">The <typeparamref name="TRequest"/> to return a suitable <typeparamref name="TResource"/> for.</param>
         protected TResource Get(TRequest request)
         {
-            TResource resource = default;
-            ulong useId = 0;
-            int index = -1;
+            var node = AvailableResources.First;
 
-            for (int i = 0; i < AvailableResources.Count; i++)
+            while (node != null)
             {
-                var available = AvailableResources[i];
-
-                if (CanUseResource(request, available.resource))
+                if (CanUseResource(request, node.Value.resource))
                 {
-                    useId = available.useId;
-                    resource = available.resource;
-                    index = i;
+                    node.Value = (Vd.ResetId, node.Value.resource);
                     break;
                 }
+
+                node = node.Next;
             }
 
-            if (index == -1)
-                resource = CreateResource(request);
+            node ??= new LinkedListNode<(ulong, TResource)>((Vd.ResetId, CreateResource(request)));
 
-            if (IsResourceStillAvailable(resource))
+            if (!CanResourceRemainAvailable(request, node.Value.resource))
             {
-                if (index >= 0)
-                    AvailableResources[index] = (Vd.ResetId, resource);
-                else
+                if (node.List != null)
                 {
-                    AvailableResources.Add((Vd.ResetId, resource));
-                    statAvailableCount.Value++;
-                }
-            }
-            else
-            {
-                if (AvailableResources.Remove((useId, resource)))
+                    AvailableResources.Remove(node);
                     statAvailableCount.Value--;
+                }
 
-                UsedResources.Add((Vd.ResetId, resource));
+                UsedResources.AddLast(node);
                 statUsedCount.Value++;
             }
+            else if (node.List == null)
+            {
+                AvailableResources.AddLast(node);
+                statAvailableCount.Value++;
+            }
 
-            return resource;
+            return node.Value.resource;
         }
 
         /// <summary>
@@ -97,10 +90,11 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         protected virtual bool CanUseResource(TRequest request, TResource resource) => true;
 
         /// <summary>
-        /// Whether a <typeparamref name="TResource"/> can still be used for subsequent requests.
+        /// Whether a <typeparamref name="TResource"/> can remain available after fulfilling the specified <typeparamref name="TRequest"/>.
         /// </summary>
+        /// <param name="request">The <typeparamref name="TRequest"/> to check with.</param>
         /// <param name="resource">The <typeparamref name="TResource"/> to check against.</param>
-        protected virtual bool IsResourceStillAvailable(TResource resource) => false;
+        protected virtual bool CanResourceRemainAvailable(TRequest request, TResource resource) => false;
 
         /// <summary>
         /// Creates a new <typeparamref name="TResource"/> for the specified <typeparamref name="TRequest"/>.
@@ -119,44 +113,48 @@ namespace osu.Framework.Graphics.Renderer.Pooling
                     ((IRendererPool)used.resource).ReleaseUsedResources(untilId);
             }
 
-            int released = UsedResources.RemoveAll(used =>
+            var pivot = AvailableResources.First;
+
+            for (var node = UsedResources.First; node?.Value.useId <= untilId; node = UsedResources.First)
             {
-                if (used.useId <= untilId)
-                {
-                    AvailableResources.Add(used);
-                    return true;
-                }
+                UsedResources.Remove(node);
+                statUsedCount.Value--;
 
-                return false;
-            });
+                while (pivot?.Value.useId <= node.Value.useId)
+                    pivot = pivot.Next;
 
-            statUsedCount.Value -= released;
-            statAvailableCount.Value += released;
+                if (pivot != null)
+                    AvailableResources.AddBefore(pivot, node);
+                else
+                    AvailableResources.AddLast(node);
+
+                statAvailableCount.Value++;
+            }
         }
 
         public virtual bool FreeUnusedResources(ulong resourceFreeInterval)
         {
-            int freed = AvailableResources.RemoveAll(available =>
-            {
-                if (Vd.ResetId - available.useId <= resourceFreeInterval)
-                    return false;
+            bool freed = false;
 
-                if (available.resource is IRendererPool pool)
+            for (var node = AvailableResources.First; Vd.ResetId - node?.Value.useId > resourceFreeInterval; node = AvailableResources.First)
+            {
+                if (node.Value.resource is IRendererPool pool)
                 {
                     pool.FreeUnusedResources(resourceFreeInterval);
 
                     if (pool.HasResources)
-                        return false;
+                        continue;
                 }
 
-                if (available.resource is IDisposable disposableResource)
+                if (node.Value.resource is IDisposable disposableResource)
                     disposableResource.Dispose();
 
-                return true;
-            });
+                AvailableResources.Remove(node);
+                statAvailableCount.Value--;
+                freed = true;
+            }
 
-            statAvailableCount.Value -= freed;
-            return freed > 0;
+            return freed;
         }
     }
 
@@ -176,6 +174,14 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         protected virtual bool CanUseResource(TResource resource) => base.CanUseResource(default, resource);
 
         protected sealed override bool CanUseResource(EmptyRequest _, TResource resource) => CanUseResource(resource);
+
+        /// <summary>
+        /// Whether a <typeparamref name="TResource"/> can remain available.
+        /// </summary>
+        /// <param name="resource">The <typeparamref name="TResource"/> to check against.</param>
+        protected virtual bool CanResourceRemainAvailable(TResource resource) => base.CanResourceRemainAvailable(default, resource);
+
+        protected sealed override bool CanResourceRemainAvailable(EmptyRequest _, TResource resource) => CanResourceRemainAvailable(resource);
 
         /// <summary>
         /// Creates a new <typeparamref name="TResource"/>.
