@@ -453,7 +453,8 @@ namespace osu.Framework.Graphics.Renderer
         /// </summary>
         private static void releaseUsedResources()
         {
-            ulong latestSignaledUseID = commands_execution_fence_pool.LatestSignaledUseID;
+            if (!(commands_execution_fence_pool.LatestSignaledUseID is ulong latestSignaledUseID))
+                return;
 
             commands_execution_fence_pool.ReleaseUsedResources(latestSignaledUseID);
             staging_buffer_pool.ReleaseUsedResources(latestSignaledUseID);

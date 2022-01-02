@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using Veldrid;
 using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
@@ -12,19 +11,17 @@ namespace osu.Framework.Graphics.Renderer.Pooling
         /// <summary>
         /// The latest use ID of the used fences that have been signaled.
         /// </summary>
-        public ulong LatestSignaledUseID
+        public ulong? LatestSignaledUseID
         {
             get
             {
-                ulong id = 0;
-
-                foreach (var used in UsedResources)
+                for (var node = UsedResources.Last; node != null; node = node.Previous)
                 {
-                    if (used.resource.Signaled)
-                        id = Math.Max(used.useId, id);
+                    if (node.Value.resource.Signaled)
+                        return node.Value.useId;
                 }
 
-                return id;
+                return null;
             }
         }
 
