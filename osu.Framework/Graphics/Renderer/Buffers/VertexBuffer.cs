@@ -87,13 +87,10 @@ namespace osu.Framework.Graphics.Renderer.Buffers
             IsDisposed = true;
         }
 
-        public virtual void Bind(bool forRendering)
+        public virtual void Bind()
         {
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString(), "Can not bind disposed vertex buffers.");
-
-            if (buffer == null)
-                Initialise();
 
             Vd.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
         }
@@ -115,7 +112,10 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
         public void DrawRange(int startIndex, int endIndex)
         {
-            Bind(true);
+            if (buffer == null)
+                Initialise();
+
+            Bind();
 
             int countVertices = endIndex - startIndex;
             Vd.DrawVertices(Topology, ToElementIndex(startIndex), ToElements(countVertices));
@@ -130,12 +130,11 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
         public void UpdateRange(int startIndex, int endIndex)
         {
-            Bind(false);
+            if (buffer == null)
+                Initialise();
 
             int countVertices = endIndex - startIndex;
             Vd.UpdateBuffer(buffer, startIndex * STRIDE, ref getMemory().Span[startIndex], countVertices * STRIDE);
-
-            Unbind();
 
             FrameStatistics.Add(StatisticsCounterType.VerticesUpl, countVertices);
         }

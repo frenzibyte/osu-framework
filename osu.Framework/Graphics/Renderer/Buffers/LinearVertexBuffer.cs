@@ -51,12 +51,10 @@ namespace osu.Framework.Graphics.Renderer.Buffers
             }
         }
 
-        public override void Bind(bool forRendering)
+        public override void Bind()
         {
-            base.Bind(forRendering);
-
-            if (forRendering)
-                Vd.BindIndexBuffer(LinearIndexData.IndexBuffer, IndexFormat.UInt16);
+            base.Bind();
+            Vd.BindIndexBuffer(LinearIndexData.IndexBuffer, IndexFormat.UInt16);
         }
 
         protected override PrimitiveTopology Topology { get; }
