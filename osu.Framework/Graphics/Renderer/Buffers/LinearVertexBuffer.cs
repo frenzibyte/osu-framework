@@ -47,7 +47,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
                 Vd.BindIndexBuffer(LinearIndexData.IndexBuffer, IndexFormat.UInt16);
 
-                Vd.Commands.UpdateBuffer(LinearIndexData.IndexBuffer, 0, indices);
+                Vd.UpdateBuffer(LinearIndexData.IndexBuffer, 0, ref indices[0], indices.Length * sizeof(ushort));
             }
         }
 

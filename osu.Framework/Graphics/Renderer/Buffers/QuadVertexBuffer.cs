@@ -75,7 +75,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
 
                 Vd.BindIndexBuffer(QuadIndexData.IndexBuffer, IndexFormat.UInt16);
 
-                Vd.Commands.UpdateBuffer(QuadIndexData.IndexBuffer, 0, indices);
+                Vd.UpdateBuffer(QuadIndexData.IndexBuffer, 0, ref indices[0], indices.Length * sizeof(ushort));
             }
         }
 
