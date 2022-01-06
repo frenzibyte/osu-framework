@@ -226,8 +226,8 @@ namespace osu.Framework.Graphics.Renderer
 
         public Size GetDrawableSize()
         {
-            int width = 0;
-            int height = 0;
+            int width;
+            int height;
 
             switch (Device.BackendType)
             {
@@ -242,6 +242,10 @@ namespace osu.Framework.Graphics.Renderer
 
                 case GraphicsBackend.Metal:
                     SDL.SDL_Metal_GetDrawableSize(sdlWindow.SDLWindowHandle, out width, out height);
+                    break;
+
+                default:
+                    SDL.SDL_GetWindowSize(sdlWindow.SDLWindowHandle, out width, out height);
                     break;
             }
 
