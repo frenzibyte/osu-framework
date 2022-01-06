@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Drawing;
+using Veldrid;
 
 namespace osu.Framework.Platform
 {
@@ -10,6 +11,11 @@ namespace osu.Framework.Platform
     /// </summary>
     public interface IGraphicsBackend
     {
+        /// <summary>
+        /// The type of the graphics backend.
+        /// </summary>
+        GraphicsBackend Type { get; }
+
         /// <summary>
         /// Whether buffer swapping should be synced to the monitor's refresh rate.
         /// </summary>

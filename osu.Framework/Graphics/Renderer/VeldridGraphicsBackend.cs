@@ -90,6 +90,25 @@ namespace osu.Framework.Graphics.Renderer
         /// </summary>
         public static int MaxPixelsUploadedPerFrame { get; set; } = 1024 * 1024 * 2;
 
+        public virtual GraphicsBackend Type
+        {
+            get
+            {
+                switch (RuntimeInfo.OS)
+                {
+                    case RuntimeInfo.Platform.Windows:
+                        return GraphicsBackend.Direct3D11;
+
+                    case RuntimeInfo.Platform.macOS:
+                        return GraphicsBackend.Vulkan;
+
+                    default:
+                    case RuntimeInfo.Platform.Linux:
+                        return GraphicsBackend.OpenGL;
+                }
+            }
+        }
+
         public bool VerticalSync
         {
             get => Device.SyncToVerticalBlank;
@@ -198,13 +217,27 @@ namespace osu.Framework.Graphics.Renderer
             {
                 case RuntimeInfo.Platform.Windows:
                     swapchainDescription.Source = SwapchainSource.CreateWin32(sdlWindow.WindowHandle, IntPtr.Zero);
-                    return GraphicsDevice.CreateD3D11(options, swapchainDescription);
+                    break;
 
                 case RuntimeInfo.Platform.macOS:
-                    swapchainDescription.Source = SwapchainSource.CreateNSWindow(sdlWindow.WindowHandle);
-                    return GraphicsDevice.CreateMetal(options, swapchainDescription);
+                    if (Type == GraphicsBackend.Vulkan)
+                    {
+                        // Vulkan's validation layer is busted with Veldrid running on macOS.
+                        // Waiting on https://github.com/mellinoe/veldrid/pull/419.
+                        options.Debug = false;
+                    }
+
+                    swapchainDescription.Source = SwapchainSource.CreateNSView(SDL.SDL_Metal_CreateView(sdlWindow.SDLWindowHandle));
+                    break;
 
                 case RuntimeInfo.Platform.Linux:
+                    swapchainDescription.Source = SwapchainSource.CreateXlib(sdlWindow.DisplayHandle, sdlWindow.WindowHandle);
+                    break;
+            }
+
+            switch (Type)
+            {
+                case GraphicsBackend.OpenGL:
                     SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
 
                     IntPtr context = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
@@ -219,6 +252,19 @@ namespace osu.Framework.Graphics.Renderer
                         c => SDL.SDL_GL_DeleteContext(c),
                         () => SDL.SDL_GL_SwapWindow(sdlWindow.SDLWindowHandle),
                         value => SDL.SDL_GL_SetSwapInterval(value ? 1 : 0)), (uint)initialSize.Width, (uint)initialSize.Height);
+
+                case GraphicsBackend.OpenGLES:
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
+                    return GraphicsDevice.CreateOpenGLES(options, swapchainDescription);
+
+                case GraphicsBackend.Direct3D11:
+                    return GraphicsDevice.CreateD3D11(options, swapchainDescription);
+
+                case GraphicsBackend.Vulkan:
+                    return GraphicsDevice.CreateVulkan(options, swapchainDescription);
+
+                case GraphicsBackend.Metal:
+                    return GraphicsDevice.CreateMetal(options, swapchainDescription);
             }
 
             return null;

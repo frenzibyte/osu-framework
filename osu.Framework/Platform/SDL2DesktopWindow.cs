@@ -22,6 +22,7 @@ using osuTK.Input;
 using SDL2;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Veldrid;
 using Image = SixLabors.ImageSharp.Image;
 using Point = System.Drawing.Point;
 using Rectangle = System.Drawing.Rectangle;
@@ -339,6 +340,34 @@ namespace osu.Framework.Platform
             }
         }
 
+        /// <summary>
+        /// Gets the native display handle as provided by some operating systems, otherwise <see cref="IntPtr.Zero"/> is returned.
+        /// </summary>
+        public IntPtr DisplayHandle
+        {
+            get
+            {
+                if (SDLWindowHandle == IntPtr.Zero)
+                    return IntPtr.Zero;
+
+                var wmInfo = getWindowWMInfo();
+
+                // Display handle is selected per subsystem as defined at:
+                // https://wiki.libsdl.org/SDL_SysWMinfo
+                switch (wmInfo.subsystem)
+                {
+                    case SDL.SDL_SYSWM_TYPE.SDL_SYSWM_X11:
+                        return wmInfo.info.x11.display;
+
+                    case SDL.SDL_SYSWM_TYPE.SDL_SYSWM_WAYLAND:
+                        return wmInfo.info.wl.display;
+
+                    default:
+                        return IntPtr.Zero;
+                }
+            }
+        }
+
         private SDL.SDL_SysWMinfo getWindowWMInfo()
         {
             if (SDLWindowHandle == IntPtr.Zero)
@@ -390,11 +419,27 @@ namespace osu.Framework.Platform
         /// </summary>
         public virtual void Create()
         {
-            SDL.SDL_WindowFlags flags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL |
-                                        SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE |
+            SDL.SDL_WindowFlags flags = SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE |
                                         SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI |
                                         SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | // shown after first swap to avoid white flash on startup (windows)
                                         WindowState.ToFlags();
+
+            switch (graphicsBackend.Type)
+            {
+                case GraphicsBackend.OpenGL:
+                case GraphicsBackend.OpenGLES:
+                    flags |= SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
+                    break;
+
+                case GraphicsBackend.Vulkan when !RuntimeInfo.IsApple:
+                    flags |= SDL.SDL_WindowFlags.SDL_WINDOW_VULKAN;
+                    break;
+
+                case GraphicsBackend.Metal:
+                case GraphicsBackend.Vulkan when RuntimeInfo.IsApple:
+                    flags |= SDL.SDL_WindowFlags.SDL_WINDOW_METAL;
+                    break;
+            }
 
             SDL.SDL_SetHint(SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
             SDL.SDL_SetHint(SDL.SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "1");
