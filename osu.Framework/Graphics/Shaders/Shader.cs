@@ -115,7 +115,7 @@ namespace osu.Framework.Graphics.Shaders
         /// <param name="name">The name of the uniform.</param>
         /// <returns>Returns a base uniform.</returns>
         public Uniform<T> GetUniform<T>(string name)
-            where T : struct, IEquatable<T>
+            where T : unmanaged, IEquatable<T>
         {
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString(), "Can not retrieve uniforms from a disposed shader.");
@@ -239,7 +239,7 @@ namespace osu.Framework.Graphics.Shaders
         }
 
         private static IUniform createUniform<T>(Shader shader, string name, ref int bufferSize)
-            where T : struct, IEquatable<T>
+            where T : unmanaged, IEquatable<T>
         {
             int uniformSize = Marshal.SizeOf<T>();
             int baseAlignment;

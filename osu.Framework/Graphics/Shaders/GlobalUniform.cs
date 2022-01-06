@@ -7,7 +7,7 @@ using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 namespace osu.Framework.Graphics.Shaders
 {
     internal class GlobalUniform<T> : IUniformWithValue<T>
-        where T : struct, IEquatable<T>
+        where T : unmanaged, IEquatable<T>
     {
         public Shader Owner { get; }
         public int Location { get; }

@@ -13,7 +13,7 @@ using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 namespace osu.Framework.Graphics.Renderer.Buffers
 {
     public abstract class VertexBuffer<T> : IVertexBuffer, IDisposable
-        where T : struct, IEquatable<T>, IVertex
+        where T : unmanaged, IEquatable<T>, IVertex
     {
         protected static readonly int STRIDE = VertexUtils<DepthWrappingVertex<T>>.STRIDE;
 

@@ -9,7 +9,7 @@ namespace osu.Framework.Graphics.Renderer.Vertices
 {
     [StructLayout(LayoutKind.Sequential)]
     internal struct DepthWrappingVertex<TVertex> : IVertex, IEquatable<DepthWrappingVertex<TVertex>>
-        where TVertex : struct, IVertex, IEquatable<TVertex>
+        where TVertex : unmanaged, IVertex, IEquatable<TVertex>
     {
         [VertexMember(VertexElementFormat.Float1, VertexElementSemantic.Normal)]
         public float BackbufferDrawDepth;

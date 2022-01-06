@@ -94,7 +94,7 @@ namespace osu.Framework.Graphics.Renderer
         /// <param name="size">The value size in bytes, otherwise the value type size will be used.</param>
         /// <typeparam name="T">The value type.</typeparam>
         public static void UpdateBuffer<T>(DeviceBuffer buffer, int offset, ref T value, int? size = null)
-            where T : struct, IEquatable<T>
+            where T : unmanaged, IEquatable<T>
         {
             size ??= Marshal.SizeOf<T>();
 
@@ -261,7 +261,7 @@ namespace osu.Framework.Graphics.Renderer
         }
 
         internal static void UpdateUniform<T>(IUniformWithValue<T> uniform)
-            where T : struct, IEquatable<T>
+            where T : unmanaged, IEquatable<T>
         {
             if (uniform.Owner == currentShader)
                 FlushCurrentBatch();

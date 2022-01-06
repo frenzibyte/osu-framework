@@ -35,7 +35,7 @@ namespace osu.Framework.Graphics.Renderer.Buffers
     }
 
     public class QuadVertexBuffer<T> : VertexBuffer<T>
-        where T : struct, IEquatable<T>, IVertex
+        where T : unmanaged, IEquatable<T>, IVertex
     {
         private readonly int amountIndices;
 

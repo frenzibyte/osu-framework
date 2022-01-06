@@ -8,7 +8,7 @@ using osu.Framework.Graphics.Renderer.Vertices;
 namespace osu.Framework.Graphics.Batches
 {
     public class QuadBatch<T> : VertexBatch<T>
-        where T : struct, IEquatable<T>, IVertex
+        where T : unmanaged, IEquatable<T>, IVertex
     {
         public QuadBatch(int size, int maxBuffers)
             : base(size, maxBuffers)
