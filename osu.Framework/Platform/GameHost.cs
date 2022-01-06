@@ -22,7 +22,7 @@ using osu.Framework.Development;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -36,12 +36,12 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
+using osu.Framework.Platform.Graphics.Veldrid;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Memory;
 using Veldrid;
 using Image = SixLabors.ImageSharp.Image;
 using Size = System.Drawing.Size;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Platform
 {
@@ -447,7 +447,7 @@ namespace osu.Framework.Platform
             if (Root == null)
                 return;
 
-            using (Vd.BeginCommands())
+            using (Renderer.BeginCommands())
                 drawFrame();
 
             using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
@@ -476,7 +476,7 @@ namespace osu.Framework.Platform
                     }
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.Reset))
-                        Vd.Reset(new System.Numerics.Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                        Renderer.Reset(new System.Numerics.Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
                     postReset?.Invoke();
 
@@ -500,20 +500,20 @@ namespace osu.Framework.Platform
                     // else
                     {
                         // Disable depth testing
-                        Vd.PushDepthInfo(new DepthInfo());
+                        Renderer.PushDepthInfo(new DepthInfo());
                     }
 
                     // Back pass
                     buffer.Object.Draw(null);
 
-                    Vd.PopDepthInfo();
+                    Renderer.PopDepthInfo();
 
                     lastDrawFrameId = buffer.FrameId;
                     break;
                 }
             }
 
-            Vd.FlushCurrentBatch();
+            Renderer.FlushCurrentBatch();
         }
 
         /// <summary>
@@ -526,7 +526,7 @@ namespace osu.Framework.Platform
             if (Window.VerticalSync)
                 // without glFinish, vsync is basically unplayable due to the extra latency introduced.
                 // we will likely want to give the user control over this in the future as an advanced setting.
-                Vd.Device.WaitForIdle();
+                Renderer.Device.WaitForIdle();
         }
 
         /// <summary>
@@ -547,25 +547,25 @@ namespace osu.Framework.Platform
                 {
                     unsafe
                     {
-                        var format = Vd.DefaultFrameBuffer.ColorTargets.Single().Target.Format;
-                        var target = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, format, TextureUsage.RenderTarget));
-                        var frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(null, target));
-                        var staging = Vd.Factory.CreateTexture(TextureDescription.Texture2D(target.Width, target.Height, 1, 1, target.Format, TextureUsage.Staging));
+                        var format = Renderer.DefaultFrameBuffer.ColorTargets.Single().Target.Format;
+                        var target = Renderer.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, format, TextureUsage.RenderTarget));
+                        var frameBuffer = Renderer.Factory.CreateFramebuffer(new FramebufferDescription(null, target));
+                        var staging = Renderer.Factory.CreateTexture(TextureDescription.Texture2D(target.Width, target.Height, 1, 1, target.Format, TextureUsage.Staging));
 
                         // ReSharper disable AccessToDisposedClosure
-                        using (Vd.BeginCommands(out var commands))
+                        using (Renderer.BeginCommands(out var commands))
                         {
-                            drawFrame(() => Vd.BindFrameBuffer(frameBuffer));
+                            drawFrame(() => Renderer.BindFrameBuffer(frameBuffer));
 
                             commands.CopyTexture(target, staging);
                         }
 
-                        var resource = Vd.Device.Map(staging, MapMode.Read);
+                        var resource = Renderer.Device.Map(staging, MapMode.Read);
 
                         fixed (void* ptr = pixelData.Memory.Span)
                             Buffer.MemoryCopy(resource.Data.ToPointer(), ptr, pixelData.Memory.Length * sizeof(Bgra32), resource.SizeInBytes);
 
-                        Vd.Device.Unmap(resource.Resource);
+                        Renderer.Device.Unmap(resource.Resource);
 
                         staging.Dispose();
                         frameBuffer.Dispose();

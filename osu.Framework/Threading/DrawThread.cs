@@ -5,8 +5,9 @@ using osu.Framework.Statistics;
 using System;
 using System.Collections.Generic;
 using osu.Framework.Development;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Platform;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
+using osu.Framework.Platform.Graphics.Veldrid;
 
 namespace osu.Framework.Threading
 {
@@ -30,8 +31,8 @@ namespace osu.Framework.Threading
             {
                 window.MakeCurrent();
 
-                using (Vd.BeginCommands())
-                    Vd.Reset(new System.Numerics.Vector2(window.ClientSize.Width, window.ClientSize.Height));
+                using (Renderer.BeginCommands())
+                    Renderer.Reset(new System.Numerics.Vector2(window.ClientSize.Width, window.ClientSize.Height));
             }
         }
 

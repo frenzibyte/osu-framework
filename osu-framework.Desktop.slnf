@@ -9,7 +9,8 @@
       "osu.Framework.NativeLibs\\osu.Framework.NativeLibs.csproj",
       "osu.Framework.Tests\\osu.Framework.Tests.csproj",
       "FirstTestProject\\FirstTestProject.csproj",
-      "SecondTestProject\\SecondTestProject.csproj"
+      "SecondTestProject\\SecondTestProject.csproj",
+      "..\\SharpBgfx\\SharpBgfx\\SharpBgfx.csproj"
     ]
   }
 }

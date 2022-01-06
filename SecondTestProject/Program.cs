@@ -6,11 +6,12 @@ using osu.Framework;
 using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
+using osu.Framework.Platform.Graphics.Veldrid;
 using osuTK.Graphics;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace SecondTestProject
 {
@@ -43,20 +44,20 @@ namespace SecondTestProject
             {
                 ThreadSafety.IsDrawThread = true;
 
-                using (Vd.BeginCommands())
+                using (Renderer.BeginCommands())
                 {
-                    Vd.Reset(new System.Numerics.Vector2(window.Size.Width, window.Size.Height));
+                    Renderer.Reset(new System.Numerics.Vector2(window.Size.Width, window.Size.Height));
 
                     shader.Bind();
 
                     texture!.DrawQuad(new Quad(0, 0, 500, 500), Color4.White);
 
-                    Vd.FlushCurrentBatch();
+                    Renderer.FlushCurrentBatch();
 
                     shader.Unbind();
                 }
 
-                Vd.Device.SwapBuffers();
+                Renderer.Device.SwapBuffers();
 
                 ThreadSafety.IsDrawThread = false;
             };

@@ -2,7 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework;
-using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Platform.Graphics.Veldrid;
 
 namespace SampleGame.Desktop
 {
@@ -12,7 +13,7 @@ namespace SampleGame.Desktop
         {
             using (var host = Host.GetSuitableHost("osu-framework-veldrid"))
             {
-                VeldridGraphicsBackend.Host = host;
+                Renderer.Host = host;
                 host.Run(new SampleGameGame());
             }
         }

@@ -6,8 +6,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Renderer;
-using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Utils;
@@ -17,7 +15,9 @@ using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Textures;
+using osu.Framework.Graphics.Rendering.Vertices;
 
 namespace osu.Framework.Tests.Visual.Containers
 {

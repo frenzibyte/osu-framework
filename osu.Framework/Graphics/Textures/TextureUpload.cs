@@ -5,13 +5,13 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using osu.Framework.Extensions.ImageExtensions;
-using osu.Framework.Graphics.Renderer.Buffers;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Buffers;
 using osu.Framework.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using StbiSharp;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -52,7 +52,7 @@ namespace osu.Framework.Graphics.Textures
         {
             this.image = image;
 
-            if (image.Width > Vd.MaxTextureSize || image.Height > Vd.MaxTextureSize)
+            if (image.Width > Renderer.MaxTextureSize || image.Height > Renderer.MaxTextureSize)
                 throw new TextureTooLargeForGLException();
 
             pixelMemory = image.CreateReadOnlyPixelMemory();

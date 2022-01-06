@@ -6,11 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using osu.Framework.Development;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Threading;
 using osuTK;
 using Veldrid;
 using Veldrid.SPIRV;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 using VdShader = Veldrid.Shader;
 using static osu.Framework.Threading.ScheduledDelegate;
 using Encoding = System.Text.Encoding;
@@ -52,7 +52,7 @@ namespace osu.Framework.Graphics.Shaders
 
             Name = name;
 
-            Vd.ScheduleExpensiveOperation(shaderCompileDelegate = new ScheduledDelegate(compile));
+            Renderer.ScheduleExpensiveOperation(shaderCompileDelegate = new ScheduledDelegate(compile));
         }
 
         private void compile()
@@ -91,7 +91,7 @@ namespace osu.Framework.Graphics.Shaders
 
             EnsureShaderCompiled();
 
-            Vd.BindShader(this);
+            Renderer.BindShader(this);
 
             foreach (var uniform in uniformsValues)
                 uniform?.Update();
@@ -104,7 +104,7 @@ namespace osu.Framework.Graphics.Shaders
             if (!IsBound)
                 return;
 
-            Vd.UnbindShader(this);
+            Renderer.UnbindShader(this);
 
             IsBound = false;
         }
@@ -130,23 +130,23 @@ namespace osu.Framework.Graphics.Shaders
             var descriptions = new List<ShaderDescription>();
 
             foreach (var part in parts)
-                descriptions.Add(new ShaderDescription(part.Type, part.GetData(uniformInfo), Vd.Device.BackendType == GraphicsBackend.Metal ? "main0" : "main", DebugUtils.IsDebugBuild));
+                descriptions.Add(new ShaderDescription(part.Type, part.GetData(uniformInfo), Renderer.Device.BackendType == GraphicsBackend.Metal ? "main0" : "main", DebugUtils.IsDebugBuild));
 
             var vertex = descriptions.Single(s => s.Stage == ShaderStages.Vertex);
             var fragment = descriptions.Single(s => s.Stage == ShaderStages.Fragment);
 
             try
             {
-                if (Vd.Device.BackendType == GraphicsBackend.Vulkan)
+                if (Renderer.Device.BackendType == GraphicsBackend.Vulkan)
                 {
                     vertex.ShaderBytes = ensureSpirv(vertex);
                     fragment.ShaderBytes = ensureSpirv(fragment);
                 }
                 else
                 {
-                    var result = SpirvCompilation.CompileVertexFragment(vertex.ShaderBytes, fragment.ShaderBytes, getCompilationTarget(Vd.Device.BackendType), new CrossCompileOptions(Vd.Device.IsDepthRangeZeroToOne, false));
+                    var result = SpirvCompilation.CompileVertexFragment(vertex.ShaderBytes, fragment.ShaderBytes, getCompilationTarget(Renderer.Device.BackendType), new CrossCompileOptions(Renderer.Device.IsDepthRangeZeroToOne, false));
 
-                    switch (Vd.Device.BackendType)
+                    switch (Renderer.Device.BackendType)
                     {
                         case GraphicsBackend.Direct3D11:
                         case GraphicsBackend.OpenGL:
@@ -166,7 +166,7 @@ namespace osu.Framework.Graphics.Shaders
                     VertexLayout = new VertexLayoutDescription(result.Reflection.VertexElements);
                 }
 
-                Shaders = new[] { Vd.Factory.CreateShader(vertex), Vd.Factory.CreateShader(fragment) };
+                Shaders = new[] { Renderer.Factory.CreateShader(vertex), Renderer.Factory.CreateShader(fragment) };
             }
             catch (SpirvCompilationException sce)
             {
@@ -234,8 +234,8 @@ namespace osu.Framework.Graphics.Shaders
             if (bufferSize % 16 > 0)
                 bufferSize += 16 - (bufferSize % 16);
 
-            UniformBuffer = Vd.Factory.CreateBuffer(new BufferDescription((uint)bufferSize, BufferUsage.UniformBuffer));
-            UniformResourceSet = Vd.CreateUniformResourceSet(UniformBuffer);
+            UniformBuffer = Renderer.Factory.CreateBuffer(new BufferDescription((uint)bufferSize, BufferUsage.UniformBuffer));
+            UniformResourceSet = Renderer.CreateUniformResourceSet(UniformBuffer);
         }
 
         private static IUniform createUniform<T>(Shader shader, string name, ref int bufferSize)
@@ -283,7 +283,7 @@ namespace osu.Framework.Graphics.Shaders
 
         ~Shader()
         {
-            Vd.ScheduleDisposal(s => s.Dispose(false), this);
+            Renderer.ScheduleDisposal(s => s.Dispose(false), this);
         }
 
         public void Dispose()

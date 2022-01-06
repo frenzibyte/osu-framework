@@ -3,7 +3,7 @@
 
 using System;
 using System.Threading;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Rendering.Textures;
 
 namespace osu.Framework.Graphics.Textures
 {

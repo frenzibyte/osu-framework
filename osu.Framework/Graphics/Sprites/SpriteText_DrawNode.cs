@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Textures;
 using osuTK;
 using osuTK.Graphics;

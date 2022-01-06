@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering.Textures;
 using osu.Framework.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

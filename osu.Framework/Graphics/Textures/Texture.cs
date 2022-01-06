@@ -5,11 +5,11 @@ using System;
 using System.IO;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Primitives;
 using osuTK;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Rendering.Textures;
+using osu.Framework.Graphics.Rendering.Vertices;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
 
 namespace osu.Framework.Graphics.Textures

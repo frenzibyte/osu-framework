@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using osu.Framework.Graphics.Renderer.Buffers;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Buffers;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Statistics;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Batches
 {
@@ -76,7 +76,7 @@ namespace osu.Framework.Graphics.Batches
         /// <param name="v">The vertex to add.</param>
         public void Add(T v)
         {
-            Vd.SetActiveBatch(this);
+            Renderer.SetActiveBatch(this);
 
             if (currentBufferIndex < VertexBuffers.Count && currentVertexIndex >= currentVertexBuffer.Size)
             {

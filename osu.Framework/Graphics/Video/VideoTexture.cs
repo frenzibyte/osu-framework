@@ -3,12 +3,13 @@
 
 using System;
 using System.Diagnostics;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Textures;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using Veldrid;
+using PixelFormat = Veldrid.PixelFormat;
 using Texture = Veldrid.Texture;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Video
 {
@@ -57,7 +58,7 @@ namespace osu.Framework.Graphics.Video
             if (textureResourceSet == null)
                 return false;
 
-            if (Vd.BindTexture(textureResourceSet, wrapModeS, wrapModeT))
+            if (Renderer.BindTexture(textureResourceSet, wrapModeS, wrapModeT))
                 BindCount++;
 
             return true;
@@ -95,20 +96,20 @@ namespace osu.Framework.Graphics.Video
                         textureSize += width * height;
                     }
 
-                    textures[i] = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R8_UNorm, TextureUsage.Sampled));
+                    textures[i] = Renderer.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R8_UNorm, TextureUsage.Sampled));
                 }
 
-                textureResourceSet = new TextureResourceSet(textures, Vd.Device.LinearSampler);
+                textureResourceSet = new TextureResourceSet(textures, Renderer.Device.LinearSampler);
             }
 
-            Vd.BindTexture(TextureResourceSet);
+            Renderer.BindTexture(TextureResourceSet);
 
             for (int i = 0; i < TextureResourceSet.Textures.Count; i++)
             {
                 int width = videoUpload.Frame->width / (i > 0 ? 2 : 1);
                 int height = videoUpload.Frame->height / (i > 0 ? 2 : 1);
                 var data = new ReadOnlySpan<byte>(videoUpload.Frame->data[(uint)i], width * height);
-                Vd.UpdateTexture(TextureResourceSet.Textures[i], 0, 0, width, height, 0, data);
+                Renderer.UpdateTexture(TextureResourceSet.Textures[i], 0, 0, width, height, 0, data);
 
                 // GL.PixelStore(PixelStoreParameter.UnpackRowLength, videoUpload.Frame->linesize[(uint)i]);
                 // GL.TexSubImage2D(TextureTarget2d.Texture2D, 0, 0, 0, videoUpload.Frame->width / (i > 0 ? 2 : 1), videoUpload.Frame->height / (i > 0 ? 2 : 1),
@@ -126,7 +127,7 @@ namespace osu.Framework.Graphics.Video
 
             memoryLease?.Dispose();
 
-            Vd.ScheduleDisposal(v =>
+            Renderer.ScheduleDisposal(v =>
             {
                 if (v.textureResourceSet == null)
                     return;

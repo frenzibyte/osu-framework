@@ -2,12 +2,11 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
+using osu.Framework.Graphics.Rendering;
 
 namespace osu.Framework.Graphics.Shaders
 {
-    internal class GlobalUniform<T> : IUniformWithValue<T>
-        where T : unmanaged, IEquatable<T>
+    internal class GlobalUniform<T> : IUniform where T : unmanaged, IEquatable<T>
     {
         public Shader Owner { get; }
         public int Location { get; }
@@ -37,11 +36,11 @@ namespace osu.Framework.Graphics.Shaders
             if (PendingChange == null)
                 return;
 
-            Vd.UpdateUniform(this);
+            Renderer.UpdateUniform(this);
             PendingChange = null;
         }
 
-        ref T IUniformWithValue<T>.GetValueByRef() => ref PendingChange.GetValueByRef();
-        T IUniformWithValue<T>.GetValue() => PendingChange.Value;
+        public ref T GetValueByRef() => ref PendingChange.GetValueByRef();
+        public T GetValue() => PendingChange.Value;
     }
 }

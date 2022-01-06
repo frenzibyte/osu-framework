@@ -3,14 +3,13 @@
 
 using System;
 using osu.Framework.Allocation;
-using osu.Framework.Graphics.Renderer;
-using osu.Framework.Graphics.Renderer.Buffers;
-using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Buffers;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Statistics;
 using osuTK;
 using osuTK.Graphics;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {
@@ -97,12 +96,12 @@ namespace osu.Framework.Graphics
                     {
                         // We need to draw children as if they were zero-based to the top-left of the texture.
                         // We can do this by adding a translation component to our (orthogonal) projection matrix.
-                        Vd.PushOrtho(screenSpaceDrawRectangle);
-                        Vd.Clear(new ClearInfo(backgroundColour));
+                        Renderer.PushOrtho(screenSpaceDrawRectangle);
+                        Renderer.Clear(new ClearInfo(backgroundColour));
 
                         Child.Draw(vertexAction);
 
-                        Vd.PopOrtho();
+                        Renderer.PopOrtho();
                     }
 
                     PopulateContents();
@@ -157,7 +156,7 @@ namespace osu.Framework.Graphics
             // in the frame buffer and helps with cached buffers being re-used.
             RectangleI screenSpaceMaskingRect = new RectangleI((int)Math.Floor(screenSpaceDrawRectangle.X), (int)Math.Floor(screenSpaceDrawRectangle.Y), (int)frameBufferSize.X + 1, (int)frameBufferSize.Y + 1);
 
-            Vd.PushMaskingInfo(new MaskingInfo
+            Renderer.PushMaskingInfo(new MaskingInfo
             {
                 ScreenSpaceAABB = screenSpaceMaskingRect,
                 MaskingRect = screenSpaceDrawRectangle,
@@ -167,19 +166,19 @@ namespace osu.Framework.Graphics
             }, true);
 
             // Match viewport to FrameBuffer such that we don't draw unnecessary pixels.
-            Vd.PushViewport(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
-            Vd.PushScissor(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
-            Vd.PushScissorOffset(screenSpaceMaskingRect.Location);
+            Renderer.PushViewport(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
+            Renderer.PushScissor(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
+            Renderer.PushScissorOffset(screenSpaceMaskingRect.Location);
 
             return new ValueInvokeOnDisposal<BufferedDrawNode>(this, d => d.returnViewport());
         }
 
         private void returnViewport()
         {
-            Vd.PopScissorOffset();
-            Vd.PopViewport();
-            Vd.PopScissor();
-            Vd.PopMaskingInfo();
+            Renderer.PopScissorOffset();
+            Renderer.PopViewport();
+            Renderer.PopScissor();
+            Renderer.PopMaskingInfo();
         }
 
         private void clipDrawRectangle()

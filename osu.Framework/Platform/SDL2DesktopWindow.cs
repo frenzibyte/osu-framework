@@ -12,8 +12,9 @@ using osu.Framework.Configuration;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Input;
+using osu.Framework.Platform.Graphics.Veldrid;
 using osu.Framework.Platform.SDL2;
 using osu.Framework.Platform.Windows.Native;
 using osu.Framework.Threading;
@@ -1232,7 +1233,7 @@ namespace osu.Framework.Platform
 
         #endregion
 
-        protected virtual IGraphicsBackend CreateGraphicsBackend() => new VeldridGraphicsBackend();
+        protected virtual IGraphicsBackend CreateGraphicsBackend() => new Renderer();
 
         public void SetupWindow(FrameworkConfigManager config)
         {

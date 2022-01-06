@@ -2,16 +2,16 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
-using osu.Framework.Graphics.Renderer.Buffers;
 using osuTK;
 using osuTK.Graphics;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
 using System;
 using osu.Framework.Graphics.Colour;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Buffers;
 using osu.Framework.Utils;
 using PixelFormat = Veldrid.PixelFormat;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -67,12 +67,12 @@ namespace osu.Framework.Graphics.Containers
 
                 if (blurRadius.X > 0 || blurRadius.Y > 0)
                 {
-                    Vd.PushScissorState(false);
+                    Renderer.PushScissorState(false);
 
                     if (blurRadius.X > 0) drawBlurredFrameBuffer(blurRadius.X, blurSigma.X, blurRotation);
                     if (blurRadius.Y > 0) drawBlurredFrameBuffer(blurRadius.Y, blurSigma.Y, blurRotation + 90);
 
-                    Vd.PopScissorState();
+                    Renderer.PopScissorState();
                 }
             }
 
@@ -81,7 +81,7 @@ namespace osu.Framework.Graphics.Containers
                 if (drawOriginal && effectPlacement == EffectPlacement.InFront)
                     base.DrawContents();
 
-                Vd.SetBlend(effectBlending);
+                Renderer.SetBlend(effectBlending);
 
                 ColourInfo finalEffectColour = DrawColourInfo.Colour;
                 finalEffectColour.ApplyChild(effectColour);
@@ -97,7 +97,7 @@ namespace osu.Framework.Graphics.Containers
                 FrameBuffer current = SharedData.CurrentEffectBuffer;
                 FrameBuffer target = SharedData.GetNextEffectBuffer();
 
-                Vd.SetBlend(BlendingParameters.None);
+                Renderer.SetBlend(BlendingParameters.None);
 
                 using (BindFrameBuffer(target))
                 {

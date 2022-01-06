@@ -6,14 +6,16 @@ using System.IO;
 using osu.Framework.Configuration;
 using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Platform;
+using osu.Framework.Platform.Graphics.Veldrid;
 using osuTK;
 using osuTK.Graphics;
 using Veldrid;
 using Veldrid.SPIRV;
 using Image = SixLabors.ImageSharp.Image;
+using PrimitiveTopology = Veldrid.PrimitiveTopology;
 
 // ReSharper disable RedundantExplicitParamsArrayCreation
 
@@ -54,8 +56,8 @@ namespace FirstTestProject
             window.Visible = true;
             window.Title = "osu!framework (running under Veldrid)";
 
-            device = VeldridGraphicsBackend.Device;
-            factory = VeldridGraphicsBackend.Device.ResourceFactory;
+            device = Renderer.Device;
+            factory = Renderer.Device.ResourceFactory;
 
             setupTextures();
             setupUniforms();

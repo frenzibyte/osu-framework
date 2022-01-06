@@ -2,15 +2,15 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.IO.Stores;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Textures;
 using osu.Framework.Logging;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -44,7 +44,7 @@ namespace osu.Framework.Graphics.Textures
 
             if (useAtlas)
             {
-                int size = Math.Min(max_atlas_size, Vd.MaxTextureSize);
+                int size = Math.Min(max_atlas_size, Renderer.MaxTextureSize);
                 Atlas = new TextureAtlas(size, size, filteringMode: filteringMode, manualMipmaps: manualMipmaps);
             }
         }
@@ -157,7 +157,7 @@ namespace osu.Framework.Graphics.Textures
             }
             catch (TextureTooLargeForGLException)
             {
-                Logger.Log($"Texture \"{name}\" exceeds the maximum size supported by this device ({Vd.MaxTextureSize}px).", level: LogLevel.Error);
+                Logger.Log($"Texture \"{name}\" exceeds the maximum size supported by this device ({Renderer.MaxTextureSize}px).", level: LogLevel.Error);
             }
             finally
             {

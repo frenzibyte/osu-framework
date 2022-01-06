@@ -6,15 +6,14 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.Renderer;
-using osu.Framework.Graphics.Renderer.Buffers;
-using osu.Framework.Graphics.Renderer.Textures;
-using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Buffers;
+using osu.Framework.Graphics.Rendering.Textures;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Utils;
 using osuTK;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {
@@ -87,13 +86,13 @@ namespace osu.Framework.Graphics
         {
             // Logger.Log("Set blending information");
 
-            Vd.SetBlend(DrawColourInfo.Blending);
+            Renderer.SetBlend(DrawColourInfo.Blending);
 
             // Logger.Log($"Set draw depth to {drawDepth}");
 
             // This is the back-to-front (BTF) pass. The back-buffer depth test function used is GL_LESS.
             // The depth test will fail for samples that overlap the opaque interior of this <see cref="DrawNode"/> and any <see cref="DrawNode"/>s above this one.
-            Vd.SetDrawDepth(drawDepth);
+            Renderer.SetDrawDepth(drawDepth);
         }
 
         /// <summary>
@@ -140,7 +139,7 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
         protected virtual void DrawOpaqueInterior(Action<TexturedVertex2D> vertexAction)
         {
-            Vd.SetDrawDepth(drawDepth);
+            Renderer.SetDrawDepth(drawDepth);
         }
 
         /// <summary>
@@ -226,7 +225,7 @@ namespace osu.Framework.Graphics
                                       Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
             where T : IConvexPolygon
         {
-            var maskingQuad = Vd.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
+            var maskingQuad = Renderer.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
 
             var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
             Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
@@ -251,7 +250,7 @@ namespace osu.Framework.Graphics
                                       Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
             where T : IConvexPolygon
         {
-            var maskingQuad = Vd.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
+            var maskingQuad = Renderer.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
 
             var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
             Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
@@ -296,7 +295,7 @@ namespace osu.Framework.Graphics
             if (Interlocked.Decrement(ref referenceCount) != 0)
                 return;
 
-            Vd.ScheduleDisposal(node => node.Dispose(true), this);
+            Renderer.ScheduleDisposal(node => node.Dispose(true), this);
             GC.SuppressFinalize(this);
         }
 

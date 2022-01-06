@@ -2,10 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.Renderer.Buffers;
-using osu.Framework.Graphics.Renderer.Textures;
-using Veldrid;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Buffers;
+using osu.Framework.Graphics.Rendering.Textures;
+using PixelFormat = Veldrid.PixelFormat;
 
 namespace osu.Framework.Graphics
 {
@@ -109,7 +109,7 @@ namespace osu.Framework.Graphics
 
         public void Dispose()
         {
-            Vd.ScheduleDisposal(d => d.Dispose(true), this);
+            Renderer.ScheduleDisposal(d => d.Dispose(true), this);
             GC.SuppressFinalize(this);
         }
 

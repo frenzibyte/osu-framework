@@ -7,9 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using osu.Framework.Graphics.Rendering;
 using Veldrid;
 using Encoding = System.Text.Encoding;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shaders
 {
@@ -19,7 +19,7 @@ namespace osu.Framework.Graphics.Shaders
 
         internal string Name { get; }
 
-        internal ShaderStages Type { get; }
+        internal ShaderType Type { get; }
 
         internal IReadOnlyList<ShaderUniformInfo> Uniforms { get; }
 
@@ -31,7 +31,7 @@ namespace osu.Framework.Graphics.Shaders
         private static readonly Regex shader_resource_regex = new Regex(@"^\s*(?>uniform)\s+(?:(?:lowp|mediump|highp)\s+)?(texture2D|sampler)\s+\w+;", RegexOptions.Multiline);
         private static readonly Regex shader_uniform_regex = new Regex(@"^\s*(?>uniform)\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(\w+);", RegexOptions.Multiline);
 
-        private ShaderPart(string name, ShaderStages type, string code, List<ShaderUniformInfo> uniforms)
+        private ShaderPart(string name, ShaderType type, string code, List<ShaderUniformInfo> uniforms)
         {
             Name = name;
             Type = type;
@@ -40,7 +40,7 @@ namespace osu.Framework.Graphics.Shaders
             this.code = code;
         }
 
-        internal static ShaderPart LoadFromFile(string name, byte[] data, ShaderStages type, ShaderManager manager)
+        internal static ShaderPart LoadFromFile(string name, byte[] data, ShaderType type, ShaderManager manager)
         {
             var uniforms = new List<ShaderUniformInfo>();
 
@@ -49,7 +49,7 @@ namespace osu.Framework.Graphics.Shaders
             return new ShaderPart(name, type, code, uniforms);
         }
 
-        private static string loadFile(byte[] data, bool mainFile, ShaderStages type, ShaderManager manager, List<ShaderUniformInfo> uniforms)
+        private static string loadFile(byte[] data, bool mainFile, ShaderType type, ShaderManager manager, List<ShaderUniformInfo> uniforms)
         {
             if (data == null)
                 return null;
@@ -83,7 +83,7 @@ namespace osu.Framework.Graphics.Shaders
 
                 code = loadFile(manager.LoadRaw("sh_Precision_Internal.h"), false, type, manager, uniforms) + "\n" + code;
 
-                if (type == ShaderStages.Vertex)
+                if (type == ShaderType.Vertex)
                     code = appendBackbuffer(code, manager, uniforms);
 
                 code = resolveResources(code);
@@ -97,7 +97,7 @@ namespace osu.Framework.Graphics.Shaders
         {
             string realMainName = "real_main_" + Guid.NewGuid().ToString("N");
 
-            string backbufferCode = loadFile(manager.LoadRaw("sh_Backbuffer_Internal.h"), false, ShaderStages.Vertex, manager, uniforms);
+            string backbufferCode = loadFile(manager.LoadRaw("sh_Backbuffer_Internal.h"), false, ShaderType.Vertex, manager, uniforms);
 
             backbufferCode = backbufferCode.Replace("{{ real_main }}", realMainName);
             code = Regex.Replace(code, @"void main\((.*)\)", $"void {realMainName}()") + backbufferCode + '\n';
@@ -126,18 +126,18 @@ namespace osu.Framework.Graphics.Shaders
                 switch (resourceMatch.Groups[1].Value)
                 {
                     case "texture2D":
-                        index = Array.FindIndex(Vd.TEXTURE_LAYOUT.Elements, e => e.Kind == ResourceKind.TextureReadOnly);
+                        index = Array.FindIndex(Renderer.TEXTURE_LAYOUT.Elements, e => e.Kind == ResourceKind.TextureReadOnly);
                         break;
 
                     case "sampler":
-                        index = Array.FindIndex(Vd.TEXTURE_LAYOUT.Elements, e => e.Kind == ResourceKind.Sampler);
+                        index = Array.FindIndex(Renderer.TEXTURE_LAYOUT.Elements, e => e.Kind == ResourceKind.Sampler);
                         break;
 
                     default:
                         throw new ArgumentOutOfRangeException(nameof(code));
                 }
 
-                code = code.Replace(resourceMatch.Value, $"layout(set = {Vd.TEXTURE_RESOURCE_SLOT}, binding = {index}) {resourceMatch.Value}");
+                code = code.Replace(resourceMatch.Value, $"layout(set = {Renderer.TEXTURE_RESOURCE_SLOT}, binding = {index}) {resourceMatch.Value}");
 
                 resourceMatch = resourceMatch.NextMatch();
             }
@@ -173,10 +173,10 @@ namespace osu.Framework.Graphics.Shaders
             if (uniforms.Count == 0)
                 return code;
 
-            string uniformBufferName = Vd.UNIFORM_LAYOUT.Elements.Single().Name;
+            string uniformBufferName = Renderer.UNIFORM_LAYOUT.Elements.Single().Name;
 
             var uniformBuilder = new StringBuilder();
-            uniformBuilder.AppendLine($"layout(std140, set = {Vd.UNIFORM_RESOURCE_SLOT}, binding = 0) uniform {uniformBufferName}");
+            uniformBuilder.AppendLine($"layout(std140, set = {Renderer.UNIFORM_RESOURCE_SLOT}, binding = 0) uniform {uniformBufferName}");
             uniformBuilder.AppendLine("{");
 
             foreach (var uniform in uniforms)

@@ -8,10 +8,11 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Platform.Graphics.Veldrid;
 using osuTK;
 using osuTK.Graphics;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Tests.Visual.Drawables
 {
@@ -103,7 +104,7 @@ namespace osu.Framework.Tests.Visual.Drawables
                 }
             });
 
-            AddWaitStep("wait for some draw nodes", Vd.MAX_DRAW_NODES);
+            AddWaitStep("wait for some draw nodes", Renderer.MAX_DRAW_NODES);
 
             // Clear the parent to ensure no references are held via drawables themselves,
             // and remove the parent to ensure that the parent maintains references to the child draw nodes

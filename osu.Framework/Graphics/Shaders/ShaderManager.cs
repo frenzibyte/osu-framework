@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.IO.Stores;
 using Veldrid;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shaders
 {
@@ -51,8 +51,8 @@ namespace osu.Framework.Graphics.Shaders
 
             List<ShaderPart> parts = new List<ShaderPart>
             {
-                createShaderPart(vertex, ShaderStages.Vertex),
-                createShaderPart(fragment, ShaderStages.Fragment)
+                createShaderPart(vertex, ShaderType.Vertex),
+                createShaderPart(fragment, ShaderType.Fragment)
             };
 
             return shaderCache[tuple] = CreateShader($"{vertex}/{fragment}", parts);
@@ -60,7 +60,7 @@ namespace osu.Framework.Graphics.Shaders
 
         internal virtual Shader CreateShader(string name, List<ShaderPart> parts) => new Shader(name, parts);
 
-        private ShaderPart createShaderPart(string name, ShaderStages type, bool bypassCache = false)
+        private ShaderPart createShaderPart(string name, ShaderType type, bool bypassCache = false)
         {
             name = ensureValidName(name, type);
 
@@ -76,7 +76,7 @@ namespace osu.Framework.Graphics.Shaders
             return part;
         }
 
-        private string ensureValidName(string name, ShaderStages type)
+        private string ensureValidName(string name, ShaderType type)
         {
             string ending = getFileEnding(type);
 
@@ -88,14 +88,14 @@ namespace osu.Framework.Graphics.Shaders
             return name + ending;
         }
 
-        private string getFileEnding(ShaderStages type)
+        private string getFileEnding(ShaderType type)
         {
             switch (type)
             {
-                case ShaderStages.Fragment:
+                case ShaderType.Fragment:
                     return @".fs";
 
-                case ShaderStages.Vertex:
+                case ShaderType.Vertex:
                     return @".vs";
             }
 
@@ -120,7 +120,7 @@ namespace osu.Framework.Graphics.Shaders
 
                 store.Dispose();
 
-                Vd.ScheduleDisposal(s =>
+                Renderer.ScheduleDisposal(s =>
                 {
                     foreach (var shader in s.shaderCache.Values)
                         shader.Dispose();

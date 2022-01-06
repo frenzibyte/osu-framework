@@ -5,10 +5,10 @@ using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Sprites
 {
@@ -162,7 +162,7 @@ namespace osu.Framework.Graphics.Sprites
                 if (!sourceDrawsOriginal && shouldDrawEffectBuffer)
                     return;
 
-                Vd.SetBlend(DrawColourInfo.Blending);
+                Renderer.SetBlend(DrawColourInfo.Blending);
                 DrawFrameBuffer(shared.MainBuffer, screenSpaceDrawQuad, DrawColourInfo.Colour, vertexAction);
             }
 
@@ -171,7 +171,7 @@ namespace osu.Framework.Graphics.Sprites
                 if (!shouldDrawEffectBuffer)
                     return;
 
-                Vd.SetBlend(sourceEffectBlending);
+                Renderer.SetBlend(sourceEffectBlending);
                 ColourInfo finalEffectColour = DrawColourInfo.Colour;
                 finalEffectColour.ApplyChild(sourceEffectColour);
 

@@ -1,9 +1,9 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using osu.Framework.Graphics.Renderer.Textures;
 using osu.Framework.Graphics.Primitives;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Textures;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -19,7 +19,7 @@ namespace osu.Framework.Graphics.Textures
             // We need non-zero texture bounds for EdgeSmoothness to work correctly.
             // Let's be very conservative and use a tenth of the size of a pixel in the
             // largest possible texture.
-            float smallestPixelTenth = 0.1f / Vd.MaxTextureSize;
+            float smallestPixelTenth = 0.1f / Renderer.MaxTextureSize;
             return new RectangleF(0, 0, smallestPixelTenth, smallestPixelTenth);
         }
     }

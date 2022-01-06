@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using JetBrains.Annotations;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Rendering.Textures;
 using osu.Framework.IO.Stores;
 
 namespace osu.Framework.Graphics.Textures

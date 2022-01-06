@@ -3,7 +3,7 @@
 
 using NUnit.Framework;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Rendering.Textures;
 using osu.Framework.Graphics.Textures;
 
 namespace osu.Framework.Tests.Graphics

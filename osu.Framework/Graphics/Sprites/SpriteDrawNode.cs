@@ -3,11 +3,11 @@
 
 using osuTK;
 using System;
-using osu.Framework.Graphics.Renderer.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Textures;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Graphics.Renderer.Textures;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Sprites
 {
@@ -65,7 +65,7 @@ namespace osu.Framework.Graphics.Sprites
 
         protected virtual void BlitOpaqueInterior(Action<TexturedVertex2D> vertexAction)
         {
-            if (Vd.IsMaskingActive)
+            if (Renderer.IsMaskingActive)
                 DrawClipped(ref ConservativeScreenSpaceDrawQuad, Texture, DrawColourInfo.Colour, vertexAction: vertexAction);
             else
                 DrawQuad(Texture, ConservativeScreenSpaceDrawQuad, DrawColourInfo.Colour, vertexAction: vertexAction, textureCoords: TextureCoords);
