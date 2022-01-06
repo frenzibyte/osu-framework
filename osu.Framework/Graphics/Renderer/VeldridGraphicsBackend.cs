@@ -321,7 +321,7 @@ namespace osu.Framework.Graphics.Renderer
             Viewport = RectangleI.Empty;
             Ortho = RectangleF.Empty;
 
-            PushScissorState(false);
+            PushScissorState(true);
             PushViewport(new RectangleI(0, 0, (int)size.X, (int)size.Y));
             PushScissor(new RectangleI(0, 0, (int)size.X, (int)size.Y));
             PushScissorOffset(Vector2I.Zero);

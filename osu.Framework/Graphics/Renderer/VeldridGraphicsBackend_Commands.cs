@@ -204,7 +204,7 @@ namespace osu.Framework.Graphics.Renderer
                 scissor.Height = -scissor.Height;
             }
 
-            Commands.SetScissorRect(0, (uint)scissor.X, (uint)(Viewport.Height - scissor.Bottom), (uint)scissor.Width, (uint)scissor.Height);
+            Commands.SetScissorRect(0, (uint)scissor.X, (uint)scissor.Y, (uint)scissor.Width, (uint)scissor.Height);
         }
 
         #endregion
