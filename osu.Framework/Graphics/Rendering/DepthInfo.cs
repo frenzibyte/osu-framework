@@ -29,6 +29,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <summary>
         /// The depth test function.
         /// </summary>
+        // todo: don't use veldrid enum in renderer namespace
         public readonly ComparisonKind Function;
 
         public DepthInfo(bool depthTest = true, bool writeDepth = true, ComparisonKind function = ComparisonKind.Less)

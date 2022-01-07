@@ -8,6 +8,7 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
+using osu.Framework.Platform.Graphics;
 using Veldrid;
 
 namespace osu.Framework.Graphics.Rendering

@@ -9,7 +9,6 @@ using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Platform;
-using osu.Framework.Platform.Graphics.Veldrid;
 using osuTK;
 using osuTK.Graphics;
 using Veldrid;

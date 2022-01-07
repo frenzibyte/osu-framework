@@ -10,7 +10,6 @@ using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Input.Handlers.Mouse;
-using osu.Framework.Platform.Graphics.Veldrid;
 
 namespace osu.Framework.Platform.MacOS
 {

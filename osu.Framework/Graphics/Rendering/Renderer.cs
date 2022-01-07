@@ -125,46 +125,7 @@ namespace osu.Framework.Graphics.Rendering
 
         public void Initialise(IWindow window)
         {
-            if (IsInitialized) return;
-
-            if (!(window is SDL2DesktopWindow))
-                throw new ArgumentException("Unsupported window backend.", nameof(window));
-
-            sdlWindow = (SDL2DesktopWindow)window;
-
-            var options = new GraphicsDeviceOptions
-            {
-                HasMainSwapchain = true,
-                SwapchainDepthFormat = null,
-                // SwapchainSrgbFormat = true,
-                SyncToVerticalBlank = true,
-                PreferDepthRangeZeroToOne = true,
-                PreferStandardClipSpaceYDirection = true,
-                ResourceBindingModel = ResourceBindingModel.Improved,
-                Debug = DebugUtils.IsDebugBuild,
-            };
-
             Device = CreateDevice(options, sdlWindow, window.ClientSize);
-
-            Logger.Log($@"{Device.BackendType} Initialised
-                          {Device.BackendType} ComputeShader: {Device.Features.ComputeShader}
-                          {Device.BackendType} GeometryShader: {Device.Features.GeometryShader}
-                          {Device.BackendType} TessellationShaders: {Device.Features.TessellationShaders}
-                          {Device.BackendType} MultipleViewports: {Device.Features.MultipleViewports}
-                          {Device.BackendType} SamplerLodBias: {Device.Features.SamplerLodBias}
-                          {Device.BackendType} DrawBaseVertex: {Device.Features.DrawBaseVertex}
-                          {Device.BackendType} DrawBaseInstance: {Device.Features.DrawBaseInstance}
-                          {Device.BackendType} DrawIndirect: {Device.Features.DrawIndirect}
-                          {Device.BackendType} DrawIndirectBaseInstance: {Device.Features.DrawIndirectBaseInstance}
-                          {Device.BackendType} FillModeWireframe: {Device.Features.FillModeWireframe}
-                          {Device.BackendType} SamplerAnisotropy: {Device.Features.SamplerAnisotropy}
-                          {Device.BackendType} DepthClipDisable: {Device.Features.DepthClipDisable}
-                          {Device.BackendType} Texture1D: {Device.Features.Texture1D}
-                          {Device.BackendType} IndependentBlend: {Device.Features.IndependentBlend}
-                          {Device.BackendType} StructuredBuffer: {Device.Features.StructuredBuffer}
-                          {Device.BackendType} SubsetTextureView: {Device.Features.SubsetTextureView}
-                          {Device.BackendType} CommandListDebugMarkers: {Device.Features.CommandListDebugMarkers}
-                          {Device.BackendType} BufferRangeBinding: {Device.Features.BufferRangeBinding}");
 
             pipelineDescription = new GraphicsPipelineDescription
             {
@@ -181,74 +142,6 @@ namespace osu.Framework.Graphics.Rendering
             IsInitialized = true;
 
             reset_scheduler.AddDelayed(checkPendingDisposals, 0, true);
-        }
-
-        protected virtual GraphicsDevice CreateDevice(GraphicsDeviceOptions options, SDL2DesktopWindow sdlWindow, Size initialSize)
-        {
-            var swapchainDescription = new SwapchainDescription
-            {
-                Width = (uint)initialSize.Width,
-                Height = (uint)initialSize.Height,
-                ColorSrgb = options.SwapchainSrgbFormat,
-                DepthFormat = options.SwapchainDepthFormat,
-                SyncToVerticalBlank = options.SyncToVerticalBlank,
-            };
-
-            switch (RuntimeInfo.OS)
-            {
-                case RuntimeInfo.Platform.Windows:
-                    swapchainDescription.Source = SwapchainSource.CreateWin32(sdlWindow.WindowHandle, IntPtr.Zero);
-                    break;
-
-                case RuntimeInfo.Platform.macOS:
-                    if (Type == GraphicsBackend.Vulkan)
-                    {
-                        // Vulkan's validation layer is busted with Veldrid running on macOS.
-                        // Waiting on https://github.com/mellinoe/veldrid/pull/419.
-                        options.Debug = false;
-                    }
-
-                    swapchainDescription.Source = SwapchainSource.CreateNSView(SDL.SDL_Metal_CreateView(sdlWindow.SDLWindowHandle));
-                    break;
-
-                case RuntimeInfo.Platform.Linux:
-                    swapchainDescription.Source = SwapchainSource.CreateXlib(sdlWindow.DisplayHandle, sdlWindow.WindowHandle);
-                    break;
-            }
-
-            switch (Type)
-            {
-                case GraphicsBackend.OpenGL:
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
-
-                    IntPtr context = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
-                    if (context == IntPtr.Zero)
-                        throw new InvalidOperationException($"Failed to create an SDL2 GL context ({SDL.SDL_GetError()})");
-
-                    return GraphicsDevice.CreateOpenGL(options, new OpenGLPlatformInfo(context,
-                        s => SDL.SDL_GL_GetProcAddress(s),
-                        c => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, c),
-                        () => SDL.SDL_GL_GetCurrentContext(),
-                        () => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, IntPtr.Zero),
-                        c => SDL.SDL_GL_DeleteContext(c),
-                        () => SDL.SDL_GL_SwapWindow(sdlWindow.SDLWindowHandle),
-                        value => SDL.SDL_GL_SetSwapInterval(value ? 1 : 0)), (uint)initialSize.Width, (uint)initialSize.Height);
-
-                case GraphicsBackend.OpenGLES:
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
-                    return GraphicsDevice.CreateOpenGLES(options, swapchainDescription);
-
-                case GraphicsBackend.Direct3D11:
-                    return GraphicsDevice.CreateD3D11(options, swapchainDescription);
-
-                case GraphicsBackend.Vulkan:
-                    return GraphicsDevice.CreateVulkan(options, swapchainDescription);
-
-                case GraphicsBackend.Metal:
-                    return GraphicsDevice.CreateMetal(options, swapchainDescription);
-            }
-
-            return null;
         }
 
         public Size GetDrawableSize()

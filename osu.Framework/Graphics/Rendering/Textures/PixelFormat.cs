@@ -3,6 +3,7 @@
 
 namespace osu.Framework.Graphics.Rendering.Textures
 {
+    // todo: fill this.
     public enum PixelFormat
     {
         /// <summary>

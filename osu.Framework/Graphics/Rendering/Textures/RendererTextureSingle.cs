@@ -13,6 +13,7 @@ using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Lists;
 using osu.Framework.Platform;
+using osu.Framework.Platform.Graphics;
 using osu.Framework.Statistics;
 using osuTK;
 using SixLabors.ImageSharp;
@@ -548,7 +549,5 @@ namespace osu.Framework.Graphics.Rendering.Textures
                 ? new Image<Rgba32>(width, height)
                 : new Image<Rgba32>(width, height, initialisationColour);
         }
-
-        private static int calculateMipmapLevels(int width, int height) => Math.Min(1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2)), MAX_MIPMAP_LEVELS);
     }
 }

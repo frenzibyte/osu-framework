@@ -6,7 +6,8 @@ using osu.Framework.Graphics.Rendering;
 
 namespace osu.Framework.Graphics.Shaders
 {
-    internal class GlobalUniform<T> : IUniform where T : unmanaged, IEquatable<T>
+    internal class GlobalUniform<T> : IUniform
+        where T : unmanaged, IEquatable<T>
     {
         public Shader Owner { get; }
         public int Location { get; }

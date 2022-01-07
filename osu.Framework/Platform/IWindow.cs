@@ -16,6 +16,16 @@ namespace osu.Framework.Platform
     public interface IWindow : IDisposable
     {
         /// <summary>
+        /// The underlying window handle.
+        /// </summary>
+        IntPtr WindowHandle { get; }
+
+        /// <summary>
+        /// The underlying display handle for linux-based operating systems, otherwise <see cref="IntPtr.Zero"/> is returned.
+        /// </summary>
+        IntPtr DisplayHandle { get; }
+
+        /// <summary>
         /// Cycles through the available <see cref="WindowMode"/>s as determined by <see cref="SupportedWindowModes"/>.
         /// </summary>
         void CycleMode();

@@ -10,7 +10,6 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Platform.Graphics.Veldrid;
 using osuTK;
 using osuTK.Graphics;
 

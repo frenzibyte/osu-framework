@@ -17,7 +17,7 @@ using Shader = osu.Framework.Graphics.Shaders.Shader;
 namespace osu.Framework.Platform
 {
     /// <summary>
-    /// Provides an implementation-agnostic interface on the backing graphics API.
+    /// Provides an implementation-agnostic interface on the backing low-level graphics API.
     /// </summary>
     public interface IGraphicsBackend
     {
@@ -34,17 +34,17 @@ namespace osu.Framework.Platform
         /// <summary>
         /// The blending parameters state currently applied to the backend.
         /// </summary>
-        BlendingParameters BlendingParameters { get; set; }
+        BlendingParameters BlendingParameters { set; }
 
         /// <summary>
         /// The depth information state currently applied to the backend.
         /// </summary>
-        DepthInfo DepthInfo { get; set; }
+        DepthInfo DepthInfo { set; }
 
         /// <summary>
         /// Whether scissor testing should be enabled in the backend.
         /// </summary>
-        bool ScissorTest { get; set; }
+        bool ScissorTest { set; }
 
         /// <summary>
         /// Whether buffer swapping should be synced to the monitor's refresh rate.
@@ -109,7 +109,11 @@ namespace osu.Framework.Platform
         /// <summary>
         /// Sets the active vertex and index buffers to draw with.
         /// </summary>
-        void SetVertexBuffer<T>(VertexBuffer<T> buffer) where T : unmanaged, IEquatable<T>, IVertex;
+        /// <typeparam name="T">The vertex type.</typeparam>
+        /// <typeparam name="TIndex">The index type.</typeparam>
+        void SetVertexBuffer<T, TIndex>(VertexBuffer<T> buffer)
+            where T : unmanaged, IEquatable<T>, IVertex
+            where TIndex : unmanaged;
 
         /// <summary>
         /// Updates the vertex buffer with <paramref name="data"/> at the specified location.

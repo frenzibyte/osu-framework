@@ -10,7 +10,6 @@ using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
-using osu.Framework.Platform.Graphics.Veldrid;
 using osuTK.Graphics;
 
 namespace SecondTestProject

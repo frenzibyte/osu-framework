@@ -3,7 +3,6 @@
 
 using osu.Framework;
 using osu.Framework.Graphics.Rendering;
-using osu.Framework.Platform.Graphics.Veldrid;
 
 namespace SampleGame.Desktop
 {

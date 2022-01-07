@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using osu.Framework.Platform.Graphics;
 using osu.Framework.Statistics;
 using Veldrid;
 

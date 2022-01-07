@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Platform;
-using osu.Framework.Platform.Graphics.Veldrid;
 
 namespace osu.Framework.Threading
 {

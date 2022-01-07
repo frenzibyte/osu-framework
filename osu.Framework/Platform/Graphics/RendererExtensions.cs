@@ -2,11 +2,14 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Graphics;
 using osu.Framework.Graphics.Rendering.Textures;
 using Veldrid;
 using BlendStateDescription = Veldrid.BlendStateDescription;
+using PixelFormat = osu.Framework.Graphics.Rendering.Textures.PixelFormat;
+using VdPixelFormat = Veldrid.PixelFormat;
 
-namespace osu.Framework.Graphics.Rendering
+namespace osu.Framework.Platform.Graphics
 {
     public static class VeldridExtensions
     {
@@ -83,6 +86,24 @@ namespace osu.Framework.Graphics.Rendering
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(equation));
+            }
+        }
+
+        public static VdPixelFormat ToPixelFormat(this PixelFormat format)
+        {
+            switch (format)
+            {
+                case PixelFormat.RGBA_Srgb:
+                    return VdPixelFormat.R8_G8_B8_A8_UNorm_SRgb;
+
+                case PixelFormat.BGRA:
+                    return VdPixelFormat.B8_G8_R8_A8_UNorm;
+
+                case PixelFormat.Red:
+                    return VdPixelFormat.R8_UNorm;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(format));
             }
         }
 
