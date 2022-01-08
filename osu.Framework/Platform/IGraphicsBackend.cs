@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Primitives;
@@ -12,6 +13,7 @@ using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
 using osuTK;
 using Veldrid;
+using PrimitiveTopology = osu.Framework.Graphics.Rendering.PrimitiveTopology;
 using Shader = osu.Framework.Graphics.Shaders.Shader;
 
 namespace osu.Framework.Platform
@@ -78,6 +80,11 @@ namespace osu.Framework.Platform
         void EndDraw();
 
         /// <summary>
+        /// Resizes the main framebuffer to the specified size.
+        /// </summary>
+        void Resize(Vector2 size);
+
+        /// <summary>
         /// Performs a backbuffer swap immediately if <see cref="VerticalSync"/> is false, or on the next screen refresh if true.
         /// </summary>
         void SwapBuffers();
@@ -92,7 +99,7 @@ namespace osu.Framework.Platform
         /// </summary>
         /// <param name="position">The position of the viewport rectangle.</param>
         /// <param name="size">The size of the viewport rectangle.</param>
-        void SetViewport(Vector3 position, Vector3 size);
+        void SetViewport(RectangleI viewport);
 
         /// <summary>
         /// Sets the scissor rectangle of the active framebuffer.
@@ -103,16 +110,26 @@ namespace osu.Framework.Platform
         /// Sets the active framebuffer which will be rendered to.
         /// </summary>
         /// <param name="framebuffer">The framebuffer, or null to set the main framebuffer.</param>
-        void SetFramebuffer([CanBeNull] FrameBuffer framebuffer);
+        void SetFrameBuffer([CanBeNull] FrameBuffer framebuffer);
 
         /// <summary>
         /// Sets the active vertex and index buffers to draw with.
         /// </summary>
-        /// <typeparam name="T">The vertex type.</typeparam>
+        /// <param name="buffer">The vertex buffer.</param>
+        /// <param name="layout">The list of elements to define the structure layout of this vertex.</param>
         /// <typeparam name="TIndex">The index type.</typeparam>
-        void SetVertexBuffer<T, TIndex>(IVertexBuffer buffer)
-            where T : unmanaged, IEquatable<T>, IVertex
+        void SetVertexBuffer<TIndex>(IVertexBuffer buffer, IReadOnlyList<VertexLayoutElement> layout)
             where TIndex : unmanaged;
+
+        /// <summary>
+        /// Sets the active texture to draw with.
+        /// </summary>
+        void SetTexture(RendererTexture texture);
+
+        /// <summary>
+        /// Sets the active shader to draw with.
+        /// </summary>
+        void SetShader(Shader shader);
 
         /// <summary>
         /// Updates the vertex buffer with <paramref name="data"/> at the specified location.
@@ -124,14 +141,9 @@ namespace osu.Framework.Platform
         void UpdateVertexBuffer<T>(IVertexBuffer buffer, int start, Memory<T> data) where T : unmanaged, IEquatable<T>, IVertex;
 
         /// <summary>
-        /// Sets the active texture to draw with.
+        /// Updates the contents of a <see cref="RendererTexture"/> with <paramref name="data"/> at the specified coordinates.
         /// </summary>
-        void SetTexture(RendererTexture texture);
-
-        /// <summary>
-        /// Updates the contents of a <see cref="Texture"/> with <paramref name="data"/> at the specified coordinates.
-        /// </summary>
-        /// <param name="texture">The <see cref="Texture"/> to update.</param>
+        /// <param name="texture">The <see cref="RendererTexture"/> to update.</param>
         /// <param name="x">The X coordinate of the update region.</param>
         /// <param name="y">The Y coordinate of the update region.</param>
         /// <param name="width">The width of the update region.</param>
@@ -139,12 +151,7 @@ namespace osu.Framework.Platform
         /// <param name="level">The texture level.</param>
         /// <param name="data">The textural data.</param>
         /// <typeparam name="TPixel">The pixel type.</typeparam>
-        void UpdateTexture<TPixel>(RendererTexture texture, int x, int y, int width, int height, int level, ReadOnlySpan<TPixel> data) where TPixel : unmanaged;
-
-        /// <summary>
-        /// Sets the active shader to draw with.
-        /// </summary>
-        void SetShader(Shader shader);
+        void UpdateTexture<TPixel>(RendererTexture texture, int x, int y, int width, int height, int level, Memory<TPixel> data) where TPixel : unmanaged;
 
         /// <summary>
         /// Updates the uniform value on the active uniform buffer.
@@ -158,11 +165,12 @@ namespace osu.Framework.Platform
         void UpdateUniforms(Shader shader);
 
         /// <summary>
-        /// Queues an indexed draw call to the active framebuffer at the specified range in the indices buffer.
+        /// Draws a number of primitives from the specified vertices.
         /// </summary>
+        /// <param name="topology">The primitive topology to use for this draw call.</param>
         /// <param name="start">The index start to begin drawing from.</param>
         /// <param name="count">The number of indices to draw.</param>
-        void DrawVertices(int start, int count);
+        void Draw(PrimitiveTopology topology, int start, int count);
 
         /// <summary>
         /// Waits until GPU has finished work with the latest submitted frame.

@@ -128,5 +128,27 @@ namespace osu.Framework.Platform.Graphics
 
             return SpirvCompilation.CompileGlslToSpirv(Encoding.UTF8.GetString(bytes), null, type, new GlslCompileOptions(DebugUtils.IsDebugBuild)).SpirvBytes;
         }
+
+        // private static readonly Dictionary<int, ResourceLayout> texture_layouts = new Dictionary<int, ResourceLayout>();
+        //
+        // /// <summary>
+        // /// Retrieves a <see cref="ResourceLayout"/> for a texture resource set.
+        // /// </summary>
+        // /// <param name="textureCount">The number of textures in the resource layout.</param>
+        // /// <returns></returns>
+        // public static ResourceLayout GetTextureResourceLayout(int textureCount)
+        // {
+        //     if (texture_layouts.TryGetValue(textureCount, out var layout))
+        //         return layout;
+        //
+        //     var description = new ResourceLayoutDescription(new ResourceLayoutElementDescription[textureCount + 1]);
+        //     var textureElement = TEXTURE_LAYOUT.Elements.Single(e => e.Kind == ResourceKind.TextureReadOnly);
+        //
+        //     for (int i = 0; i < textureCount; i++)
+        //         description.Elements[i] = new ResourceLayoutElementDescription($"{textureElement.Name}{i}", textureElement.Kind, textureElement.Stages);
+        //
+        //     description.Elements[^1] = TEXTURE_LAYOUT.Elements.Single(e => e.Kind == ResourceKind.Sampler);
+        //     return texture_layouts[textureCount] = Factory.CreateResourceLayout(description);
+        // }
     }
 }

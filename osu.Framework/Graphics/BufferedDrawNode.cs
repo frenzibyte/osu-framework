@@ -163,7 +163,7 @@ namespace osu.Framework.Graphics
                 ToMaskingSpace = Matrix3.Identity,
                 BlendRange = 1,
                 AlphaExponent = 1,
-            }, true);
+            });
 
             // Match viewport to FrameBuffer such that we don't draw unnecessary pixels.
             Renderer.PushViewport(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));

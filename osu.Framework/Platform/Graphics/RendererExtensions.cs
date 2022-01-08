@@ -7,7 +7,9 @@ using osu.Framework.Graphics.Rendering.Textures;
 using Veldrid;
 using BlendStateDescription = Veldrid.BlendStateDescription;
 using PixelFormat = osu.Framework.Graphics.Rendering.Textures.PixelFormat;
+using PrimitiveTopology = osu.Framework.Graphics.Rendering.PrimitiveTopology;
 using VdPixelFormat = Veldrid.PixelFormat;
+using VdPrimitiveTopology = Veldrid.PrimitiveTopology;
 
 namespace osu.Framework.Platform.Graphics
 {
@@ -130,7 +132,31 @@ namespace osu.Framework.Platform.Graphics
                         : SamplerFilter.MinPoint_MagPoint_MipPoint;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+                    throw new ArgumentOutOfRangeException(nameof(mode));
+            }
+        }
+
+        public static VdPrimitiveTopology ToPrimitiveTopology(this PrimitiveTopology topology)
+        {
+            switch (topology)
+            {
+                case PrimitiveTopology.Triangles:
+                    return VdPrimitiveTopology.TriangleList;
+
+                case PrimitiveTopology.TriangleStrip:
+                    return VdPrimitiveTopology.TriangleStrip;
+
+                case PrimitiveTopology.Lines:
+                    return VdPrimitiveTopology.LineList;
+
+                case PrimitiveTopology.LineStrip:
+                    return VdPrimitiveTopology.LineStrip;
+
+                case PrimitiveTopology.Points:
+                    return VdPrimitiveTopology.PointList;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(topology));
             }
         }
 
