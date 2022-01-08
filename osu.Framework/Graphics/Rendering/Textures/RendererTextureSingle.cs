@@ -13,14 +13,11 @@ using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Lists;
 using osu.Framework.Platform;
-using osu.Framework.Platform.Graphics;
 using osu.Framework.Statistics;
 using osuTK;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Veldrid;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
-using Texture = Veldrid.Texture;
 
 namespace osu.Framework.Graphics.Rendering.Textures
 {
@@ -58,7 +55,7 @@ namespace osu.Framework.Graphics.Rendering.Textures
         public ulong BindCount { get; protected set; }
 
         // ReSharper disable once InconsistentlySynchronizedField (no need to lock here. we don't really care if the value is stale).
-        public override bool Loaded => texture != null || uploadQueue.Count > 0;
+        public override bool Loaded => resource != null || uploadQueue.Count > 0;
 
         public override RectangleI Bounds => new RectangleI(0, 0, Width, Height);
 
@@ -110,19 +107,13 @@ namespace osu.Framework.Graphics.Rendering.Textures
 
             Renderer.ScheduleDisposal(texture =>
             {
-                if (texture.texture == null)
+                if (texture.resource == null)
                     return;
 
                 texture.memoryLease?.Dispose();
 
-                texture.textureResourceSet?.Dispose();
-                texture.textureResourceSet = null;
-
-                texture.sampler?.Dispose();
-                texture.sampler = null;
-
-                texture.texture?.Dispose();
-                texture.texture = null;
+                texture.resource?.Dispose();
+                texture.resource = null;
             }, this);
         }
 
@@ -177,22 +168,19 @@ namespace osu.Framework.Graphics.Rendering.Textures
             set => width = value;
         }
 
-        private Texture texture;
-        private Sampler sampler;
+        private IDisposable resource;
 
-        private TextureResourceSet textureResourceSet;
-
-        public override TextureResourceSet TextureResourceSet
+        public override object Resource
         {
             get
             {
                 if (!Available)
-                    throw new ObjectDisposedException(ToString(), "Can not obtain resource set of a disposed texture.");
+                    throw new ObjectDisposedException(ToString(), "Can not obtain resource of a disposed texture.");
 
-                if (textureResourceSet == null)
-                    throw new InvalidOperationException("Can not obtain resource set of a texture before uploading it.");
+                if (resource == null)
+                    throw new InvalidOperationException("Can not obtain resource of a texture before uploading it.");
 
-                return textureResourceSet;
+                return resource;
             }
         }
 
@@ -393,7 +381,7 @@ namespace osu.Framework.Graphics.Rendering.Textures
 
             Upload();
 
-            if (texture == null)
+            if (resource == null)
                 return false;
 
             if (Renderer.BindTexture(this, wrapModeS, wrapModeT))
@@ -423,15 +411,14 @@ namespace osu.Framework.Graphics.Rendering.Textures
                 }
             }
 
-            if (didUpload && !manualMipmaps)
-                Renderer.Commands.GenerateMipmaps(texture);
+            // if (didUpload && !manualMipmaps)
+            //     Renderer.Commands.GenerateMipmaps(texture);
 
             return didUpload;
         }
 
         internal override void FlushUploads()
         {
-            /* 512x256, 256x128, 128x64, 64x32, 32x16, 16x8, 8x4, 4x2, 2x1, 1x1 */
             while (tryGetNextUpload(out var upload))
                 upload.Dispose();
         }
@@ -454,56 +441,56 @@ namespace osu.Framework.Graphics.Rendering.Textures
         protected virtual unsafe void DoUpload(ITextureUpload upload)
         {
             // Do we need to generate a new texture?
-            if (texture == null || internalWidth != width || internalHeight != height)
+            if (resource == null || internalWidth != width || internalHeight != height)
             {
                 internalWidth = width;
                 internalHeight = height;
 
                 // We only need to generate a new texture if we don't have one already. Otherwise just re-use the current one.
-                if (texture == null)
+                if (resource == null)
                 {
-                    var usage = TextureUsage.Sampled;
+                    // var usage = TextureUsage.Sampled;
+                    //
+                    // if (!manualMipmaps)
+                    //     usage |= TextureUsage.GenerateMipmaps;
 
-                    if (!manualMipmaps)
-                        usage |= TextureUsage.GenerateMipmaps;
+                    // var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.RGBA_Srgb, usage);
+                    //
+                    // var samplerDescription = new SamplerDescription
+                    // {
+                    //     AddressModeU = SamplerAddressMode.Clamp,
+                    //     AddressModeV = SamplerAddressMode.Clamp,
+                    //     AddressModeW = SamplerAddressMode.Clamp,
+                    //     Filter = filteringMode.ToSamplerFilter(manualMipmaps),
+                    //     LodBias = 0,
+                    //     MinimumLod = 0,
+                    //     MaximumLod = MAX_MIPMAP_LEVELS,
+                    //     MaximumAnisotropy = 0
+                    // };
+                    //
+                    // texture = Renderer.Factory.CreateTexture(textureDescription);
+                    // sampler = Renderer.Factory.CreateSampler(samplerDescription);
 
-                    var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
-
-                    var samplerDescription = new SamplerDescription
-                    {
-                        AddressModeU = SamplerAddressMode.Clamp,
-                        AddressModeV = SamplerAddressMode.Clamp,
-                        AddressModeW = SamplerAddressMode.Clamp,
-                        Filter = filteringMode.ToSamplerFilter(manualMipmaps),
-                        LodBias = 0,
-                        MinimumLod = 0,
-                        MaximumLod = MAX_MIPMAP_LEVELS,
-                        MaximumAnisotropy = 0
-                    };
-
-                    texture = Renderer.Factory.CreateTexture(textureDescription);
-                    sampler = Renderer.Factory.CreateSampler(samplerDescription);
-
-                    textureResourceSet = new TextureResourceSet(texture, sampler);
+                    // textureResourceSet = new TextureResourceSet(texture, sampler);
 
                     Renderer.BindTexture(this);
                 }
                 else
                     Renderer.BindTexture(this);
 
-                if (!upload.Data.IsEmpty)
-                {
-                    if (width == upload.Bounds.Width && height == upload.Bounds.Height)
-                    {
-                        updateMemoryUsage(upload.Level, (long)width * height * sizeof(Rgba32));
-                        Renderer.UpdateTexture(texture, 0, 0, width, height, upload.Level, upload.Data);
-                    }
-                    else
-                    {
-                        initializeLevel(upload.Level, width, height);
-                        Renderer.UpdateTexture(texture, upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
-                    }
-                }
+                // if (!upload.Data.IsEmpty)
+                // {
+                //     if (width == upload.Bounds.Width && height == upload.Bounds.Height)
+                //     {
+                //         updateMemoryUsage(upload.Level, (long)width * height * sizeof(Rgba32));
+                //         Renderer.UpdateTexture(resource, 0, 0, width, height, upload.Level, upload.Data);
+                //     }
+                //     else
+                //     {
+                //         initializeLevel(upload.Level, width, height);
+                //         Renderer.UpdateTexture(resource, upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
+                //     }
+                // }
             }
             // Just update content of the current texture
             else if (!upload.Data.IsEmpty)
@@ -528,7 +515,7 @@ namespace osu.Framework.Graphics.Rendering.Textures
 
                 int div = (int)Math.Pow(2, upload.Level);
 
-                Renderer.UpdateTexture(texture, upload.Bounds.X / div, upload.Bounds.Y / div, upload.Bounds.Width / div, upload.Bounds.Height / div, upload.Level, upload.Data);
+                // Renderer.UpdateTexture(resource, upload.Bounds.X / div, upload.Bounds.Y / div, upload.Bounds.Width / div, upload.Bounds.Height / div, upload.Level, upload.Data);
             }
         }
 
@@ -538,7 +525,7 @@ namespace osu.Framework.Graphics.Rendering.Textures
             using (var pixels = image.CreateReadOnlyPixelSpan())
             {
                 updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
-                Renderer.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
+                // Renderer.UpdateTexture(resource, 0, 0, width, height, level, pixels.Span);
             }
         }
 

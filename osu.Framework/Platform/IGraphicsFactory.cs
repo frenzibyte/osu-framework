@@ -34,17 +34,12 @@ namespace osu.Framework.Platform
         IDisposable CreateIndexBuffer(int length);
 
         /// <summary>
-        /// Creates a new vertex shader.
+        /// Creates a new vertex and fragment shader.
         /// </summary>
-        /// <param name="bytes">The shader bytes.</param>
+        /// <param name="vertexBytes">The vertex shader bytes.</param>
+        /// <param name="fragmentBytes">The fragment shader bytes.</param>
         /// <param name="elements">The resultant vertex layout elements.</param>
-        IDisposable CreateVertexShader(byte[] bytes, out VertexLayoutElement[] elements);
-
-        /// <summary>
-        /// Creates a new fragment/pixel shader.
-        /// </summary>
-        /// <param name="bytes">The shader bytes.</param>
-        IDisposable CreateFragmentShader(byte[] bytes);
+        IDisposable[] CreateVertexFragmentShaders(byte[] vertexBytes, byte[] fragmentBytes, out VertexLayoutElement[] elements);
 
         /// <summary>
         /// Creates a new framebuffer.

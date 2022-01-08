@@ -47,8 +47,8 @@ namespace osu.Framework.Platform.MacOS
             base.Swap();
 
             // It has been reported that this helps performance on macOS (https://github.com/ppy/osu/issues/7447)
-            if (!Window.VerticalSync)
-                Renderer.Device.WaitForIdle();
+            if (!Window.Graphics.VerticalSync)
+                Window.Graphics.WaitUntilFinished();
         }
 
         protected override IEnumerable<InputHandler> CreateAvailableInputHandlers()

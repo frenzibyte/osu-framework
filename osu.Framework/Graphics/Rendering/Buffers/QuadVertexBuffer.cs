@@ -72,22 +72,16 @@ namespace osu.Framework.Graphics.Rendering.Buffers
 
                 QuadIndexData.MaxAmountIndices = amountIndices;
 
-                Renderer.BindIndexBuffer(QuadIndexData.IndexBuffer, IndexFormat.UInt16);
-
-                Renderer.UpdateBuffer(QuadIndexData.IndexBuffer, 0, ref indices[0], indices.Length * sizeof(ushort));
+                // Renderer.BindIndexBuffer(QuadIndexData.IndexBuffer, IndexFormat.UInt16);
+                //
+                // Renderer.UpdateBuffer(QuadIndexData.IndexBuffer, 0, ref indices[0], indices.Length * sizeof(ushort));
             }
-        }
-
-        public override void Bind()
-        {
-            base.Bind();
-            Renderer.BindIndexBuffer(QuadIndexData.IndexBuffer, IndexFormat.UInt16);
         }
 
         protected override int ToElements(int vertices) => 3 * vertices / 2;
 
         protected override int ToElementIndex(int vertexIndex) => 3 * vertexIndex / 2;
 
-        protected override PrimitiveTopology Topology => PrimitiveTopology.TriangleList;
+        protected override PrimitiveTopology Topology => PrimitiveTopology.Triangles;
     }
 }

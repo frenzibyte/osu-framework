@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Primitives;
@@ -25,14 +26,7 @@ namespace osu.Framework.Platform.Graphics
         internal const uint UNIFORM_RESOURCE_SLOT = 0;
         internal const uint TEXTURE_RESOURCE_SLOT = 1;
 
-        /// <summary>
-        /// The backing <see cref="GraphicsDevice"/> of this backend.
-        /// </summary>
-        protected GraphicsDevice Device { get; }
-
-        protected CommandList Commands { get; private set; }
-
-        private readonly CommandList globalCommands;
+        public event Action OnSwap;
 
         public virtual GraphicsBackend Type
         {
@@ -53,11 +47,22 @@ namespace osu.Framework.Platform.Graphics
             }
         }
 
+        /// <summary>
+        /// The backing <see cref="GraphicsDevice"/> of this backend.
+        /// </summary>
+        protected GraphicsDevice Device { get; }
+
         public IGraphicsFactory Factory { get; }
 
-        private Framebuffer currentFrameBuffer;
+        protected CommandList Commands { get; private set; }
+
+        private readonly CommandList globalCommands;
 
         private GraphicsPipelineDescription pipelineDescription;
+
+        private Framebuffer currentFrameBuffer;
+        private ResourceSet boundTextureSet;
+        private ResourceSet boundUniformSet;
 
         public BlendingParameters BlendingParameters
         {
@@ -209,11 +214,10 @@ namespace osu.Framework.Platform.Graphics
             Commands = null;
         }
 
-        public void SwapBuffers() => Device.SwapBuffers();
-
-        public void DrawVertices(int start, int count)
+        public void SwapBuffers()
         {
-            Commands.DrawIndexed((uint)count, 1, (uint)start, 0, 0);
+            Device.SwapBuffers();
+            OnSwap?.Invoke();
         }
 
         public void Clear(ClearInfo clearInfo)
@@ -232,11 +236,11 @@ namespace osu.Framework.Platform.Graphics
 
         public void SetFramebuffer(FrameBuffer framebuffer)
         {
-            var framebufferResource = (FrameBuffer)framebuffer.Resource ?? Device.SwapchainFramebuffer;
+            var framebufferResource = (Framebuffer)(framebuffer?.Resource ?? Device.SwapchainFramebuffer);
             Commands.SetFramebuffer(currentFrameBuffer = framebufferResource);
         }
 
-        public void SetVertexBuffer<T, TIndex>(VertexBuffer<T> buffer)
+        public void SetVertexBuffer<T, TIndex>(IVertexBuffer buffer)
             where T : unmanaged, IEquatable<T>, IVertex
             where TIndex : unmanaged
         {
@@ -248,11 +252,11 @@ namespace osu.Framework.Platform.Graphics
             Commands.SetIndexBuffer((DeviceBuffer)buffer.IndexResource, format);
         }
 
-        public unsafe void UpdateVertexBuffer<T>(VertexBuffer<T> buffer, int start, Memory<T> data)
+        public unsafe void UpdateVertexBuffer<T>(IVertexBuffer buffer, int start, Memory<T> data)
             where T : unmanaged, IEquatable<T>, IVertex
-            => Commands.UpdateBuffer(buffer.VertexResource, (uint)(start * sizeof(T)), ref data.Span[0], (uint)(data.Length * sizeof(T)));
+            => Commands.UpdateBuffer((DeviceBuffer)buffer.VertexResource, (uint)(start * sizeof(T)), ref data.Span[0], (uint)(data.Length * sizeof(T)));
 
-        public void SetTexture(RendererTexture texture) => Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, (VeldridTextureSet)texture.Resource);
+        public void SetTexture(RendererTexture texture) => boundTextureSet = (ResourceSet)texture.Resource;
 
         public unsafe void UpdateTexture<TPixel>(RendererTexture texture, int x, int y, int width, int height, int level, ReadOnlySpan<TPixel> data)
             where TPixel : unmanaged
@@ -263,11 +267,18 @@ namespace osu.Framework.Platform.Graphics
                 Device.UpdateTexture(textureSet.Texture, (IntPtr)ptr, (uint)(data.Length * sizeof(TPixel)), (uint)x, (uint)y, 0, (uint)width, (uint)height, 1, (uint)level, 0);
         }
 
+        private readonly Dictionary<Shader, ResourceSet> shaderUniformSet = new Dictionary<Shader, ResourceSet>();
+
         public void SetShader(Shader shader)
         {
             pipelineDescription.ShaderSet.Shaders = shader.Shaders;
-            // todo: cache uniform buffers per shader instance.
-            // Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, );
+
+            if (!shaderUniformSet.TryGetValue(shader, out boundUniformSet))
+            {
+                // todo: add support for uniform buffer-like memory block in the shader itself.
+                // var size = 
+                // shaderUniformSet[shader] = boundUniformSet = 
+            }
         }
 
         public void UpdateUniform<T>(IUniform<T> uniform) where T : unmanaged, IEquatable<T>
@@ -298,5 +309,26 @@ namespace osu.Framework.Platform.Graphics
                     break;
             }
         }
+
+        public void UpdateUniforms(Shader shader)
+        {
+            // todo:
+            // Commands.UpdateBuffer(shader.Uniforms);
+        }
+
+        private readonly Dictionary<GraphicsPipelineDescription, Pipeline> pipelineCache = new Dictionary<GraphicsPipelineDescription, Pipeline>();
+
+        public void DrawVertices(int start, int count)
+        {
+            if (!pipelineCache.TryGetValue(pipelineDescription, out var pipeline))
+                pipelineCache[pipelineDescription] = pipeline = Device.ResourceFactory.CreateGraphicsPipeline(ref pipelineDescription);
+
+            Commands.SetPipeline(pipeline);
+            Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, boundTextureSet);
+            Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, boundUniformSet);
+            Commands.DrawIndexed((uint)count, 1, (uint)start, 0, 0);
+        }
+
+        public void WaitUntilFinished() => Device.WaitForIdle();
     }
 }

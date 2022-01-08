@@ -14,12 +14,16 @@ namespace osu.Framework.Graphics.Rendering.Buffers
     public abstract class VertexBuffer<T> : IVertexBuffer, IDisposable
         where T : unmanaged, IEquatable<T>, IVertex
     {
+        private IDisposable vertexResource;
+
+        public object VertexResource => vertexResource;
+
+        public abstract object IndexResource { get; }
+
         protected static readonly int STRIDE = VertexUtils<DepthWrappingVertex<T>>.STRIDE;
 
         private Memory<DepthWrappingVertex<T>> vertexMemory;
         private IMemoryOwner<DepthWrappingVertex<T>> memoryOwner;
-
-        private DeviceBuffer buffer;
 
         protected VertexBuffer(int amountVertices)
         {
@@ -58,9 +62,9 @@ namespace osu.Framework.Graphics.Rendering.Buffers
 
             var description = new BufferDescription((uint)(Size * STRIDE), BufferUsage.VertexBuffer);
 
-            buffer = Renderer.Factory.CreateBuffer(description);
-
-            Renderer.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
+            // buffer = Renderer.Factory.CreateBuffer(description);
+            //
+            // Renderer.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
         }
 
         ~VertexBuffer()
@@ -91,7 +95,7 @@ namespace osu.Framework.Graphics.Rendering.Buffers
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString(), "Can not bind disposed vertex buffers.");
 
-            Renderer.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
+            // Renderer.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
         }
 
         public virtual void Unbind()
@@ -133,7 +137,7 @@ namespace osu.Framework.Graphics.Rendering.Buffers
                 Initialise();
 
             int countVertices = endIndex - startIndex;
-            Renderer.UpdateBuffer(buffer, startIndex * STRIDE, ref getMemory().Slice()Span[startIndex], countVertices * STRIDE);
+            // .UpdateVertexBuffer(this, startIndex * STRIDE, getMemory().Slice(startIndex, countVertices));
 
             FrameStatistics.Add(StatisticsCounterType.VerticesUpl, countVertices);
         }
@@ -161,12 +165,12 @@ namespace osu.Framework.Graphics.Rendering.Buffers
 
         void IVertexBuffer.Free()
         {
-            if (buffer != null)
+            if (vertexResource != null)
             {
                 Unbind();
 
-                buffer.Dispose();
-                buffer = null;
+                vertexResource.Dispose();
+                vertexResource = null;
             }
 
             memoryOwner?.Dispose();

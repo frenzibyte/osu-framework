@@ -29,6 +29,7 @@ namespace osu.Framework.Graphics.Shaders
 
         private IReadOnlyList<ShaderUniformInfo> uniformInfo;
 
+        // todo: add support for uniform buffer-like memory block.
         /// <summary>
         /// Holds all the <see cref="Uniforms"/> values for faster access than iterating on <see cref="Dictionary{TKey,TValue}.Values"/>.
         /// </summary>
@@ -319,35 +320,6 @@ namespace osu.Framework.Graphics.Shaders
         }
 
         #endregion
-
-        private static CrossCompileTarget getCompilationTarget(GraphicsBackend backend)
-        {
-            switch (backend)
-            {
-                case GraphicsBackend.Direct3D11:
-                    return CrossCompileTarget.HLSL;
-
-                case GraphicsBackend.OpenGL:
-                    return CrossCompileTarget.GLSL;
-
-                case GraphicsBackend.Metal:
-                    return CrossCompileTarget.MSL;
-
-                case GraphicsBackend.OpenGLES:
-                    return CrossCompileTarget.ESSL;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(backend), backend, null);
-            }
-        }
-
-        private static byte[] ensureSpirv(ShaderDescription description)
-        {
-            if (description.ShaderBytes[0] == 3 && description.ShaderBytes[1] == 2 && description.ShaderBytes[2] == 35 && description.ShaderBytes[3] == 7)
-                return description.ShaderBytes;
-
-            return SpirvCompilation.CompileGlslToSpirv(Encoding.UTF8.GetString(description.ShaderBytes), null, description.Stage, new GlslCompileOptions(description.Debug)).SpirvBytes;
-        }
 
         public class ShaderCompilationFailedException : Exception
         {

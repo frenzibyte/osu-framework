@@ -44,16 +44,10 @@ namespace osu.Framework.Graphics.Rendering.Buffers
 
                 LinearIndexData.MaxAmountIndices = amountVertices;
 
-                Renderer.BindIndexBuffer(LinearIndexData.IndexBuffer, IndexFormat.UInt16);
-
-                Renderer.UpdateBuffer(LinearIndexData.IndexBuffer, 0, ref indices[0], indices.Length * sizeof(ushort));
+                // Renderer.BindIndexBuffer(LinearIndexData.IndexBuffer, IndexFormat.UInt16);
+                //
+                // Renderer.UpdateBuffer(LinearIndexData.IndexBuffer, 0, ref indices[0], indices.Length * sizeof(ushort));
             }
-        }
-
-        public override void Bind()
-        {
-            base.Bind();
-            Renderer.BindIndexBuffer(LinearIndexData.IndexBuffer, IndexFormat.UInt16);
         }
 
         protected override PrimitiveTopology Topology { get; }

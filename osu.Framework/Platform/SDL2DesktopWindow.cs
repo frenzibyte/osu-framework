@@ -12,8 +12,8 @@ using osu.Framework.Configuration;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Rendering;
 using osu.Framework.Input;
+using osu.Framework.Platform.Graphics;
 using osu.Framework.Platform.SDL2;
 using osu.Framework.Platform.Windows.Native;
 using osu.Framework.Threading;
@@ -41,7 +41,9 @@ namespace osu.Framework.Platform
     {
         internal IntPtr SDLWindowHandle { get; private set; } = IntPtr.Zero;
 
-        private readonly IGraphicsBackend graphicsBackend;
+        IGraphicsBackend IWindow.Graphics => Graphics;
+
+        internal IGraphicsBackend Graphics { get; private set; }
 
         private bool focused;
 
@@ -58,15 +60,6 @@ namespace osu.Framework.Platform
 
                 isActive.Value = focused = value;
             }
-        }
-
-        /// <summary>
-        /// Enables or disables vertical sync.
-        /// </summary>
-        public bool VerticalSync
-        {
-            get => graphicsBackend.VerticalSync;
-            set => graphicsBackend.VerticalSync = value;
         }
 
         /// <summary>
@@ -389,8 +382,6 @@ namespace osu.Framework.Platform
 
         public bool CapsLockPressed => SDL.SDL_GetModState().HasFlagFast(SDL.SDL_Keymod.KMOD_CAPS);
 
-        private bool firstDraw = true;
-
         private readonly BindableSize sizeFullscreen = new BindableSize();
         private readonly BindableSize sizeWindowed = new BindableSize();
         private readonly BindableDouble windowPositionX = new BindableDouble();
@@ -400,8 +391,6 @@ namespace osu.Framework.Platform
         public SDL2DesktopWindow()
         {
             SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_GAMECONTROLLER);
-
-            graphicsBackend = CreateGraphicsBackend();
 
             SupportedWindowModes = new BindableList<WindowMode>(DefaultSupportedWindowModes);
 
@@ -424,7 +413,7 @@ namespace osu.Framework.Platform
                                         SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | // shown after first swap to avoid white flash on startup (windows)
                                         WindowState.ToFlags();
 
-            switch (graphicsBackend.Type)
+            switch (Graphics.Type)
             {
                 case GraphicsBackend.OpenGL:
                 case GraphicsBackend.OpenGLES:
@@ -457,11 +446,18 @@ namespace osu.Framework.Platform
             MouseEntered += () => cursorInWindow.Value = true;
             MouseLeft += () => cursorInWindow.Value = false;
 
-            graphicsBackend.Initialise(this);
+            Graphics = CreateGraphicsBackend();
+            Graphics.OnSwap += onFirstSwap;
 
             updateWindowSpecifics();
             updateWindowSize();
             WindowMode.TriggerChange();
+
+            void onFirstSwap()
+            {
+                Visible = true;
+                Graphics.OnSwap -= onFirstSwap;
+            }
         }
 
         // reference must be kept to avoid GC, see https://stackoverflow.com/a/6193914
@@ -521,12 +517,11 @@ namespace osu.Framework.Platform
         /// <returns>Whether the window size has been changed after updating.</returns>
         private void updateWindowSize()
         {
-            var drawableSize = graphicsBackend.GetDrawableSize();
-
+            getDrawableSize(out int w, out int h);
             SDL.SDL_GetWindowSize(SDLWindowHandle, out int windowWidth, out int _);
 
-            Scale = (float)drawableSize.Width / windowWidth;
-            Size = drawableSize;
+            Scale = (float)w / windowWidth;
+            Size = new Size(w, h);
 
             // This function may be invoked before the SDL internal states are all changed. (as documented here: https://wiki.libsdl.org/SDL_SetEventFilter)
             // Scheduling the store to config until after the event poll has run will ensure the window is in the correct state.
@@ -549,30 +544,7 @@ namespace osu.Framework.Platform
 
         public void SwapBuffers()
         {
-            graphicsBackend.SwapBuffers();
-
-            if (firstDraw)
-            {
-                Visible = true;
-                firstDraw = false;
-            }
         }
-
-        /// <summary>
-        /// Requests that the graphics backend become the current context.
-        /// </summary>
-        /// <remarks>
-        /// This may not be required for some backends.
-        /// </remarks>
-        public void MakeCurrent() => graphicsBackend.MakeCurrent();
-
-        /// <summary>
-        /// Requests that the current context be cleared.
-        /// </summary>
-        /// <remarks>
-        /// This may not be required for some backends.
-        /// </remarks>
-        public void ClearCurrent() => graphicsBackend.ClearCurrent();
 
         private void enqueueJoystickAxisInput(JoystickAxisSource axisSource, short axisValue)
         {
@@ -1128,7 +1100,8 @@ namespace osu.Framework.Platform
                     SDL.SDL_RestoreWindow(SDLWindowHandle);
                     SDL.SDL_MaximizeWindow(SDLWindowHandle);
 
-                    Size = graphicsBackend.GetDrawableSize();
+                    getDrawableSize(out int width, out int height);
+                    Size = new Size(width, height);
                     break;
 
                 case WindowState.Minimised:
@@ -1208,6 +1181,29 @@ namespace osu.Framework.Platform
             return currentDisplay.Bounds.Size;
         }
 
+        private void getDrawableSize(out int width, out int height)
+        {
+            switch (Graphics.Type)
+            {
+                case GraphicsBackend.OpenGL:
+                case GraphicsBackend.OpenGLES:
+                    SDL.SDL_GL_GetDrawableSize(SDLWindowHandle, out width, out height);
+                    return;
+
+                case GraphicsBackend.Vulkan:
+                    SDL.SDL_Vulkan_GetDrawableSize(SDLWindowHandle, out width, out height);
+                    return;
+
+                case GraphicsBackend.Metal:
+                    SDL.SDL_Metal_GetDrawableSize(SDLWindowHandle, out width, out height);
+                    return;
+
+                default:
+                    SDL.SDL_GetWindowSize(SDLWindowHandle, out width, out height);
+                    return;
+            }
+        }
+
         private MouseButton mouseButtonFromEvent(byte button)
         {
             switch ((uint)button)
@@ -1232,7 +1228,7 @@ namespace osu.Framework.Platform
 
         #endregion
 
-        protected virtual IGraphicsBackend CreateGraphicsBackend() => new Renderer();
+        protected virtual IGraphicsBackend CreateGraphicsBackend() => new VeldridGraphicsBackend(this);
 
         public void SetupWindow(FrameworkConfigManager config)
         {

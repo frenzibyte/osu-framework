@@ -19,7 +19,7 @@ namespace osu.Framework.Graphics.Rendering.Textures
 
         public override RendererTexture Native => parent.Native;
 
-        public override TextureResourceSet TextureResourceSet => parent.TextureResourceSet;
+        public override object Resource => parent.Resource;
 
         public override bool Loaded => parent.Loaded;
 

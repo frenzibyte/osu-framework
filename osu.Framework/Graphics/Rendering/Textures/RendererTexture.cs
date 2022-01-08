@@ -71,7 +71,10 @@ namespace osu.Framework.Graphics.Rendering.Textures
 
         public Opacity Opacity { get; protected set; } = Opacity.Mixed;
 
-        public abstract TextureResourceSet TextureResourceSet { get; }
+        /// <summary>
+        /// The underlying device texture resource.
+        /// </summary>
+        public abstract object Resource { get; }
 
         public abstract int Height { get; set; }
 

@@ -4,7 +4,6 @@
 using System;
 using osu.Framework.Graphics.Rendering.Textures;
 using osu.Framework.Graphics.Textures;
-using Veldrid;
 using PixelFormat = Veldrid.PixelFormat;
 using Vector2 = osuTK.Vector2;
 
@@ -12,7 +11,9 @@ namespace osu.Framework.Graphics.Rendering.Buffers
 {
     public class FrameBuffer : IDisposable
     {
-        private Framebuffer frameBuffer;
+        private IDisposable resource;
+
+        public object Resource => resource;
 
         public RendererTexture Texture { get; private set; }
 
@@ -57,32 +58,32 @@ namespace osu.Framework.Graphics.Rendering.Buffers
 
         private void initialise()
         {
-            var description = new FramebufferDescription();
-
-            Texture = new FrameBufferTexture(Size, filteringMode);
-
-            description.ColorTargets = new FramebufferAttachmentDescription[1 + (colorFormats?.Length ?? 0)];
-            description.ColorTargets[0] = new FramebufferAttachmentDescription(Texture.TextureResourceSet.Texture, 0);
-
-            if (colorFormats != null)
-            {
-                for (int i = 0; i < colorFormats.Length; i++)
-                {
-                    var targetDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, colorFormats[i], TextureUsage.RenderTarget);
-                    description.ColorTargets[1 + i] = new FramebufferAttachmentDescription(Renderer.Factory.CreateTexture(targetDescription), 0);
-                }
-            }
-
-            if (depthFormat != null)
-            {
-                var targetDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, depthFormat.Value, TextureUsage.DepthStencil);
-                description.DepthTarget = new FramebufferAttachmentDescription(Renderer.Factory.CreateTexture(targetDescription), 0);
-            }
-
-            frameBuffer = Renderer.Factory.CreateFramebuffer(description);
-
-            Renderer.BindFrameBuffer(frameBuffer);
-            Renderer.BindDefaultTexture();
+            // var description = new FramebufferDescription();
+            //
+            // Texture = new FrameBufferTexture(Size, filteringMode);
+            //
+            // description.ColorTargets = new FramebufferAttachmentDescription[1 + (colorFormats?.Length ?? 0)];
+            // description.ColorTargets[0] = new FramebufferAttachmentDescription(Texture.TextureResourceSet.Texture, 0);
+            //
+            // if (colorFormats != null)
+            // {
+            //     for (int i = 0; i < colorFormats.Length; i++)
+            //     {
+            //         var targetDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, colorFormats[i], TextureUsage.RenderTarget);
+            //         description.ColorTargets[1 + i] = new FramebufferAttachmentDescription(Renderer.Factory.CreateTexture(targetDescription), 0);
+            //     }
+            // }
+            //
+            // if (depthFormat != null)
+            // {
+            //     var targetDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, depthFormat.Value, TextureUsage.DepthStencil);
+            //     description.DepthTarget = new FramebufferAttachmentDescription(Renderer.Factory.CreateTexture(targetDescription), 0);
+            // }
+            //
+            // resource = Renderer.Factory.CreateFramebuffer(description);
+            //
+            // Renderer.BindFrameBuffer(this);
+            // Renderer.BindDefaultTexture();
         }
 
         /// <summary>
@@ -99,14 +100,14 @@ namespace osu.Framework.Graphics.Rendering.Buffers
             else
             {
                 // Buffer is bound during initialisation
-                Renderer.BindFrameBuffer(frameBuffer);
+                Renderer.BindFrameBuffer(this);
             }
         }
 
         /// <summary>
         /// Unbinds the framebuffer.
         /// </summary>
-        public void Unbind() => Renderer.UnbindFrameBuffer(frameBuffer);
+        public void Unbind() => Renderer.UnbindFrameBuffer(this);
 
         #region Disposal
 
@@ -133,17 +134,17 @@ namespace osu.Framework.Graphics.Rendering.Buffers
                 Texture?.Dispose();
                 Texture = null;
 
-                Renderer.UnbindFrameBuffer(frameBuffer);
+                // Renderer.UnbindFrameBuffer(this);
 
                 Renderer.ScheduleDisposal(f =>
                 {
-                    for (int i = 0; i < f.frameBuffer.ColorTargets.Count; i++)
-                        f.frameBuffer.ColorTargets[i].Target.Dispose();
+                    // for (int i = 0; i < f.resource.ColorTargets.Count; i++)
+                    //     f.resource.ColorTargets[i].Target.Dispose();
+                    //
+                    // f.resource.DepthTarget?.Target.Dispose();
 
-                    f.frameBuffer.DepthTarget?.Target.Dispose();
-
-                    f.frameBuffer.Dispose();
-                    f.frameBuffer = null;
+                    f.resource.Dispose();
+                    f.resource = null;
                 }, this);
             }
 

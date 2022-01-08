@@ -6,8 +6,18 @@ namespace osu.Framework.Graphics.Rendering.Buffers
     /// <summary>
     /// Internal interface for all <see cref="VertexBuffer{T}"/>s.
     /// </summary>
-    internal interface IVertexBuffer
+    public interface IVertexBuffer
     {
+        /// <summary>
+        /// The underlying device vertex buffer resource.
+        /// </summary>
+        object VertexResource { get; }
+
+        /// <summary>
+        /// The underlying device index buffer resource.
+        /// </summary>
+        object IndexResource { get; }
+
         /// <summary>
         /// The <see cref="Renderer.ResetId"/> when this <see cref="IVertexBuffer"/> was last used.
         /// </summary>

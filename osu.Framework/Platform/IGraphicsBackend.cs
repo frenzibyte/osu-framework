@@ -22,6 +22,12 @@ namespace osu.Framework.Platform
     public interface IGraphicsBackend
     {
         /// <summary>
+        /// Invoked when a <see cref="SwapBuffers"/> call is performed.
+        /// </summary>
+        [CanBeNull]
+        event Action OnSwap;
+
+        /// <summary>
         /// The graphics backend type.
         /// </summary>
         GraphicsBackend Type { get; }
@@ -77,13 +83,6 @@ namespace osu.Framework.Platform
         void SwapBuffers();
 
         /// <summary>
-        /// Queues an indexed draw call to the active framebuffer at the specified range in the indices buffer.
-        /// </summary>
-        /// <param name="start">The index start to begin drawing from.</param>
-        /// <param name="count">The number of indices to draw.</param>
-        void DrawVertices(int start, int count);
-
-        /// <summary>
         /// Clears the render and depth-stencil targets of the active framebuffer.
         /// </summary>
         void Clear(ClearInfo clearInfo);
@@ -111,7 +110,7 @@ namespace osu.Framework.Platform
         /// </summary>
         /// <typeparam name="T">The vertex type.</typeparam>
         /// <typeparam name="TIndex">The index type.</typeparam>
-        void SetVertexBuffer<T, TIndex>(VertexBuffer<T> buffer)
+        void SetVertexBuffer<T, TIndex>(IVertexBuffer buffer)
             where T : unmanaged, IEquatable<T>, IVertex
             where TIndex : unmanaged;
 
@@ -122,7 +121,7 @@ namespace osu.Framework.Platform
         /// <param name="start">The vertex number to begin updating from.</param>
         /// <param name="data">The new vertices data.</param>
         /// <typeparam name="T">The vertex type.</typeparam>
-        void UpdateVertexBuffer<T>(VertexBuffer<T> buffer, int start, Memory<T> data) where T : unmanaged, IEquatable<T>, IVertex;
+        void UpdateVertexBuffer<T>(IVertexBuffer buffer, int start, Memory<T> data) where T : unmanaged, IEquatable<T>, IVertex;
 
         /// <summary>
         /// Sets the active texture to draw with.
@@ -151,5 +150,23 @@ namespace osu.Framework.Platform
         /// Updates the uniform value on the active uniform buffer.
         /// </summary>
         void UpdateUniform<T>(IUniform<T> uniform) where T : unmanaged, IEquatable<T>;
+
+        /// <summary>
+        /// Updates all uniform values of a shader on the active uniform buffer.
+        /// </summary>
+        /// <param name="shader">The shader whose uniforms should be updated.</param>
+        void UpdateUniforms(Shader shader);
+
+        /// <summary>
+        /// Queues an indexed draw call to the active framebuffer at the specified range in the indices buffer.
+        /// </summary>
+        /// <param name="start">The index start to begin drawing from.</param>
+        /// <param name="count">The number of indices to draw.</param>
+        void DrawVertices(int start, int count);
+
+        /// <summary>
+        /// Waits until GPU has finished work with the latest submitted frame.
+        /// </summary>
+        void WaitUntilFinished();
     }
 }
