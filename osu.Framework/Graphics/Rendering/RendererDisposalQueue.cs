@@ -87,7 +87,7 @@ namespace osu.Framework.Graphics.Rendering
             {
                 action = disposeAction;
                 this.target = target;
-                RemainingFrameDelay = Renderer.MAX_DRAW_NODES;
+                RemainingFrameDelay = IRenderer.MAX_DRAW_NODES;
             }
 
             public void Run() => action(target);

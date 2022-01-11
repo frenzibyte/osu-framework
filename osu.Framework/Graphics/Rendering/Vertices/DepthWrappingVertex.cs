@@ -3,7 +3,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Veldrid;
 
 namespace osu.Framework.Graphics.Rendering.Vertices
 {
@@ -11,7 +10,6 @@ namespace osu.Framework.Graphics.Rendering.Vertices
     internal struct DepthWrappingVertex<TVertex> : IVertex, IEquatable<DepthWrappingVertex<TVertex>>
         where TVertex : unmanaged, IVertex, IEquatable<TVertex>
     {
-        [VertexLayoutElement(VertexElementFormat.Float1, VertexElementSemantic.Normal)]
         public float BackbufferDrawDepth;
 
         public TVertex Vertex;

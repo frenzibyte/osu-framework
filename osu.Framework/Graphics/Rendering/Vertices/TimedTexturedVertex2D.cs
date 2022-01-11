@@ -5,25 +5,24 @@ using System;
 using System.Runtime.InteropServices;
 using osuTK;
 using osuTK.Graphics;
-using Veldrid;
 
 namespace osu.Framework.Graphics.Rendering.Vertices
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct TimedTexturedVertex2D : IEquatable<TimedTexturedVertex2D>, IVertex
     {
-        [VertexLayoutElement(VertexElementFormat.Float2, VertexElementSemantic.Position)]
         public Vector2 Position;
 
-        [VertexLayoutElement(VertexElementFormat.Float4, VertexElementSemantic.Color)]
         public Color4 Colour;
 
-        [VertexLayoutElement(VertexElementFormat.Float2, VertexElementSemantic.TextureCoordinate)]
         public Vector2 TexturePosition;
 
-        [VertexLayoutElement(VertexElementFormat.Float1, VertexElementSemantic.Normal)]
         public float Time;
 
-        public readonly bool Equals(TimedTexturedVertex2D other) => Position.Equals(other.Position) && TexturePosition.Equals(other.TexturePosition) && Colour.Equals(other.Colour) && Time.Equals(other.Time);
+        public readonly bool Equals(TimedTexturedVertex2D other)
+            => Position.Equals(other.Position)
+               && TexturePosition.Equals(other.TexturePosition)
+               && Colour.Equals(other.Colour)
+               && Time.Equals(other.Time);
     }
 }

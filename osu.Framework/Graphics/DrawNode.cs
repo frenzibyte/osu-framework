@@ -81,18 +81,15 @@ namespace osu.Framework.Graphics
         /// <remarks>
         /// Subclasses must invoke <code>base.Draw()</code> prior to drawing vertices.
         /// </remarks>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
-        public virtual void Draw(Action<TexturedVertex2D> vertexAction)
+        public virtual void Draw(IRenderer renderer, Action<TexturedVertex2D> vertexAction)
         {
-            // Logger.Log("Set blending information");
-
-            Renderer.SetBlend(DrawColourInfo.Blending);
-
-            // Logger.Log($"Set draw depth to {drawDepth}");
+            renderer.BlendingParameters = DrawColourInfo.Blending;
 
             // This is the back-to-front (BTF) pass. The back-buffer depth test function used is GL_LESS.
             // The depth test will fail for samples that overlap the opaque interior of this <see cref="DrawNode"/> and any <see cref="DrawNode"/>s above this one.
-            Renderer.SetDrawDepth(drawDepth);
+            renderer.DrawDepth = drawDepth;
         }
 
         /// <summary>
@@ -104,9 +101,10 @@ namespace osu.Framework.Graphics
         /// During this pass, the opaque interior is drawn BELOW ourselves. For this to occur, <see cref="drawDepth"/> is temporarily incremented and then decremented after drawing is complete.
         /// Other <see cref="DrawNode"/>s behind ourselves receive the incremented depth value before doing the same themselves, allowing early-z to take place during this pass.
         /// </remarks>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="depthValue">The previous depth value.</param>
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
-        internal virtual void DrawOpaqueInteriorSubTree(DepthValue depthValue, Action<TexturedVertex2D> vertexAction)
+        internal virtual void DrawOpaqueInteriorSubTree(IRenderer renderer, DepthValue depthValue, Action<TexturedVertex2D> vertexAction)
         {
             if (!depthValue.CanIncrement || !CanDrawOpaqueInterior)
             {
@@ -122,7 +120,7 @@ namespace osu.Framework.Graphics
             float previousDepthValue = depthValue;
             drawDepth = depthValue.Increment();
 
-            DrawOpaqueInterior(vertexAction);
+            DrawOpaqueInterior(renderer, vertexAction);
 
             // Decrement the depth.
             drawDepth = previousDepthValue;
@@ -136,10 +134,11 @@ namespace osu.Framework.Graphics
         /// <remarks>
         /// Subclasses must invoke <code>base.DrawOpaqueInterior()</code> prior to drawing vertices.
         /// </remarks>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
-        protected virtual void DrawOpaqueInterior(Action<TexturedVertex2D> vertexAction)
+        protected virtual void DrawOpaqueInterior(IRenderer renderer, Action<TexturedVertex2D> vertexAction)
         {
-            Renderer.SetDrawDepth(drawDepth);
+            renderer.DrawDepth = drawDepth;
         }
 
         /// <summary>
@@ -152,6 +151,7 @@ namespace osu.Framework.Graphics
         /// Draws a triangle to the screen.
         /// </summary>
         /// <param name="texture">The texture to fill the triangle with.</param>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexTriangle">The triangle to draw.</param>
         /// <param name="textureRect">The texture rectangle.</param>
         /// <param name="drawColour">The vertex colour.</param>
@@ -159,14 +159,15 @@ namespace osu.Framework.Graphics
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="textureCoords">The texture coordinates of the triangle's vertices (translated from the corresponding quad's rectangle).</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void DrawTriangle(Texture texture, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
-                                    Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
-            => texture.DrawTriangle(vertexTriangle, drawColour, textureRect, vertexAction, inflationPercentage, textureCoords);
+        protected void DrawTriangle(Texture texture, IRenderer renderer, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null,
+                                    Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
+            => texture.DrawTriangle(renderer, vertexTriangle, drawColour, textureRect, vertexAction, inflationPercentage, textureCoords);
 
         /// <summary>
         /// Draws a triangle to the screen.
         /// </summary>
         /// <param name="texture">The texture to fill the triangle with.</param>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexTriangle">The triangle to draw.</param>
         /// <param name="drawColour">The vertex colour.</param>
         /// <param name="textureRect">The texture rectangle.</param>
@@ -174,9 +175,9 @@ namespace osu.Framework.Graphics
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="textureCoords">The texture coordinates of the triangle's vertices (translated from the corresponding quad's rectangle).</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void DrawTriangle(RendererTexture texture, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
-                                    Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
-            => texture.DrawTriangle(vertexTriangle, drawColour, textureRect, vertexAction, inflationPercentage, textureCoords);
+        protected void DrawTriangle(RendererTexture texture, IRenderer renderer, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null,
+                                    Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
+            => texture.DrawTriangle(renderer, vertexTriangle, drawColour, textureRect, vertexAction, inflationPercentage, textureCoords);
 
         /// <summary>
         /// Draws a quad to the screen.

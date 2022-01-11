@@ -5,22 +5,21 @@ using System;
 using System.Runtime.InteropServices;
 using osuTK;
 using osuTK.Graphics;
-using Veldrid;
 
 namespace osu.Framework.Graphics.Rendering.Vertices
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct TexturedVertex3D : IEquatable<TexturedVertex3D>, IVertex
     {
-        [VertexLayoutElement(VertexElementFormat.Float3, VertexElementSemantic.Position)]
         public Vector3 Position;
 
-        [VertexLayoutElement(VertexElementFormat.Float4, VertexElementSemantic.Color)]
         public Color4 Colour;
 
-        [VertexLayoutElement(VertexElementFormat.Float2, VertexElementSemantic.TextureCoordinate)]
         public Vector2 TexturePosition;
 
-        public readonly bool Equals(TexturedVertex3D other) => Position.Equals(other.Position) && TexturePosition.Equals(other.TexturePosition) && Colour.Equals(other.Colour);
+        public readonly bool Equals(TexturedVertex3D other)
+            => Position.Equals(other.Position)
+               && TexturePosition.Equals(other.TexturePosition)
+               && Colour.Equals(other.Colour);
     }
 }

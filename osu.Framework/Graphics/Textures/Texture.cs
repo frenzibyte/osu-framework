@@ -8,6 +8,7 @@ using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
 using osuTK;
 using osu.Framework.Graphics.Colour;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Rendering.Textures;
 using osu.Framework.Graphics.Rendering.Vertices;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
@@ -150,23 +151,25 @@ namespace osu.Framework.Graphics.Textures
         /// <summary>
         /// Draws a triangle to the screen.
         /// </summary>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexTriangle">The triangle to draw.</param>
         /// <param name="drawColour">The vertex colour.</param>
         /// <param name="textureRect">The texture rectangle in texture space.</param>
         /// <param name="vertexAction">An action that adds vertices to a <see cref="VertexBatch{T}"/>.</param>
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="textureCoords">The texture coordinates of the triangle's vertices (translated from the corresponding quad's rectangle).</param>
-        internal void DrawTriangle(Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+        internal void DrawTriangle(IRenderer renderer, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
                                    Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
         {
-            if (RendererTexture == null || !RendererTexture.Bind()) return;
+            if (RendererTexture == null || !RendererTexture.Bind(renderer)) return;
 
-            RendererTexture.DrawTriangle(vertexTriangle, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, TextureBounds(textureCoords));
+            RendererTexture.DrawTriangle(renderer, vertexTriangle, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, TextureBounds(textureCoords));
         }
 
         /// <summary>
         /// Draws a quad to the screen.
         /// </summary>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexQuad">The quad to draw.</param>
         /// <param name="drawColour">The vertex colour.</param>
         /// <param name="textureRect">The texture rectangle in texture space.</param>
@@ -174,12 +177,12 @@ namespace osu.Framework.Graphics.Textures
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="blendRangeOverride">The range over which the edges of the <paramref name="textureRect"/> should be blended.</param>
         /// <param name="textureCoords">The texture coordinates of the quad's vertices.</param>
-        internal void DrawQuad(Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null,
-                               Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
+        internal void DrawQuad(IRenderer renderer, Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+                               Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
         {
-            if (RendererTexture == null || !RendererTexture.Bind()) return;
+            if (RendererTexture == null || !RendererTexture.Bind(renderer)) return;
 
-            RendererTexture.DrawQuad(vertexQuad, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, blendRangeOverride, TextureBounds(textureCoords));
+            RendererTexture.DrawQuad(renderer, vertexQuad, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, blendRangeOverride, TextureBounds(textureCoords));
         }
 
         public override string ToString() => $@"{AssetName} ({Width}, {Height})";

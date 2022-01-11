@@ -89,18 +89,20 @@ namespace osu.Framework.Graphics.Rendering.Textures
         /// <summary>
         /// Draws a triangle to the screen.
         /// </summary>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexTriangle">The triangle to draw.</param>
         /// <param name="drawColour">The vertex colour.</param>
         /// <param name="textureRect">The texture rectangle.</param>
         /// <param name="vertexAction">An action that adds vertices to a <see cref="VertexBatch{T}"/>.</param>
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="textureCoords">The texture coordinates of the triangle's vertices (translated from the corresponding quad's rectangle).</param>
-        internal abstract void DrawTriangle(Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+        internal abstract void DrawTriangle(IRenderer renderer, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
                                             Vector2? inflationPercentage = null, RectangleF? textureCoords = null);
 
         /// <summary>
         /// Draws a quad to the screen.
         /// </summary>
+        /// <param name="renderer">The renderer to draw with.</param>
         /// <param name="vertexQuad">The quad to draw.</param>
         /// <param name="drawColour">The vertex colour.</param>
         /// <param name="textureRect">The texture rectangle.</param>
@@ -108,8 +110,8 @@ namespace osu.Framework.Graphics.Rendering.Textures
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="blendRangeOverride">The range over which the edges of the <paramref name="textureRect"/> should be blended.</param>
         /// <param name="textureCoords">The texture coordinates of the quad's vertices.</param>
-        internal abstract void DrawQuad(Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null,
-                                        Vector2? blendRangeOverride = null, RectangleF? textureCoords = null);
+        internal abstract void DrawQuad(IRenderer renderer, Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+                                        Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, RectangleF? textureCoords = null);
 
         /// <summary>
         /// Bind as active texture.

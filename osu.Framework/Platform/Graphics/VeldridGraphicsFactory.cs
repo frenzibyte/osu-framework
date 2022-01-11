@@ -61,7 +61,7 @@ namespace osu.Framework.Platform.Graphics
                         break;
                 }
 
-                elements = result.Reflection.VertexElements.Select(e => new VertexLayoutElement(e.Format, e.Semantic) { Name = e.Name }).ToArray();
+                elements = result.Reflection.VertexElements.Select(e => new VertexLayoutElement(e.Format) { Name = e.Name }).ToArray();
             }
 
             return new IDisposable[]

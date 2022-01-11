@@ -26,7 +26,7 @@ namespace osu.Framework.Graphics.Rendering
     /// <summary>
     /// The managed game renderer backed by an <see cref="IGraphicsBackend"/>.
     /// </summary>
-    public partial class Renderer : IRenderer
+    public class Renderer : IRenderer
     {
         /// <summary>
         /// The interval (in frames) before checking whether device resources should be freed.
@@ -65,19 +65,36 @@ namespace osu.Framework.Graphics.Rendering
         public RendererState<bool> ScissorState { get; }
         public RendererState<Vector2I> ScissorOffset { get; }
 
-        private BlendingParameters currentBlendingParameters;
+        private BlendingParameters blendingParameters;
 
-        private readonly Stack<Shader> shaderStack = new Stack<Shader>();
-        private readonly Stack<FrameBuffer> frameBufferStack = new Stack<FrameBuffer>();
+        public BlendingParameters BlendingParameters
+        {
+            get => blendingParameters;
+            set
+            {
+                if (value == blendingParameters)
+                    return;
 
-        private IVertexBuffer boundVertexBuffer;
+                flushCurrentBatch();
+                graphicsBackend.BlendingParameters = blendingParameters = value;
+            }
+        }
+
+        public float DrawDepth { get; set; }
+
+        private IReadOnlyList<VertexLayoutElement> boundVertexLayout;
+
         private RendererTexture boundTexture;
-        private Shader boundShader;
 
         public WrapMode CurrentWrapModeS { get; private set; }
         public WrapMode CurrentWrapModeT { get; private set; }
-
         public bool AtlasTextureIsBound { get; private set; }
+
+        private readonly Stack<Shader> shaderStack = new Stack<Shader>();
+
+        private readonly Stack<FrameBuffer> frameBufferStack = new Stack<FrameBuffer>();
+
+        public bool UsingBackbuffer => frameBufferStack.Peek() == null;
 
         private readonly Scheduler resetScheduler = new Scheduler(() => ThreadSafety.IsDrawThread, new StopwatchClock(true)); // force no thread set until we are actually on the draw thread.
 
@@ -96,10 +113,6 @@ namespace osu.Framework.Graphics.Rendering
         // private readonly RendererFencePool commandsExecutionFencePool = new RendererFencePool();
         // private readonly RendererStagingBufferPool stagingBufferPool = new RendererStagingBufferPool();
         // private readonly RendererStagingTexturePool stagingTexturePool = new RendererStagingTexturePool();
-
-        public float BackbufferDrawDepth { get; private set; }
-
-        public bool UsingBackbuffer => frameBufferStack.Peek() == null;
 
         private readonly RendererDisposalQueue disposalQueue = new RendererDisposalQueue();
 
@@ -147,7 +160,8 @@ namespace osu.Framework.Graphics.Rendering
             }
 
             currentActiveBatch = null;
-            currentBlendingParameters = default;
+
+            blendingParameters = default;
 
             foreach (var b in batchResetList)
                 b.ResetCounters();
@@ -223,6 +237,8 @@ namespace osu.Framework.Graphics.Rendering
 
         public void Clear(ClearInfo clearInfo) => graphicsBackend.Clear(clearInfo);
 
+        public void ScheduleExpensiveOperation(ScheduledDelegate operation) => expensiveOperationQueue.Enqueue(operation);
+
         public void EnqueueTextureUpload(RendererTexture texture)
         {
             if (texture.IsQueuedForUpload)
@@ -234,8 +250,6 @@ namespace osu.Framework.Graphics.Rendering
                 textureUploadQueue.Enqueue(texture);
             }
         }
-
-        public void ScheduleExpensiveOperation(ScheduledDelegate operation) => expensiveOperationQueue.Enqueue(operation);
 
         public void SetActiveBatch(IVertexBatch batch)
         {
@@ -251,25 +265,66 @@ namespace osu.Framework.Graphics.Rendering
 
         public void RegisterVertexBufferUse(IVertexBuffer buffer) => vertexBuffersInUse.Add(buffer);
 
-        public void SetDrawDepth(float drawDepth) => BackbufferDrawDepth = drawDepth;
+        #region Factory
 
-        public void SetBlend(BlendingParameters blendingParameters)
+        public void CreateTexture(int width, int height, PixelFormat format, int maximumLevels, Action<IDisposable> returnValue)
+            => returnValue(graphicsBackend.Factory.CreateTexture(width, height, format, maximumLevels));
+
+        public void CreateVertexBuffer(int length, Action<IDisposable> returnValue)
+            => returnValue(graphicsBackend.Factory.CreateVertexBuffer(length));
+
+        public void CreateIndexBuffer(int length, Action<IDisposable> returnValue)
+            => returnValue(graphicsBackend.Factory.CreateIndexBuffer(length));
+
+        public void CreateVertexFragmentShaders(byte[] vertexBytes, byte[] fragmentBytes, Action<IDisposable[], IReadOnlyList<VertexLayoutElement>> returnValue)
+            => returnValue(graphicsBackend.Factory.CreateVertexFragmentShaders(vertexBytes, fragmentBytes, out var elements), elements);
+
+        public void CreateFrameBuffer(RendererTexture target, PixelFormat[] renderFormats, PixelFormat? depthFormat, Action<IDisposable> returnValue)
+            => returnValue(graphicsBackend.Factory.CreateFrameBuffer(target, renderFormats, depthFormat));
+
+        #endregion
+
+        #region Encoding
+
+        public void UpdateVertexBuffer<T>(IVertexBuffer buffer, int start, Memory<T> data)
+            where T : unmanaged, IEquatable<T>, IVertex
+            => graphicsBackend.UpdateVertexBuffer(buffer, start, data);
+
+        public void UpdateTexture<TPixel>(RendererTexture texture, int x, int y, int width, int height, int level, Memory<TPixel> data)
+            where TPixel : unmanaged
+            => graphicsBackend.UpdateTexture(texture, x, y, width, height, level, data);
+
+        public void UpdateUniform<T>(IUniform<T> uniform)
+            where T : unmanaged, IEquatable<T>
         {
-            if (currentBlendingParameters == blendingParameters)
-                return;
+            if (shaderStack.Count > 0 && uniform.Owner == shaderStack.Peek())
+                flushCurrentBatch();
 
-            flushCurrentBatch();
-            graphicsBackend.BlendingParameters = blendingParameters;
+            graphicsBackend.UpdateUniform(uniform);
         }
+
+        public void UpdateUniforms(Shader shader)
+        {
+            if (shaderStack.Count > 0 && shader == shaderStack.Peek())
+                flushCurrentBatch();
+
+            graphicsBackend.UpdateUniforms(shader);
+        }
+
+        #endregion
+
+        #region Binding
 
         public void BindVertexBuffer<TIndex>(IVertexBuffer buffer, IReadOnlyList<VertexLayoutElement> layout)
             where TIndex : unmanaged
         {
             graphicsBackend.SetVertexBuffer<TIndex>(buffer, layout);
             FrameStatistics.Increment(StatisticsCounterType.VBufBinds);
+
+            boundVertexLayout = layout;
         }
 
-        public bool BindTexture(RendererTexture texture, WrapMode wrapModeS, WrapMode wrapModeT)
+        public void BindTexture(RendererTexture texture, WrapMode wrapModeS, WrapMode wrapModeT, Action onBound)
         {
             if (wrapModeS != CurrentWrapModeS)
             {
@@ -284,7 +339,7 @@ namespace osu.Framework.Graphics.Rendering
             }
 
             if (boundTexture == texture)
-                return false;
+                return;
 
             flushCurrentBatch();
 
@@ -294,30 +349,33 @@ namespace osu.Framework.Graphics.Rendering
             AtlasTextureIsBound = false;
 
             FrameStatistics.Increment(StatisticsCounterType.TextureBinds);
-            return true;
+            onBound?.Invoke();
         }
 
         public void BindShader(Shader shader)
         {
             ThreadSafety.EnsureDrawThread();
 
+            var lastShader = shaderStack.Peek();
+
             shaderStack.Push(shader);
 
-            if (shader == boundShader)
+            if (shader == lastShader)
                 return;
 
             FrameStatistics.Increment(StatisticsCounterType.ShaderBinds);
 
             flushCurrentBatch();
-            graphicsBackend.SetShader(boundShader = shader);
+            graphicsBackend.SetShader(shader);
         }
 
         public void UnbindShader(Shader shader)
         {
             ThreadSafety.EnsureDrawThread();
 
-            if (shader != boundShader)
-                throw new InvalidOperationException("Attempting to unbind shader while not current.");
+            // todo: this should probably follow the behaviour of the other states.
+            if (shaderStack.Peek() != shader)
+                throw new InvalidOperationException("Attempting to unbind a shader while another one was bound.");
 
             shaderStack.Pop();
 
@@ -326,7 +384,7 @@ namespace osu.Framework.Graphics.Rendering
                 return;
 
             flushCurrentBatch();
-            graphicsBackend.SetShader(boundShader = shaderStack.Peek());
+            graphicsBackend.SetShader(shaderStack.Peek());
         }
 
         public void BindFrameBuffer(FrameBuffer frameBuffer)
@@ -364,30 +422,7 @@ namespace osu.Framework.Graphics.Rendering
             GlobalPropertyManager.Set(GlobalProperty.GammaCorrection, UsingBackbuffer);
         }
 
-        public void UpdateVertexBuffer<T>(IVertexBuffer buffer, int start, Memory<T> data)
-            where T : unmanaged, IEquatable<T>, IVertex
-            => graphicsBackend.UpdateVertexBuffer(buffer, start, data);
-
-        public void UpdateTexture<TPixel>(RendererTexture texture, int x, int y, int width, int height, int level, Memory<TPixel> data)
-            where TPixel : unmanaged
-            => graphicsBackend.UpdateTexture(texture, x, y, width, height, level, data);
-
-        public void UpdateUniform<T>(IUniform<T> uniform)
-            where T : unmanaged, IEquatable<T>
-        {
-            if (uniform.Owner == boundShader)
-                flushCurrentBatch();
-
-            graphicsBackend.UpdateUniform(uniform);
-        }
-
-        public void UpdateUniforms(Shader shader)
-        {
-            if (shader == boundShader)
-                flushCurrentBatch();
-
-            graphicsBackend.UpdateUniforms(shader);
-        }
+        #endregion
 
         /// <summary>
         /// Frees resources unused after a while of frames.
@@ -585,7 +620,7 @@ namespace osu.Framework.Graphics.Rendering
             {
             }
 
-            private static string getDisplayString(IReadOnlyList<VertexLayoutElement> layout) => string.Join(", ", layout.Skip(ShaderPart.BACKBUFFER_ATTRIBUTE_OFFSET).Select(l => l.Format));
+            private static string getDisplayString(IReadOnlyList<VertexLayoutElement> layout) => string.Join(", ", layout.Skip(ShaderPart.BACKBUFFER_ATTRIBUTE_OFFSET).Select(l => l.Type.Name));
         }
     }
 }
