@@ -7,6 +7,7 @@ using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input;
 using osu.Framework.Input.Events;
+using osu.Framework.Input.StateChanges;
 using osuTK;
 using osuTK.Graphics;
 
@@ -36,8 +37,17 @@ namespace osu.Framework.Graphics.Cursor
 
         public override bool PropagatePositionalInputSubTree => IsPresent; // make sure we are still updating position during possible fade out.
 
+        /// <summary>
+        /// Whether the <see cref="ActiveCursor"/> should be internally hidden when mouse from invalid input source has been applied (e.g. "mouse from touch").
+        /// </summary>
+        protected virtual bool HideCursorOnInvalidInput => true;
+
         protected override bool OnMouseMove(MouseMoveEvent e)
         {
+            var lastMouseSource = e.CurrentState.Mouse.LastSource;
+            bool hasValidInput = lastMouseSource != null && !(lastMouseSource is ISourcedFromTouch);
+
+            ActiveCursor.Alpha = hasValidInput || !HideCursorOnInvalidInput ? 1 : 0;
             ActiveCursor.Position = e.MousePosition;
             return base.OnMouseMove(e);
         }
