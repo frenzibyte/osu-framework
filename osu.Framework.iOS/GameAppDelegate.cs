@@ -16,6 +16,11 @@ namespace osu.Framework.iOS
     {
         private const string output_volume = "outputVolume";
 
+        /// <summary>
+        /// Invoked when the <see cref="IOSGameHost"/> has started.
+        /// </summary>
+        public event Action HostStarted;
+
         public override UIWindow Window { get; set; }
 
         private IOSGameView gameView;
@@ -39,6 +44,7 @@ namespace osu.Framework.iOS
             gameView.Run();
 
             host.Run(CreateGame());
+            HostStarted?.Invoke();
 
             // Watch for the volume button changing in order to change audio policy
             AVAudioSession audioSession = AVAudioSession.SharedInstance();
