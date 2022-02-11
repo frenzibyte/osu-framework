@@ -186,6 +186,31 @@ namespace osu.Framework.Tests.Visual.Drawables
             checkFocused(() => requestingFocus);
         }
 
+        /// <summary>
+        /// Ensures that performing <see cref="InputManager.ChangeFocus"/> to a non-loaded (non-alive) drawable will occur after the drawable is loaded.
+        /// </summary>
+        [Test]
+        public void NonLoadedDrawableReceivesFocusAfterLoad()
+        {
+            Drawable focusNew = null;
+
+            checkFocused(() => requestingFocus);
+
+            AddStep("switch focus to non-loaded drawable", () =>
+            {
+                Add(focusNew = new FocusBox
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre
+                });
+
+                Assert.False(focusNew.IsLoaded);
+                InputManager.ChangeFocus(focusNew);
+            });
+
+            checkFocused(() => focusNew);
+        }
+
         [Test]
         public void ShowOverlayInteractions()
         {
