@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework;
+using osu.Framework.Platform;
 
 namespace SampleGame.Desktop
 {
@@ -9,8 +10,9 @@ namespace SampleGame.Desktop
     {
         public static void Main()
         {
-            using (var host = Host.GetSuitableHost("osu-framework-veldrid"))
-                host.Run(new SampleGameGame());
+            using (GameHost host = Host.GetSuitableDesktopHost(@"osu-framework-veldrid"))
+            using (Game game = new SampleGameGame())
+                host.Run(game);
         }
     }
 }

@@ -430,7 +430,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         internal override void FlushUploads()
         {
-            /* 512x256, 256x128, 128x64, 64x32, 32x16, 16x8, 8x4, 4x2, 2x1, 1x1 */
             while (tryGetNextUpload(out var upload))
                 upload.Dispose();
         }
