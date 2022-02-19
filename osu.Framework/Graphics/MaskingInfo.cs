@@ -26,7 +26,7 @@ namespace osu.Framework.Graphics
         public float CornerExponent;
 
         public float BorderThickness;
-        public SRGBColour BorderColour;
+        public ColourInfo BorderColour;
 
         public float BlendRange;
         public float AlphaExponent;
@@ -54,8 +54,8 @@ namespace osu.Framework.Graphics
 
         public static bool operator !=(in MaskingInfo left, in MaskingInfo right) => !(left == right);
 
-        public readonly override bool Equals(object obj) => obj is MaskingInfo other && this == other;
+        public override readonly bool Equals(object obj) => obj is MaskingInfo other && this == other;
 
-        public readonly override int GetHashCode() => 0; // Shouldn't be used; simplifying implementation here.
+        public override readonly int GetHashCode() => 0; // Shouldn't be used; simplifying implementation here.
     }
 }
