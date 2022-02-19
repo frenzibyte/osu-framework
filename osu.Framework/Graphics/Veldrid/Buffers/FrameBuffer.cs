@@ -44,18 +44,16 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 size = value;
 
                 if (isInitialised)
-                {
-                    VeldridTexture.Width = (int)Math.Ceiling(size.X);
-                    VeldridTexture.Height = (int)Math.Ceiling(size.Y);
-
-                    VeldridTexture.SetData(new TextureUpload());
-                    VeldridTexture.Upload();
-                }
+                    // reinitialise to update framebuffer size.
+                    initialise();
             }
         }
 
         private void initialise()
         {
+            VeldridTexture?.Dispose();
+            frameBuffer?.Dispose();
+
             var description = new FramebufferDescription();
 
             VeldridTexture = new FrameBufferVeldridTexture(Size, filteringMode);
@@ -79,9 +77,6 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             }
 
             frameBuffer = Vd.Factory.CreateFramebuffer(description);
-
-            Vd.BindFrameBuffer(frameBuffer);
-            Vd.BindDefaultTexture();
         }
 
         /// <summary>
@@ -95,11 +90,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 initialise();
                 isInitialised = true;
             }
-            else
-            {
-                // Buffer is bound during initialisation
-                Vd.BindFrameBuffer(frameBuffer);
-            }
+
+            Vd.BindFrameBuffer(frameBuffer);
         }
 
         /// <summary>
