@@ -89,7 +89,7 @@ namespace osu.Framework.Graphics.Veldrid
 
             FlushCurrentBatch();
 
-            pipelineDescription.BlendState = new BlendStateDescription(default, blendingParameters.ToBlendAttachment(colorWriteMask));
+            pipelineDescription.BlendState = new BlendStateDescription(RgbaFloat.White, blendingParameters.ToBlendAttachment(colorWriteMask));
             lastBlendingParameters = blendingParameters;
             lastColorWriteMask = colorWriteMask;
         }
