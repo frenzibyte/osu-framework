@@ -5,9 +5,9 @@ using Veldrid;
 
 namespace osu.Framework.Graphics.Veldrid.Pooling
 {
-    internal sealed class RendererStagingBufferPool : RendererPool<RendererStagingBufferPool.Request, DeviceBuffer>
+    internal sealed class VeldridStagingBufferPool : VeldridPool<VeldridStagingBufferPool.Request, DeviceBuffer>
     {
-        public RendererStagingBufferPool()
+        public VeldridStagingBufferPool()
             : base("Staging Buffers")
         {
         }

@@ -94,9 +94,9 @@ namespace osu.Framework.Graphics.Veldrid
 
         private static readonly List<IVertexBuffer> vertex_buffers_in_use = new List<IVertexBuffer>();
 
-        private static readonly RendererFencePool commands_execution_fence_pool = new RendererFencePool();
-        private static readonly RendererStagingBufferPool staging_buffer_pool = new RendererStagingBufferPool();
-        private static readonly RendererStagingTexturePool staging_texture_pool = new RendererStagingTexturePool();
+        private static readonly VeldridFencePool commands_execution_fence_pool = new VeldridFencePool();
+        private static readonly VeldridStagingBufferPool staging_buffer_pool = new VeldridStagingBufferPool();
+        private static readonly VeldridStagingTexturePool staging_texture_pool = new VeldridStagingTexturePool();
 
         public static bool IsInitialized { get; private set; }
 

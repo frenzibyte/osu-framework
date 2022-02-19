@@ -5,7 +5,7 @@ using Veldrid;
 
 namespace osu.Framework.Graphics.Veldrid.Pooling
 {
-    internal class RendererFencePool : RendererPool<Fence>
+    internal class VeldridFencePool : VeldridPool<Fence>
     {
         /// <summary>
         /// The latest use ID of the used fences that have been signaled.
@@ -24,7 +24,7 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
             }
         }
 
-        public RendererFencePool()
+        public VeldridFencePool()
             : base("Synchronisation fences")
         {
         }

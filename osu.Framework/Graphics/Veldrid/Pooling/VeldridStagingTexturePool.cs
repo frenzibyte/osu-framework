@@ -7,11 +7,11 @@ using Veldrid;
 
 namespace osu.Framework.Graphics.Veldrid.Pooling
 {
-    internal class RendererStagingTexturePool : RendererPool<RendererStagingTexturePool.Request, RendererSubTexturePool>
+    internal class VeldridStagingTexturePool : VeldridPool<VeldridStagingTexturePool.Request, VeldridSubTexturePool>
     {
         private const int min_texture_pool_size = 1024;
 
-        public RendererStagingTexturePool()
+        public VeldridStagingTexturePool()
             : base("Staging Textures")
         {
         }
@@ -28,7 +28,7 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
             return pool.Get(width, height);
         }
 
-        protected override bool CanUseResource(Request request, RendererSubTexturePool pool)
+        protected override bool CanUseResource(Request request, VeldridSubTexturePool pool)
         {
             var size = getRecommendedSizeFor(request);
             if (pool.Texture.Width != size.Width && pool.Texture.Height != size.Height)
@@ -37,14 +37,14 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
             return pool.Texture.Format == request.Format && pool.CanAllocateRegion(request.Width, request.Height);
         }
 
-        protected override bool CanResourceRemainAvailable(Request request, RendererSubTexturePool pool) => !pool.ReachesPoolEnd(request.Width, request.Height);
+        protected override bool CanResourceRemainAvailable(Request request, VeldridSubTexturePool pool) => !pool.ReachesPoolEnd(request.Width, request.Height);
 
-        protected override RendererSubTexturePool CreateResource(Request request)
+        protected override VeldridSubTexturePool CreateResource(Request request)
         {
             var size = getRecommendedSizeFor(request);
             var description = TextureDescription.Texture2D((uint)size.Width, (uint)size.Height, 1, 1, request.Format, TextureUsage.Staging);
             var texture = Vd.Factory.CreateTexture(description);
-            return new RendererSubTexturePool(texture, "Staging Texture Regions");
+            return new VeldridSubTexturePool(texture, "Staging Texture Regions");
         }
 
         private static Size getRecommendedSizeFor(Request request) => new Size

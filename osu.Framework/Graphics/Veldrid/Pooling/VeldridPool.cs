@@ -12,7 +12,7 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
     /// </summary>
     /// <typeparam name="TRequest">The pool request type.</typeparam>
     /// <typeparam name="TResource">The device resource type.</typeparam>
-    public abstract class RendererPool<TRequest, TResource> : IRendererPool
+    public abstract class VeldridPool<TRequest, TResource> : IVeldridPool
         where TRequest : struct
     {
         /// <summary>
@@ -31,10 +31,10 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
         public bool HasResources => AvailableResources.Count > 0 || UsedResources.Count > 0;
 
         /// <summary>
-        /// Creates a new <see cref="RendererPool{TRequest, TResource}"/>.
+        /// Creates a new <see cref="VeldridPool{TRequest,TResource}"/>.
         /// </summary>
         /// <param name="name">The pool name in plural form for <see cref="GlobalStatistics"/> display purposes.</param>
-        protected RendererPool(string name)
+        protected VeldridPool(string name)
         {
             statAvailableCount = GlobalStatistics.Get<int>("Renderer Pools", $"Available {name.ToLower()}");
             statUsedCount = GlobalStatistics.Get<int>("Renderer Pools", $"Used {name.ToLower()}");
@@ -103,13 +103,13 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
 
         public virtual void ReleaseUsedResources(ulong untilId)
         {
-            if (typeof(IRendererPool).IsAssignableFrom(typeof(TResource)))
+            if (typeof(IVeldridPool).IsAssignableFrom(typeof(TResource)))
             {
                 foreach (var available in AvailableResources)
-                    ((IRendererPool)available.resource).ReleaseUsedResources(untilId);
+                    ((IVeldridPool)available.resource).ReleaseUsedResources(untilId);
 
                 foreach (var used in UsedResources)
-                    ((IRendererPool)used.resource).ReleaseUsedResources(untilId);
+                    ((IVeldridPool)used.resource).ReleaseUsedResources(untilId);
             }
 
             var pivot = AvailableResources.First;
@@ -137,7 +137,7 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
 
             for (var node = AvailableResources.First; Vd.ResetId - node?.Value.useId > resourceFreeInterval; node = AvailableResources.First)
             {
-                if (node.Value.resource is IRendererPool pool)
+                if (node.Value.resource is IVeldridPool pool)
                 {
                     pool.FreeUnusedResources(resourceFreeInterval);
 
@@ -157,9 +157,9 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
         }
     }
 
-    public abstract class RendererPool<TResource> : RendererPool<RendererPool<TResource>.EmptyRequest, TResource>
+    public abstract class VeldridPool<TResource> : VeldridPool<VeldridPool<TResource>.EmptyRequest, TResource>
     {
-        protected RendererPool(string name)
+        protected VeldridPool(string name)
             : base(name)
         {
         }

@@ -6,7 +6,7 @@ namespace osu.Framework.Graphics.Veldrid.Pooling
     /// <summary>
     /// A pool managing over device resources, designed to handle GPU-side memory access.
     /// </summary>
-    internal interface IRendererPool
+    internal interface IVeldridPool
     {
         /// <summary>
         /// Whether this pool has any resources available or in use.

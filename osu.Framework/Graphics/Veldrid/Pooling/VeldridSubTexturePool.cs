@@ -8,11 +8,11 @@ using Veldrid;
 namespace osu.Framework.Graphics.Veldrid.Pooling
 {
     // todo: use TextureAtlas and RendererTexture rather than reinventing the wheel.
-    internal class RendererSubTexturePool : RendererPool<RendererSubTexturePool.Request, TextureRegion>, IDisposable
+    internal class VeldridSubTexturePool : VeldridPool<VeldridSubTexturePool.Request, TextureRegion>, IDisposable
     {
         public readonly Texture Texture;
 
-        public RendererSubTexturePool(Texture texture, string name)
+        public VeldridSubTexturePool(Texture texture, string name)
             : base(name)
         {
             Texture = texture;
