@@ -11,7 +11,7 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
     [StructLayout(LayoutKind.Sequential)]
     public struct UncolouredVertex2D : IEquatable<UncolouredVertex2D>, IVertex
     {
-        [VertexMember(VertexElementFormat.Float2, VertexElementSemantic.Position)]
+        [VertexMember(VertexElementFormat.Float2)]
         public Vector2 Position;
 
         public readonly bool Equals(UncolouredVertex2D other) => Position.Equals(other.Position);

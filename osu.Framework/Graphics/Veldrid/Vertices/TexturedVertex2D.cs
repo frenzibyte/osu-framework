@@ -12,19 +12,19 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
     [StructLayout(LayoutKind.Sequential)]
     public struct TexturedVertex2D : IEquatable<TexturedVertex2D>, IVertex
     {
-        [VertexMember(VertexElementFormat.Float2, VertexElementSemantic.Position)]
+        [VertexMember(VertexElementFormat.Float2)]
         public Vector2 Position;
 
-        [VertexMember(VertexElementFormat.Float4, VertexElementSemantic.Color)]
+        [VertexMember(VertexElementFormat.Float4)]
         public Color4 Colour;
 
-        [VertexMember(VertexElementFormat.Float2, VertexElementSemantic.TextureCoordinate)]
+        [VertexMember(VertexElementFormat.Float2)]
         public Vector2 TexturePosition;
 
-        [VertexMember(VertexElementFormat.Float4, VertexElementSemantic.Normal)]
+        [VertexMember(VertexElementFormat.Float4)]
         public Vector4 TextureRect;
 
-        [VertexMember(VertexElementFormat.Float2, VertexElementSemantic.Normal)]
+        [VertexMember(VertexElementFormat.Float2)]
         public Vector2 BlendRange;
 
         public readonly bool Equals(TexturedVertex2D other) =>

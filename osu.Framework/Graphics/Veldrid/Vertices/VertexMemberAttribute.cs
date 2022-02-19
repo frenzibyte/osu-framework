@@ -17,11 +17,6 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
         public VertexElementFormat Format { get; }
 
         /// <summary>
-        /// The semantic of this vertex member attribute.
-        /// </summary>
-        public VertexElementSemantic Semantic { get; }
-
-        /// <summary>
         /// Whether this vertex attribute member is normalized. If this is set to true, the member will be mapped to
         /// a range of [-1, 1] (signed) or [0, 1] (unsigned) when it is passed to the shader.
         /// </summary>
@@ -32,10 +27,9 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
         /// </summary>
         internal IntPtr Offset;
 
-        public VertexMemberAttribute(VertexElementFormat format, VertexElementSemantic semantic, bool normalized = false)
+        public VertexMemberAttribute(VertexElementFormat format, bool normalized = false)
         {
             Format = format;
-            Semantic = semantic;
             Normalized = normalized;
         }
     }

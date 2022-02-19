@@ -12,10 +12,10 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
     [StructLayout(LayoutKind.Sequential)]
     public struct Vertex2D : IEquatable<Vertex2D>, IVertex
     {
-        [VertexMember(VertexElementFormat.Float2, VertexElementSemantic.Position)]
+        [VertexMember(VertexElementFormat.Float2)]
         public Vector2 Position;
 
-        [VertexMember(VertexElementFormat.Float4, VertexElementSemantic.Color)]
+        [VertexMember(VertexElementFormat.Float4)]
         public Color4 Colour;
 
         public readonly bool Equals(Vertex2D other) => Position.Equals(other.Position) && Colour.Equals(other.Colour);

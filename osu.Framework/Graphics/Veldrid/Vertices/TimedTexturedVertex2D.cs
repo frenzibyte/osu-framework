@@ -12,16 +12,16 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
     [StructLayout(LayoutKind.Sequential)]
     public struct TimedTexturedVertex2D : IEquatable<TimedTexturedVertex2D>, IVertex
     {
-        [VertexMember(VertexElementFormat.Float2, VertexElementSemantic.Position)]
+        [VertexMember(VertexElementFormat.Float2)]
         public Vector2 Position;
 
-        [VertexMember(VertexElementFormat.Float4, VertexElementSemantic.Color)]
+        [VertexMember(VertexElementFormat.Float4)]
         public Color4 Colour;
 
-        [VertexMember(VertexElementFormat.Float2, VertexElementSemantic.TextureCoordinate)]
+        [VertexMember(VertexElementFormat.Float2)]
         public Vector2 TexturePosition;
 
-        [VertexMember(VertexElementFormat.Float1, VertexElementSemantic.Normal)]
+        [VertexMember(VertexElementFormat.Float1)]
         public float Time;
 
         public readonly bool Equals(TimedTexturedVertex2D other) => Position.Equals(other.Position) && TexturePosition.Equals(other.TexturePosition) && Colour.Equals(other.Colour) && Time.Equals(other.Time);

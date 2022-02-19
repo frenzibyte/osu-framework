@@ -11,7 +11,7 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
     internal struct DepthWrappingVertex<TVertex> : IVertex, IEquatable<DepthWrappingVertex<TVertex>>
         where TVertex : unmanaged, IVertex, IEquatable<TVertex>
     {
-        [VertexMember(VertexElementFormat.Float1, VertexElementSemantic.Normal)]
+        [VertexMember(VertexElementFormat.Float1)]
         public float BackbufferDrawDepth;
 
         public TVertex Vertex;
