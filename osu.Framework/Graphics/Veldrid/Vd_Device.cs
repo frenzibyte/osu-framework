@@ -2,8 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using osu.Framework.Development;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
@@ -46,7 +48,8 @@ namespace osu.Framework.Graphics.Veldrid
                         string renderer = default;
                         string glslVersion = default;
                         string vendor = default;
-                        string extensions = default;
+
+                        StringBuilder extensions = default;
 
                         Device.GetOpenGLInfo().ExecuteOnGLThread(() =>
                         {
@@ -54,7 +57,19 @@ namespace osu.Framework.Graphics.Veldrid
                             renderer = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Renderer));
                             vendor = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Vendor));
                             glslVersion = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.ShadingLanguageVersion));
-                            extensions = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString((StringName)StringNameIndexed.Extensions));
+
+                            int extensionCount;
+                            OpenGLNative.glGetIntegerv(GetPName.NumExtensions, &extensionCount);
+
+                            extensions = new StringBuilder();
+
+                            for (uint i = 0; i < extensionCount; i++)
+                            {
+                                if (i > 0)
+                                    extensions.Append(' ');
+
+                                extensions.Append(Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetStringi(StringNameIndexed.Extensions, i)));
+                            }
 
                             int maxTextureSize;
                             OpenGLNative.glGetIntegerv(GetPName.MaxTextureSize, &maxTextureSize);
