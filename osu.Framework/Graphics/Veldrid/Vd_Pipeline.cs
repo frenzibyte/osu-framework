@@ -75,23 +75,23 @@ namespace osu.Framework.Graphics.Veldrid
         #region Blending
 
         private static BlendingParameters lastBlendingParameters;
-        private static Colour4? lastBlendFactor;
+        private static ColorWriteMask lastColorWriteMask;
 
         /// <summary>
         /// Sets the blending function to draw with.
         /// </summary>
         /// <param name="blendingParameters">The info we should use to update the active state.</param>
-        /// <param name="blendFactor">An optional constant blend factor.</param>
-        public static void SetBlend(BlendingParameters blendingParameters, Colour4? blendFactor = null)
+        /// <param name="colorWriteMask">An optional per-component color writing mask</param>
+        public static void SetBlend(BlendingParameters blendingParameters, ColorWriteMask colorWriteMask = ColorWriteMask.All)
         {
-            if (lastBlendingParameters == blendingParameters && lastBlendFactor == blendFactor)
+            if (lastBlendingParameters == blendingParameters || lastColorWriteMask == colorWriteMask)
                 return;
 
             FlushCurrentBatch();
 
-            pipelineDescription.BlendState = new BlendStateDescription(blendFactor?.ToRgbaFloat() ?? RgbaFloat.White, blendingParameters.ToBlendAttachment());
+            pipelineDescription.BlendState = new BlendStateDescription(RgbaFloat.White, blendingParameters.ToBlendAttachment(colorWriteMask));
             lastBlendingParameters = blendingParameters;
-            lastBlendFactor = blendFactor;
+            lastColorWriteMask = colorWriteMask;
         }
 
         #endregion
