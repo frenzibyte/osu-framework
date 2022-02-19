@@ -3,6 +3,7 @@
 
 using osu.Framework;
 using osu.Framework.Graphics.Renderer;
+using osu.Framework.Platform;
 
 namespace SampleGame.Desktop
 {
@@ -10,10 +11,12 @@ namespace SampleGame.Desktop
     {
         public static void Main()
         {
-            using (var host = Host.GetSuitableHost("osu-framework-veldrid"))
+            using (GameHost host = Host.GetSuitableDesktopHost(@"sample-game"))
             {
                 VeldridGraphicsBackend.Host = host;
-                host.Run(new SampleGameGame());
+
+                using (Game game = new SampleGameGame())
+                    host.Run(game);
             }
         }
     }
