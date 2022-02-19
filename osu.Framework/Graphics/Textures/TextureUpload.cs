@@ -5,13 +5,13 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using osu.Framework.Extensions.ImageExtensions;
-using osu.Framework.Graphics.Renderer.Buffers;
+using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using StbiSharp;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Textures
 {

@@ -9,7 +9,10 @@
       "osu.Framework.NativeLibs\\osu.Framework.NativeLibs.csproj",
       "osu.Framework.Tests\\osu.Framework.Tests.csproj",
       "FirstTestProject\\FirstTestProject.csproj",
-      "SecondTestProject\\SecondTestProject.csproj"
+      "SecondTestProject\\SecondTestProject.csproj",
+      "..\\veldrid\\src\\Veldrid\\Veldrid.csproj",
+      "..\\veldrid\\src\\Veldrid.MetalBindings\\Veldrid.MetalBindings.csproj",
+      "..\\veldrid\\src\\Veldrid.OpenGLBindings\\Veldrid.OpenGLBindings.csproj"
     ]
   }
 }

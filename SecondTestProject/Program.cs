@@ -6,11 +6,12 @@ using osu.Framework;
 using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
+using osuTK;
 using osuTK.Graphics;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace SecondTestProject
 {
@@ -45,7 +46,7 @@ namespace SecondTestProject
 
                 using (Vd.BeginCommands())
                 {
-                    Vd.Reset(new System.Numerics.Vector2(window.Size.Width, window.Size.Height));
+                    Vd.Reset(new Vector2(window.Size.Width, window.Size.Height));
 
                     shader.Bind();
 

@@ -1,16 +1,16 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Graphics.Primitives;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
+using osu.Framework.Graphics.Veldrid;
 
 namespace osu.Framework.Graphics.Textures
 {
     internal class TextureWhitePixel : Texture
     {
-        public TextureWhitePixel(RendererTexture rendererTexture)
-            : base(rendererTexture)
+        public TextureWhitePixel(VeldridTexture veldridTexture)
+            : base(veldridTexture)
         {
         }
 

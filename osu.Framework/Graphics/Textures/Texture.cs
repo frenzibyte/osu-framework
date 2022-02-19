@@ -5,11 +5,11 @@ using System;
 using System.IO;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Graphics.Primitives;
 using osuTK;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
 
 namespace osu.Framework.Graphics.Textures
@@ -22,7 +22,7 @@ namespace osu.Framework.Graphics.Textures
 
         public static Texture WhitePixel => white_pixel.Value;
 
-        public virtual RendererTexture RendererTexture { get; }
+        public virtual VeldridTexture VeldridTexture { get; }
 
         public string Filename;
         public string AssetName;
@@ -40,23 +40,23 @@ namespace osu.Framework.Graphics.Textures
         public float DisplayWidth => Width / ScaleAdjust;
         public float DisplayHeight => Height / ScaleAdjust;
 
-        public Opacity Opacity => RendererTexture.Opacity;
+        public Opacity Opacity => VeldridTexture.Opacity;
 
-        public WrapMode WrapModeS => RendererTexture.WrapModeS;
+        public WrapMode WrapModeS => VeldridTexture.WrapModeS;
 
-        public WrapMode WrapModeT => RendererTexture.WrapModeT;
+        public WrapMode WrapModeT => VeldridTexture.WrapModeT;
 
         /// <summary>
         /// Create a new texture.
         /// </summary>
-        /// <param name="rendererTexture">The renderer texture.</param>
-        public Texture(RendererTexture rendererTexture)
+        /// <param name="veldridTexture">The renderer texture.</param>
+        public Texture(VeldridTexture veldridTexture)
         {
-            RendererTexture = rendererTexture ?? throw new ArgumentNullException(nameof(rendererTexture));
+            VeldridTexture = veldridTexture ?? throw new ArgumentNullException(nameof(veldridTexture));
         }
 
         public Texture(int width, int height, bool manualMipmaps = false, FilteringMode filteringMode = FilteringMode.Linear)
-            : this(new RendererTextureSingle(width, height, manualMipmaps, filteringMode))
+            : this(new VeldridTextureSingle(width, height, manualMipmaps, filteringMode))
         {
         }
 
@@ -79,7 +79,7 @@ namespace osu.Framework.Graphics.Textures
                 cropRectangle *= scale;
             }
 
-            return new Texture(new RendererTextureSub(cropRectangle, RendererTexture, wrapModeS, wrapModeT));
+            return new Texture(new VeldridTextureSub(cropRectangle, VeldridTexture, wrapModeS, wrapModeT));
         }
 
         /// <summary>
@@ -108,14 +108,14 @@ namespace osu.Framework.Graphics.Textures
 
         public int Width
         {
-            get => RendererTexture.Width;
-            set => RendererTexture.Width = value;
+            get => VeldridTexture.Width;
+            set => VeldridTexture.Width = value;
         }
 
         public int Height
         {
-            get => RendererTexture.Height;
-            set => RendererTexture.Height = value;
+            get => VeldridTexture.Height;
+            set => VeldridTexture.Height = value;
         }
 
         public Vector2 Size => new Vector2(Width, Height);
@@ -127,7 +127,7 @@ namespace osu.Framework.Graphics.Textures
         /// <param name="upload"></param>
         public void SetData(ITextureUpload upload)
         {
-            RendererTexture?.SetData(upload);
+            VeldridTexture?.SetData(upload);
         }
 
         protected virtual RectangleF TextureBounds(RectangleF? textureRect = null)
@@ -145,7 +145,7 @@ namespace osu.Framework.Graphics.Textures
             return texRect;
         }
 
-        public RectangleF GetTextureRect(RectangleF? textureRect = null) => RendererTexture.GetTextureRect(TextureBounds(textureRect));
+        public RectangleF GetTextureRect(RectangleF? textureRect = null) => VeldridTexture.GetTextureRect(TextureBounds(textureRect));
 
         /// <summary>
         /// Draws a triangle to the screen.
@@ -159,9 +159,9 @@ namespace osu.Framework.Graphics.Textures
         internal void DrawTriangle(Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
                                    Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
         {
-            if (RendererTexture == null || !RendererTexture.Bind()) return;
+            if (VeldridTexture == null || !VeldridTexture.Bind()) return;
 
-            RendererTexture.DrawTriangle(vertexTriangle, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, TextureBounds(textureCoords));
+            VeldridTexture.DrawTriangle(vertexTriangle, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, TextureBounds(textureCoords));
         }
 
         /// <summary>
@@ -177,17 +177,17 @@ namespace osu.Framework.Graphics.Textures
         internal void DrawQuad(Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null,
                                Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
         {
-            if (RendererTexture == null || !RendererTexture.Bind()) return;
+            if (VeldridTexture == null || !VeldridTexture.Bind()) return;
 
-            RendererTexture.DrawQuad(vertexQuad, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, blendRangeOverride, TextureBounds(textureCoords));
+            VeldridTexture.DrawQuad(vertexQuad, drawColour, TextureBounds(textureRect), vertexAction, inflationPercentage, blendRangeOverride, TextureBounds(textureCoords));
         }
 
         public override string ToString() => $@"{AssetName} ({Width}, {Height})";
 
         /// <summary>
-        /// Whether <see cref="RendererTexture"/> is in a usable state.
+        /// Whether <see cref="VeldridTexture"/> is in a usable state.
         /// </summary>
-        public virtual bool Available => RendererTexture.Available;
+        public virtual bool Available => VeldridTexture.Available;
 
         #region Disposal
 

@@ -22,7 +22,7 @@ using osu.Framework.Development;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -41,7 +41,6 @@ using SixLabors.ImageSharp.Memory;
 using Veldrid;
 using Image = SixLabors.ImageSharp.Image;
 using Size = System.Drawing.Size;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Platform
 {
@@ -456,7 +455,7 @@ namespace osu.Framework.Platform
             }
         }
 
-        private void drawFrame(Action postReset = null)
+        private void drawFrame(Action preDraw = null)
         {
             while (ExecutionState == ExecutionState.Running)
             {
@@ -476,28 +475,27 @@ namespace osu.Framework.Platform
                     }
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.Reset))
-                        Vd.Reset(new System.Numerics.Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                        Vd.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
-                    postReset?.Invoke();
+                    preDraw?.Invoke();
 
-                    // if (!bypassFrontToBackPass.Value)
-                    // {
-                    //     depthValue.Reset();
-                    //
-                    //     // GL.ColorMask(false, false, false, false);
-                    //     Vd.SetBlend(BlendingParameters.None);
-                    //     Vd.PushDepthInfo(DepthInfo.Default);
-                    //
-                    //     // Front pass
-                    //     buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
-                    //
-                    //     Vd.PopDepthInfo();
-                    //     // GL.ColorMask(true, true, true, true);
-                    //
-                    //     // The back pass doesn't write depth, but needs to depth test properly
-                    //     Vd.PushDepthInfo(new DepthInfo(true, false));
-                    // }
-                    // else
+                    if (!bypassFrontToBackPass.Value)
+                    {
+                        depthValue.Reset();
+
+                        Vd.SetBlend(BlendingParameters.None, ColorWriteMask.None);
+                        Vd.PushDepthInfo(DepthInfo.Default);
+
+                        // Front pass
+                        buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
+
+                        Vd.PopDepthInfo();
+                        Vd.SetBlend(BlendingParameters.None);
+
+                        // The back pass doesn't write depth, but needs to depth test properly
+                        Vd.PushDepthInfo(new DepthInfo(true, false));
+                    }
+                    else
                     {
                         // Disable depth testing
                         Vd.PushDepthInfo(new DepthInfo());
@@ -523,7 +521,7 @@ namespace osu.Framework.Platform
         {
             Window.SwapBuffers();
 
-            if (Window.VerticalSync)
+            if (Vd.Device.SyncToVerticalBlank)
                 // without glFinish, vsync is basically unplayable due to the extra latency introduced.
                 // we will likely want to give the user control over this in the future as an advanced setting.
                 Vd.Device.WaitForIdle();
@@ -1068,7 +1066,7 @@ namespace osu.Framework.Platform
         {
             if (Window == null) return;
 
-            DrawThread.Scheduler.Add(() => Window.VerticalSync = frameSyncMode.Value == FrameSync.VSync);
+            DrawThread.Scheduler.Add(() => Vd.Device.SyncToVerticalBlank = frameSyncMode.Value == FrameSync.VSync);
         }
 
         /// <summary>

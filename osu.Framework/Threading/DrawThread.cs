@@ -5,8 +5,8 @@ using osu.Framework.Statistics;
 using System;
 using System.Collections.Generic;
 using osu.Framework.Development;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Platform;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Threading
 {
@@ -27,12 +27,7 @@ namespace osu.Framework.Threading
             var window = host.Window;
 
             if (window != null)
-            {
-                window.MakeCurrent();
-
-                using (Vd.BeginCommands())
-                    Vd.Reset(new System.Numerics.Vector2(window.ClientSize.Width, window.ClientSize.Height));
-            }
+                Vd.Initialise(host);
         }
 
         internal sealed override void MakeCurrent()
@@ -40,15 +35,6 @@ namespace osu.Framework.Threading
             base.MakeCurrent();
 
             ThreadSafety.IsDrawThread = true;
-
-            // Seems to be required on some drivers as the context is lost from the draw thread.
-            host.Window?.MakeCurrent();
-        }
-
-        protected sealed override void OnSuspended()
-        {
-            base.OnSuspended();
-            host.Window?.ClearCurrent();
         }
 
         internal override IEnumerable<StatisticsCounterType> StatisticsCounters => new[]

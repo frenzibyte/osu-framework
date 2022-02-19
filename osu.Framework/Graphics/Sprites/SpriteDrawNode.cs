@@ -3,11 +3,11 @@
 
 using osuTK;
 using System;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Graphics.Renderer.Textures;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
+using osu.Framework.Graphics.Veldrid.Textures;
 
 namespace osu.Framework.Graphics.Sprites
 {

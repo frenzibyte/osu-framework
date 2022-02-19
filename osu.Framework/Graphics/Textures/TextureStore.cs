@@ -2,15 +2,15 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.IO.Stores;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Logging;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -55,11 +55,11 @@ namespace osu.Framework.Graphics.Textures
         {
             if (upload == null) return null;
 
-            RendererTexture glTexture = null;
+            VeldridTexture veldridTexture = null;
 
             if (Atlas != null)
             {
-                if ((glTexture = Atlas.Add(upload.Width, upload.Height, wrapModeS, wrapModeT)) == null)
+                if ((veldridTexture = Atlas.Add(upload.Width, upload.Height, wrapModeS, wrapModeT)) == null)
                 {
                     Logger.Log(
                         $"Texture requested ({upload.Width}x{upload.Height}) which exceeds {nameof(TextureStore)}'s atlas size ({max_atlas_size}x{max_atlas_size}) - bypassing atlasing. Consider using {nameof(LargeTextureStore)}.",
@@ -67,9 +67,9 @@ namespace osu.Framework.Graphics.Textures
                 }
             }
 
-            glTexture ??= new RendererTextureSingle(upload.Width, upload.Height, manualMipmaps, filteringMode, wrapModeS, wrapModeT);
+            veldridTexture ??= new VeldridTextureSingle(upload.Width, upload.Height, manualMipmaps, filteringMode, wrapModeS, wrapModeT);
 
-            Texture tex = new Texture(glTexture) { ScaleAdjust = ScaleAdjust };
+            Texture tex = new Texture(veldridTexture) { ScaleAdjust = ScaleAdjust };
             tex.SetData(upload);
 
             return tex;
@@ -211,7 +211,7 @@ namespace osu.Framework.Graphics.Textures
                 {
                     // we are doing this locally as right now, Textures don't dispose the underlying texture (leaving it to GC finalizers).
                     // in the case of a purge operation we are pretty sure this is the intended behaviour.
-                    tex?.RendererTexture?.Dispose();
+                    tex?.VeldridTexture?.Dispose();
                     tex?.Dispose();
                 }
 

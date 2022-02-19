@@ -6,8 +6,8 @@ using System.Linq;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
-using osu.Framework.Graphics.Renderer.Textures;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid.Textures;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
@@ -65,10 +65,10 @@ namespace osu.Framework.Graphics.Visualisation
         {
             base.PopIn();
 
-            foreach (var tex in RendererTextureSingle.GetAllTextures())
+            foreach (var tex in VeldridTextureSingle.GetAllTextures())
                 addTexture(tex);
 
-            RendererTextureSingle.TextureCreated += addTexture;
+            VeldridTextureSingle.TextureCreated += addTexture;
         }
 
         protected override void PopOut()
@@ -78,33 +78,33 @@ namespace osu.Framework.Graphics.Visualisation
             atlasFlow.Clear();
             textureFlow.Clear();
 
-            RendererTextureSingle.TextureCreated -= addTexture;
+            VeldridTextureSingle.TextureCreated -= addTexture;
         }
 
-        private void addTexture(RendererTextureSingle texture) => Schedule(() =>
+        private void addTexture(VeldridTextureSingle veldridTexture) => Schedule(() =>
         {
-            var target = texture is RendererTextureAtlas ? atlasFlow : textureFlow;
+            var target = veldridTexture is VeldridTextureAtlas ? atlasFlow : textureFlow;
 
-            if (target.Any(p => p.Texture == texture))
+            if (target.Any(p => p.VeldridTexture == veldridTexture))
                 return;
 
-            target.Add(new TexturePanel(texture));
+            target.Add(new TexturePanel(veldridTexture));
         });
 
         private class TexturePanel : CompositeDrawable
         {
-            private readonly WeakReference<RendererTextureSingle> textureReference;
+            private readonly WeakReference<VeldridTextureSingle> textureReference;
 
-            public RendererTextureSingle Texture => textureReference.TryGetTarget(out var tex) ? tex : null;
+            public VeldridTextureSingle VeldridTexture => textureReference.TryGetTarget(out var tex) ? tex : null;
 
             private readonly SpriteText titleText;
             private readonly SpriteText footerText;
 
             private readonly UsageBackground usage;
 
-            public TexturePanel(RendererTextureSingle texture)
+            public TexturePanel(VeldridTextureSingle veldridTexture)
             {
-                textureReference = new WeakReference<RendererTextureSingle>(texture);
+                textureReference = new WeakReference<VeldridTextureSingle>(veldridTexture);
 
                 Size = new Vector2(100, 132);
 
@@ -151,7 +151,7 @@ namespace osu.Framework.Graphics.Visualisation
 
                 try
                 {
-                    var texture = Texture;
+                    var texture = VeldridTexture;
 
                     if (texture?.Available != true)
                     {
@@ -170,13 +170,13 @@ namespace osu.Framework.Graphics.Visualisation
 
         private class UsageBackground : Box, IHasTooltip
         {
-            private readonly WeakReference<RendererTextureSingle> textureReference;
+            private readonly WeakReference<VeldridTextureSingle> textureReference;
 
             private ulong lastBindCount;
 
             public float AverageUsagesPerFrame { get; private set; }
 
-            public UsageBackground(WeakReference<RendererTextureSingle> textureReference)
+            public UsageBackground(WeakReference<VeldridTextureSingle> textureReference)
             {
                 this.textureReference = textureReference;
             }
@@ -189,7 +189,7 @@ namespace osu.Framework.Graphics.Visualisation
 
                 private ColourInfo drawColour;
 
-                private WeakReference<RendererTextureSingle> textureReference;
+                private WeakReference<VeldridTextureSingle> textureReference;
 
                 public UsageBackgroundDrawNode(Box source)
                     : base(source)

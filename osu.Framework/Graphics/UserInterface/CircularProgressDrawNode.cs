@@ -7,7 +7,7 @@ using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
 using osuTK.Graphics;
 using osu.Framework.Extensions.MatrixExtensions;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using Veldrid;
 using Texture = osu.Framework.Graphics.Textures.Texture;
 
@@ -151,7 +151,7 @@ namespace osu.Framework.Graphics.UserInterface
 
             Shader.Bind();
 
-            texture.RendererTexture.Bind();
+            texture.VeldridTexture.Bind();
 
             updateVertexBuffer();
 

@@ -16,6 +16,21 @@ namespace osu.Framework.Platform
     public interface IWindow : IDisposable
     {
         /// <summary>
+        /// Gets the native window handle as provided by the operating system.
+        /// </summary>
+        IntPtr WindowHandle { get; }
+
+        /// <summary>
+        /// Gets the native display handle as provided by some operating systems, otherwise <see cref="IntPtr.Zero"/> is returned.
+        /// </summary>
+        IntPtr DisplayHandle { get; }
+
+        /// <summary>
+        /// The <see cref="IGraphicsBackend"/> supplied within this window.
+        /// </summary>
+        IGraphicsBackend Graphics { get; }
+
+        /// <summary>
         /// Cycles through the available <see cref="WindowMode"/>s as determined by <see cref="SupportedWindowModes"/>.
         /// </summary>
         void CycleMode();
@@ -70,11 +85,6 @@ namespace osu.Framework.Platform
         WindowState WindowState { get; set; }
 
         /// <summary>
-        /// Controls the vertical sync mode of the screen.
-        /// </summary>
-        bool VerticalSync { get; set; }
-
-        /// <summary>
         /// Returns the default <see cref="WindowMode"/> for the implementation.
         /// </summary>
         WindowMode DefaultWindowMode { get; }
@@ -121,16 +131,6 @@ namespace osu.Framework.Platform
         /// The <see cref="DisplayMode"/> for the display that this window is currently on.
         /// </summary>
         IBindable<DisplayMode> CurrentDisplayMode { get; }
-
-        /// <summary>
-        /// Makes this window the current graphics context, if appropriate for the driver.
-        /// </summary>
-        void MakeCurrent();
-
-        /// <summary>
-        /// Clears the current graphics context, if appropriate for the driver.
-        /// </summary>
-        void ClearCurrent();
 
         /// <summary>
         /// Request close.

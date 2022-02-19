@@ -3,39 +3,39 @@
 
 using System;
 using System.Threading;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Veldrid.Textures;
 
 namespace osu.Framework.Graphics.Textures
 {
     /// <summary>
-    /// A texture which shares a common reference count with all other textures using the same <see cref="RendererTexture"/>.
+    /// A texture which shares a common reference count with all other textures using the same <see cref="VeldridTexture"/>.
     /// </summary>
     internal class TextureWithRefCount : Texture
     {
         private readonly ReferenceCount count;
 
-        public TextureWithRefCount(RendererTexture rendererTexture, ReferenceCount count)
-            : base(rendererTexture)
+        public TextureWithRefCount(VeldridTexture veldridTexture, ReferenceCount count)
+            : base(veldridTexture)
         {
             this.count = count;
 
             count.Increment();
         }
 
-        public sealed override RendererTexture RendererTexture
+        public sealed override VeldridTexture VeldridTexture
         {
             get
             {
                 if (!Available)
                     throw new InvalidOperationException($"Attempting to access a {nameof(TextureWithRefCount)}'s underlying texture after all references are lost.");
 
-                return base.RendererTexture;
+                return base.VeldridTexture;
             }
         }
 
         // The base property invokes the overridden RendererTexture property, which will throw an exception if not available
         // So this property is redirected to reference the intended member
-        public sealed override bool Available => base.RendererTexture.Available;
+        public sealed override bool Available => base.VeldridTexture.Available;
 
         ~TextureWithRefCount()
         {

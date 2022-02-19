@@ -6,8 +6,8 @@ using System.IO;
 using osu.Framework.Configuration;
 using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Platform;
 using osuTK;
 using osuTK.Graphics;
@@ -54,8 +54,8 @@ namespace FirstTestProject
             window.Visible = true;
             window.Title = "osu!framework (running under Veldrid)";
 
-            device = VeldridGraphicsBackend.Device;
-            factory = VeldridGraphicsBackend.Device.ResourceFactory;
+            device = Vd.Device;
+            factory = Vd.Device.ResourceFactory;
 
             setupTextures();
             setupUniforms();

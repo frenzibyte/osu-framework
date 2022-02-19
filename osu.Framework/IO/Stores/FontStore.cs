@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 using osu.Framework.Platform;
 using osu.Framework.Text;
 using osu.Framework.Extensions.IEnumerableExtensions;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Veldrid.Textures;
 
 namespace osu.Framework.IO.Stores
 {

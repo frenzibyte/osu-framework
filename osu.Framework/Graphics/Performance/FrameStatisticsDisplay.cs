@@ -516,7 +516,7 @@ namespace osu.Framework.Graphics.Performance
                 Size = new Vector2(WIDTH, HEIGHT);
                 Child = Sprite = new Sprite();
 
-                Sprite.Texture = new Texture(WIDTH, HEIGHT, true) { RendererTexture = { BypassTextureUploadQueueing = true } };
+                Sprite.Texture = new Texture(WIDTH, HEIGHT, true) { VeldridTexture = { BypassTextureUploadQueueing = true } };
             }
         }
 

@@ -12,7 +12,7 @@ using osu.Framework.Configuration;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Input;
 using osu.Framework.Platform.SDL2;
 using osu.Framework.Platform.Windows.Native;
@@ -22,7 +22,6 @@ using osuTK.Input;
 using SDL2;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Veldrid;
 using Image = SixLabors.ImageSharp.Image;
 using Point = System.Drawing.Point;
 using Rectangle = System.Drawing.Rectangle;
@@ -41,7 +40,9 @@ namespace osu.Framework.Platform
     {
         internal IntPtr SDLWindowHandle { get; private set; } = IntPtr.Zero;
 
-        private readonly IGraphicsBackend graphicsBackend;
+        private readonly SDL2GraphicsBackend graphicsBackend;
+
+        public IGraphicsBackend Graphics => graphicsBackend;
 
         private bool focused;
 
@@ -58,15 +59,6 @@ namespace osu.Framework.Platform
 
                 isActive.Value = focused = value;
             }
-        }
-
-        /// <summary>
-        /// Enables or disables vertical sync.
-        /// </summary>
-        public bool VerticalSync
-        {
-            get => graphicsBackend.VerticalSync;
-            set => graphicsBackend.VerticalSync = value;
         }
 
         /// <summary>
@@ -422,28 +414,16 @@ namespace osu.Framework.Platform
             SDL.SDL_WindowFlags flags = SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE |
                                         SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI |
                                         SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | // shown after first swap to avoid white flash on startup (windows)
+                                        graphicsBackend.WindowFlags |
                                         WindowState.ToFlags();
-
-            switch (graphicsBackend.Type)
-            {
-                case GraphicsBackend.OpenGL:
-                case GraphicsBackend.OpenGLES:
-                    flags |= SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
-                    break;
-
-                case GraphicsBackend.Vulkan when !RuntimeInfo.IsApple:
-                    flags |= SDL.SDL_WindowFlags.SDL_WINDOW_VULKAN;
-                    break;
-
-                case GraphicsBackend.Metal:
-                case GraphicsBackend.Vulkan when RuntimeInfo.IsApple:
-                    flags |= SDL.SDL_WindowFlags.SDL_WINDOW_METAL;
-                    break;
-            }
 
             SDL.SDL_SetHint(SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
             SDL.SDL_SetHint(SDL.SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "1");
             SDL.SDL_SetHint(SDL.SDL_HINT_IME_SHOW_UI, "1");
+
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
             // we want text input to only be active when SDL2DesktopWindowTextInput is active.
             // SDL activates it by default on some platforms: https://github.com/libsdl-org/SDL/blob/release-2.0.16/src/video/SDL_video.c#L573-L582
@@ -547,9 +527,10 @@ namespace osu.Framework.Platform
                 Close();
         });
 
+        // todo: this should probably not exist, but required for "first draw" logic.
         public void SwapBuffers()
         {
-            graphicsBackend.SwapBuffers();
+            Vd.Device.SwapBuffers();
 
             if (firstDraw)
             {
@@ -557,22 +538,6 @@ namespace osu.Framework.Platform
                 firstDraw = false;
             }
         }
-
-        /// <summary>
-        /// Requests that the graphics backend become the current context.
-        /// </summary>
-        /// <remarks>
-        /// This may not be required for some backends.
-        /// </remarks>
-        public void MakeCurrent() => graphicsBackend.MakeCurrent();
-
-        /// <summary>
-        /// Requests that the current context be cleared.
-        /// </summary>
-        /// <remarks>
-        /// This may not be required for some backends.
-        /// </remarks>
-        public void ClearCurrent() => graphicsBackend.ClearCurrent();
 
         private void enqueueJoystickAxisInput(JoystickAxisSource axisSource, short axisValue)
         {
@@ -1232,7 +1197,7 @@ namespace osu.Framework.Platform
 
         #endregion
 
-        protected virtual IGraphicsBackend CreateGraphicsBackend() => new VeldridGraphicsBackend();
+        protected virtual SDL2GraphicsBackend CreateGraphicsBackend() => new SDL2GraphicsBackend();
 
         public void SetupWindow(FrameworkConfigManager config)
         {

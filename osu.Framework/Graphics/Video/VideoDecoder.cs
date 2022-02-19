@@ -165,7 +165,7 @@ namespace osu.Framework.Graphics.Video
         {
             foreach (var f in frames)
             {
-                ((VideoTexture)f.Texture.RendererTexture).FlushUploads();
+                ((VideoVeldridTexture)f.Texture.VeldridTexture).FlushUploads();
                 availableTextures.Enqueue(f.Texture);
             }
         }
@@ -609,7 +609,7 @@ namespace osu.Framework.Graphics.Video
                     continue;
 
                 if (!availableTextures.TryDequeue(out var tex))
-                    tex = new Texture(new VideoTexture(frame.Pointer->width, frame.Pointer->height));
+                    tex = new Texture(new VideoVeldridTexture(frame.Pointer->width, frame.Pointer->height));
 
                 var upload = new VideoTextureUpload(frame);
 
@@ -864,7 +864,7 @@ namespace osu.Framework.Graphics.Video
 
             while (decodedFrames.TryDequeue(out var f))
             {
-                ((VideoTexture)f.Texture.RendererTexture).FlushUploads();
+                ((VideoVeldridTexture)f.Texture.VeldridTexture).FlushUploads();
                 f.Texture.Dispose();
             }
 

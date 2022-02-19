@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.IO.Stores;
 using Veldrid;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Shaders
 {

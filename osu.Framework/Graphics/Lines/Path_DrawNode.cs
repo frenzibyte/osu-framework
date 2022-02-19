@@ -2,18 +2,17 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer;
+using osu.Framework.Graphics.Veldrid;
 using osuTK;
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osuTK.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Shaders;
 using Veldrid;
 using Texture = osu.Framework.Graphics.Textures.Texture;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Lines
 {
@@ -216,7 +215,7 @@ namespace osu.Framework.Graphics.Lines
 
                 pathShader.Bind();
 
-                texture.RendererTexture.Bind();
+                texture.VeldridTexture.Bind();
 
                 updateVertexBuffer();
 

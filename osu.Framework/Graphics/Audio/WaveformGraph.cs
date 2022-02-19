@@ -9,8 +9,9 @@ using osu.Framework.Allocation;
 using osu.Framework.Audio.Track;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using osuTK;
@@ -19,7 +20,6 @@ using osu.Framework.Utils;
 using osu.Framework.Threading;
 using osuTK.Graphics;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics.Audio
 {
@@ -303,7 +303,7 @@ namespace osu.Framework.Graphics.Audio
                     return;
 
                 shader.Bind();
-                texture.RendererTexture.Bind();
+                texture.VeldridTexture.Bind();
 
                 Vector2 localInflationAmount = new Vector2(0, 1) * DrawInfo.MatrixInverse.ExtractScale().Xy;
 

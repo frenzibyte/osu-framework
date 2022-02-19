@@ -3,7 +3,7 @@
 
 using NUnit.Framework;
 using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Graphics.Textures;
 
 namespace osu.Framework.Tests.Graphics
@@ -40,14 +40,14 @@ namespace osu.Framework.Tests.Graphics
         private void testWithSize(int width, int height)
         {
             TextureAtlas atlas = new TextureAtlas(1024, 1024);
-            RendererTexture texture = atlas.Add(width, height);
+            VeldridTexture veldridTexture = atlas.Add(width, height);
 
-            if (texture != null)
+            if (veldridTexture != null)
             {
-                Assert.AreEqual(texture.Width, width, message: $"Width: {texture.Width} != {width} for texture {width}x{height}");
-                Assert.AreEqual(texture.Height, height, message: $"Height: {texture.Height} != {height} for texture {width}x{height}");
+                Assert.AreEqual(veldridTexture.Width, width, message: $"Width: {veldridTexture.Width} != {width} for texture {width}x{height}");
+                Assert.AreEqual(veldridTexture.Height, height, message: $"Height: {veldridTexture.Height} != {height} for texture {width}x{height}");
 
-                RectangleF rect = texture.GetTextureRect(null);
+                RectangleF rect = veldridTexture.GetTextureRect(null);
                 Assert.LessOrEqual(rect.X + rect.Width, 1, message: $"Returned texture is wider than TextureAtlas for texture {width}x{height}");
                 Assert.LessOrEqual(rect.Y + rect.Height, 1, message: $"Returned texture is taller than TextureAtlas for texture {width}x{height}");
             }
@@ -67,9 +67,9 @@ namespace osu.Framework.Tests.Graphics
 
             var atlas = new TextureAtlas(atlas_size, atlas_size);
 
-            RendererTexture texture = atlas.Add(64, 64);
+            VeldridTexture veldridTexture = atlas.Add(64, 64);
 
-            RectangleF rect = texture.GetTextureRect(null);
+            RectangleF rect = veldridTexture.GetTextureRect(null);
             Assert.GreaterOrEqual(atlas_size * rect.X, TextureAtlas.WHITE_PIXEL_SIZE + TextureAtlas.PADDING, message: "Texture is placed on top of the white pixel");
             Assert.GreaterOrEqual(atlas_size * rect.Y, TextureAtlas.PADDING, message: "Texture has insufficient padding");
         }
@@ -81,9 +81,9 @@ namespace osu.Framework.Tests.Graphics
 
             var atlas = new TextureAtlas(atlas_size, atlas_size);
 
-            RendererTexture texture = atlas.Add(atlas_size - 2 * TextureAtlas.PADDING, 64);
+            VeldridTexture veldridTexture = atlas.Add(atlas_size - 2 * TextureAtlas.PADDING, 64);
 
-            RectangleF rect = texture.GetTextureRect(null);
+            RectangleF rect = veldridTexture.GetTextureRect(null);
             Assert.GreaterOrEqual(atlas_size * rect.X, TextureAtlas.PADDING, message: "Texture has insufficient padding");
             Assert.GreaterOrEqual(atlas_size * rect.Y, TextureAtlas.WHITE_PIXEL_SIZE + TextureAtlas.PADDING, message: "Texture is placed on top of the white pixel");
         }

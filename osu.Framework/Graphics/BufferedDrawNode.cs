@@ -3,14 +3,13 @@
 
 using System;
 using osu.Framework.Allocation;
-using osu.Framework.Graphics.Renderer;
-using osu.Framework.Graphics.Renderer.Buffers;
-using osu.Framework.Graphics.Renderer.Vertices;
+using osu.Framework.Graphics.Veldrid;
+using osu.Framework.Graphics.Veldrid.Buffers;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Statistics;
 using osuTK;
 using osuTK.Graphics;
-using Vd = osu.Framework.Graphics.Renderer.VeldridGraphicsBackend;
 
 namespace osu.Framework.Graphics
 {

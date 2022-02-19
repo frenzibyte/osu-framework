@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using JetBrains.Annotations;
-using osu.Framework.Graphics.Renderer.Textures;
+using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.IO.Stores;
 
 namespace osu.Framework.Graphics.Textures
@@ -54,7 +54,7 @@ namespace osu.Framework.Graphics.Textures
                 if (!referenceCounts.TryGetValue(lookupKey, out TextureWithRefCount.ReferenceCount count))
                     referenceCounts[lookupKey] = count = new TextureWithRefCount.ReferenceCount(referenceCountLock, () => onAllReferencesLost(baseTexture));
 
-                return new TextureWithRefCount(baseTexture.RendererTexture, count);
+                return new TextureWithRefCount(baseTexture.VeldridTexture, count);
             }
         }
 

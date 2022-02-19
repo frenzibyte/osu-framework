@@ -17,11 +17,6 @@ namespace osu.Framework.Platform
         GraphicsBackend Type { get; }
 
         /// <summary>
-        /// Whether buffer swapping should be synced to the monitor's refresh rate.
-        /// </summary>
-        bool VerticalSync { get; set; }
-
-        /// <summary>
         /// Initialises the graphics backend, given the current window backend.
         /// It is assumed that the window backend has been initialised.
         /// </summary>
@@ -32,21 +27,5 @@ namespace osu.Framework.Platform
         /// Retrieves the underlying drawable area of the window.
         /// </summary>
         Size GetDrawableSize();
-
-        /// <summary>
-        /// Performs a backbuffer swap immediately if <see cref="VerticalSync"/> is false,
-        /// or on the next screen refresh if true.
-        /// </summary>
-        void SwapBuffers();
-
-        /// <summary>
-        /// Makes the graphics backend the current context, if appropriate for the driver.
-        /// </summary>
-        void MakeCurrent();
-
-        /// <summary>
-        /// Clears the current context, if appropriate for the driver.
-        /// </summary>
-        void ClearCurrent();
     }
 }
