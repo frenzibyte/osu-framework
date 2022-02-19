@@ -227,7 +227,7 @@ namespace osu.Framework.Graphics.Renderer
                         options.Debug = false;
                     }
 
-                    swapchainDescription.Source = SwapchainSource.CreateNSView(SDL.SDL_Metal_CreateView(sdlWindow.SDLWindowHandle));
+                    swapchainDescription.Source = SwapchainSource.CreateNSWindow(sdlWindow.WindowHandle);
                     break;
 
                 case RuntimeInfo.Platform.Linux:
