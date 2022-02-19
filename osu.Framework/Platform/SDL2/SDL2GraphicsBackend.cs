@@ -3,7 +3,6 @@
 
 using System;
 using System.Drawing;
-using osu.Framework.Graphics.Veldrid;
 using SDL2;
 using Veldrid;
 using Veldrid.OpenGL;
@@ -79,33 +78,35 @@ namespace osu.Framework.Platform.SDL2
 
             sdlWindow = sdl2DesktopWindow;
 
-            openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
-            if (openGLContext == IntPtr.Zero)
-                throw new InvalidOperationException($"Failed to create an SDL2 GL context ({SDL.SDL_GetError()})");
-
-            if (Type == GraphicsBackend.OpenGL)
+            if (Type == GraphicsBackend.OpenGL || Type == GraphicsBackend.OpenGLES)
             {
-                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
-                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 2);
-            }
-            else
-            {
-                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
-                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 0);
-            }
+                openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
 
-            info = new OpenGLPlatformInfo(openGLContext,
-                s => SDL.SDL_GL_GetProcAddress(s),
-                c => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, c),
-                () => SDL.SDL_GL_GetCurrentContext(),
-                () => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, IntPtr.Zero),
-                c => SDL.SDL_GL_DeleteContext(c),
-                () => SDL.SDL_GL_SwapWindow(sdlWindow.SDLWindowHandle),
-                value => SDL.SDL_GL_SetSwapInterval(value ? 1 : 0));
+                if (openGLContext == IntPtr.Zero)
+                    throw new InvalidOperationException($"Failed to create an SDL2 GL context ({SDL.SDL_GetError()})");
 
-            Vd.Initialise(GameHost.Instance);
+                if (Type == GraphicsBackend.OpenGL)
+                {
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 2);
+                }
+                else
+                {
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 0);
+                }
+
+                info = new OpenGLPlatformInfo(openGLContext,
+                    s => SDL.SDL_GL_GetProcAddress(s),
+                    c => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, c),
+                    () => SDL.SDL_GL_GetCurrentContext(),
+                    () => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, IntPtr.Zero),
+                    c => SDL.SDL_GL_DeleteContext(c),
+                    () => SDL.SDL_GL_SwapWindow(sdlWindow.SDLWindowHandle),
+                    value => SDL.SDL_GL_SetSwapInterval(value ? 1 : 0));
+            }
         }
 
         public Size GetDrawableSize()
