@@ -11,7 +11,7 @@ namespace osu.Framework.Graphics.Veldrid
     {
         public static RgbaFloat ToRgbaFloat(this Colour4 colour) => new RgbaFloat(colour.R, colour.G, colour.B, colour.A);
 
-        public static BlendAttachmentDescription ToBlendAttachment(this BlendingParameters parameters, ColorWriteMask writeMask = ColorWriteMask.All) => new BlendAttachmentDescription
+        public static BlendAttachmentDescription ToBlendAttachment(this BlendingParameters parameters) => new BlendAttachmentDescription
         {
             BlendEnabled = !parameters.IsDisabled,
             SourceColorFactor = parameters.Source.ToBlendFactor(),
@@ -20,7 +20,6 @@ namespace osu.Framework.Graphics.Veldrid
             DestinationAlphaFactor = parameters.DestinationAlpha.ToBlendFactor(),
             ColorFunction = parameters.RGBEquation.ToBlendFunction(),
             AlphaFunction = parameters.AlphaEquation.ToBlendFunction(),
-            ColorWriteMask = writeMask,
         };
 
         public static BlendFactor ToBlendFactor(this BlendingType type)

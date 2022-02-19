@@ -491,7 +491,7 @@ namespace osu.Framework.Platform
                     {
                         depthValue.Reset();
 
-                        Vd.SetBlend(BlendingParameters.None, ColorWriteMask.None);
+                        Vd.SetBlend(BlendingParameters.None, new Colour4(0f, 0f, 0f, 0f));
                         Vd.PushDepthInfo(DepthInfo.Default);
 
                         // Front pass
