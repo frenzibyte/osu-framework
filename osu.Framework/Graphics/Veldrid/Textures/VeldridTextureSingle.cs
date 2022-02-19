@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Development;
-using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Primitives;
@@ -15,7 +14,6 @@ using osu.Framework.Lists;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osuTK;
-using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
@@ -43,9 +41,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         /// Invocation from the draw or update thread cannot be assumed.
         /// </remarks>
         public static event Action<VeldridTextureSingle> TextureCreated;
-
-        private int internalWidth;
-        private int internalHeight;
 
         private readonly FilteringMode filteringMode;
 
@@ -107,21 +102,21 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             while (tryGetNextUpload(out var upload))
                 upload.Dispose();
 
-            Vd.ScheduleDisposal(texture =>
+            Vd.ScheduleDisposal(t =>
             {
-                if (texture.texture == null)
+                if (t.texture == null)
                     return;
 
-                texture.memoryLease?.Dispose();
+                t.memoryLease?.Dispose();
 
-                texture.textureResourceSet?.Dispose();
-                texture.textureResourceSet = null;
+                t.textureResourceSet?.Dispose();
+                t.textureResourceSet = null;
 
-                texture.sampler?.Dispose();
-                texture.sampler = null;
+                t.sampler?.Dispose();
+                t.sampler = null;
 
-                texture.texture?.Dispose();
-                texture.texture = null;
+                t.texture?.Dispose();
+                t.texture = null;
             }, this);
         }
 
@@ -401,7 +396,15 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             return true;
         }
 
-        private bool manualMipmaps;
+        /// <summary>
+        /// Whether this <see cref="VeldridTextureSingle"/> generates mipmaps manually.
+        /// </summary>
+        private readonly bool manualMipmaps;
+
+        /// <summary>
+        /// Whether the current texture has mipmaps populated from a texture upload.
+        /// </summary>
+        private bool textureHasMipmaps;
 
         internal override bool Upload()
         {
@@ -422,7 +425,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 }
             }
 
-            if (didUpload && !manualMipmaps)
+            if (didUpload && !manualMipmaps && !textureHasMipmaps)
                 Vd.Commands.GenerateMipmaps(texture);
 
             return didUpload;
@@ -451,78 +454,54 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         protected virtual unsafe void DoUpload(ITextureUpload upload)
         {
-            // Do we need to generate a new texture?
-            if (texture == null || internalWidth != width || internalHeight != height)
+            // Do we need to generate a new sampler?
+            if (sampler == null)
             {
-                internalWidth = width;
-                internalHeight = height;
-
-                // We only need to generate a new texture if we don't have one already. Otherwise just re-use the current one.
-                if (texture == null)
+                var samplerDescription = new SamplerDescription
                 {
-                    var usage = TextureUsage.Sampled;
+                    AddressModeU = SamplerAddressMode.Clamp,
+                    AddressModeV = SamplerAddressMode.Clamp,
+                    AddressModeW = SamplerAddressMode.Clamp,
+                    Filter = filteringMode.ToSamplerFilter(manualMipmaps),
+                    LodBias = 0,
+                    MinimumLod = 0,
+                    MaximumLod = MAX_MIPMAP_LEVELS,
+                    MaximumAnisotropy = 0
+                };
 
-                    if (!manualMipmaps)
-                        usage |= TextureUsage.GenerateMipmaps;
+                sampler = Vd.Factory.CreateSampler(samplerDescription);
+            }
 
-                    var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
+            // Do we need to generate a new texture?
+            if (texture == null || texture.Width != width || texture.Height != height)
+            {
+                textureResourceSet?.Dispose();
+                texture?.Dispose();
 
-                    var samplerDescription = new SamplerDescription
-                    {
-                        AddressModeU = SamplerAddressMode.Clamp,
-                        AddressModeV = SamplerAddressMode.Clamp,
-                        AddressModeW = SamplerAddressMode.Clamp,
-                        Filter = filteringMode.ToSamplerFilter(manualMipmaps),
-                        LodBias = 0,
-                        MinimumLod = 0,
-                        MaximumLod = MAX_MIPMAP_LEVELS,
-                        MaximumAnisotropy = 0
-                    };
+                textureHasMipmaps = false;
 
-                    texture = Vd.Factory.CreateTexture(textureDescription);
-                    sampler = Vd.Factory.CreateSampler(samplerDescription);
+                var usage = TextureUsage.Sampled;
 
-                    textureResourceSet = new TextureResourceSet(texture, sampler);
+                if (!manualMipmaps)
+                    usage |= TextureUsage.GenerateMipmaps;
 
-                    Vd.BindTexture(this);
-                }
-                else
-                    Vd.BindTexture(this);
+                var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
+
+                texture = Vd.Factory.CreateTexture(textureDescription);
+                textureResourceSet = new TextureResourceSet(texture, sampler);
+
+                Vd.BindTexture(this);
 
                 if (!upload.Data.IsEmpty)
-                {
-                    if (width == upload.Bounds.Width && height == upload.Bounds.Height)
-                    {
-                        updateMemoryUsage(upload.Level, (long)width * height * sizeof(Rgba32));
-                        Vd.UpdateTexture(texture, 0, 0, width, height, upload.Level, upload.Data);
-                    }
-                    else
-                    {
-                        initializeLevel(upload.Level, width, height);
-                        Vd.UpdateTexture(texture, upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
-                    }
-                }
+                    Vd.UpdateTexture(texture, upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
             }
             // Just update content of the current texture
             else if (!upload.Data.IsEmpty)
             {
                 Vd.BindTexture(this);
 
-                if (!manualMipmaps && upload.Level > 0)
-                {
-                    //allocate mipmap levels
-                    int level = 1;
-                    int d = 2;
-
-                    while (width / d > 0)
-                    {
-                        initializeLevel(level, width / d, height / d);
-                        level++;
-                        d *= 2;
-                    }
-
-                    manualMipmaps = true;
-                }
+                if (upload.Level > 0)
+                    textureHasMipmaps = true;
 
                 int div = (int)Math.Pow(2, upload.Level);
 
@@ -530,23 +509,23 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             }
         }
 
-        private unsafe void initializeLevel(int level, int width, int height)
-        {
-            using (var image = createBackingImage(width, height))
-            using (var pixels = image.CreateReadOnlyPixelSpan())
-            {
-                updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
-                Vd.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
-            }
-        }
-
-        private Image<Rgba32> createBackingImage(int width, int height)
-        {
-            // it is faster to initialise without a background specification if transparent black is all that's required.
-            return initialisationColour == default
-                ? new Image<Rgba32>(width, height)
-                : new Image<Rgba32>(width, height, initialisationColour);
-        }
+        // private unsafe void initializeLevel(int level, int width, int height)
+        // {
+        //     using (var image = createBackingImage(width, height))
+        //     using (var pixels = image.CreateReadOnlyPixelSpan())
+        //     {
+        //         updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
+        //         Vd.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
+        //     }
+        // }
+        //
+        // private Image<Rgba32> createBackingImage(int width, int height)
+        // {
+        //     // it is faster to initialise without a background specification if transparent black is all that's required.
+        //     return initialisationColour == default
+        //         ? new Image<Rgba32>(width, height)
+        //         : new Image<Rgba32>(width, height, initialisationColour);
+        // }
 
         private static int calculateMipmapLevels(int width, int height) => Math.Min(1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2)), MAX_MIPMAP_LEVELS);
     }
