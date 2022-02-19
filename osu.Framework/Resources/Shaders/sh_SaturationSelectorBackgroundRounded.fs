@@ -1,7 +1,7 @@
 #include "sh_Utils.h"
 #include "sh_Masking.h"
 
-layout(location = 1) in mediump vec2 v_TexCoord;
+layout(location = 2) in mediump vec2 v_TexCoord;
 
 uniform mediump float hue;
 
