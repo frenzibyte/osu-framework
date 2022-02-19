@@ -408,7 +408,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             if (!Available)
                 return false;
 
-            // We should never run raw OGL calls on another thread than the main thread due to race conditions.
+            // We should never run raw Veldrid calls on another thread than the draw thread due to race conditions.
             ThreadSafety.EnsureDrawThread();
 
             bool didUpload = false;
