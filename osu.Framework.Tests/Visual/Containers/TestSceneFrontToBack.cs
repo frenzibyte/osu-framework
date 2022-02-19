@@ -14,7 +14,6 @@ using osu.Framework.Utils;
 using osu.Framework.Testing;
 using osuTK;
 using osuTK.Graphics;
-using osuTK.Graphics.ES30;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Veldrid.Textures;
@@ -122,9 +121,10 @@ namespace osu.Framework.Tests.Visual.Containers
             }
         }
 
+        // todo: either remove this or figure out a similar way in Veldrid.
         private class QueryingCompositeDrawableDrawNode : CompositeDrawableDrawNode
         {
-            private int queryObject = -1;
+            // private int queryObject = -1;
 
             public int DrawSamples { get; private set; }
             public int DrawOpaqueInteriorSubTreeSamples { get; private set; }
@@ -157,18 +157,18 @@ namespace osu.Framework.Tests.Visual.Containers
 
             private int endQuery()
             {
-                GL.EndQuery(QueryTarget.SamplesPassed);
-                GL.GetQueryObject(queryObject, GetQueryObjectParam.QueryResult, out int result);
+                // GL.EndQuery(QueryTarget.SamplesPassed);
+                // GL.GetQueryObject(queryObject, GetQueryObjectParam.QueryResult, out int result);
 
-                return result;
+                return 0;
             }
 
             private void startQuery()
             {
-                if (queryObject == -1)
-                    queryObject = GL.GenQuery();
-
-                GL.BeginQuery(QueryTarget.SamplesPassed, queryObject);
+                // if (queryObject == -1)
+                //     queryObject = GL.GenQuery();
+                //
+                // GL.BeginQuery(QueryTarget.SamplesPassed, queryObject);
             }
         }
     }
