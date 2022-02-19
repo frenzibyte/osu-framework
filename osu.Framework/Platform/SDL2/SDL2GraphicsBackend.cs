@@ -3,6 +3,7 @@
 
 using System;
 using System.Drawing;
+using osu.Framework.Graphics.Veldrid;
 using SDL2;
 using Veldrid;
 using Veldrid.OpenGL;
@@ -24,7 +25,11 @@ namespace osu.Framework.Platform.SDL2
 
                     case RuntimeInfo.Platform.macOS:
                     case RuntimeInfo.Platform.iOS:
-                        return GraphicsBackend.OpenGL;
+                        // Veldrid's implementation of Metal is not really on par with D3D11/Vulkan.
+                        // We may want to revisit this with a native implementation of Metal or otherwise,
+                        // but right now using Vulkan would do for the time being.
+                        // return GraphicsBackend.Metal;
+                        return GraphicsBackend.Vulkan;
 
                     case RuntimeInfo.Platform.Linux:
                         return GraphicsBackend.OpenGL;
@@ -99,6 +104,8 @@ namespace osu.Framework.Platform.SDL2
                 c => SDL.SDL_GL_DeleteContext(c),
                 () => SDL.SDL_GL_SwapWindow(sdlWindow.SDLWindowHandle),
                 value => SDL.SDL_GL_SetSwapInterval(value ? 1 : 0));
+
+            Vd.Initialise(GameHost.Instance);
         }
 
         public Size GetDrawableSize()

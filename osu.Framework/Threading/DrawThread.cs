@@ -5,7 +5,6 @@ using osu.Framework.Statistics;
 using System;
 using System.Collections.Generic;
 using osu.Framework.Development;
-using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Platform;
 
 namespace osu.Framework.Threading
@@ -26,8 +25,8 @@ namespace osu.Framework.Threading
         {
             var window = host.Window;
 
-            if (window != null)
-                Vd.Initialise(host);
+            // if (window != null)
+            //     Vd.Initialise(host);
         }
 
         internal sealed override void MakeCurrent()

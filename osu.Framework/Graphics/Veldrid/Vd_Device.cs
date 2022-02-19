@@ -7,10 +7,8 @@ using System.Runtime.InteropServices;
 using osu.Framework.Development;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using SDL2;
 using SharpGen.Runtime;
 using Veldrid;
-using Veldrid.OpenGL;
 using Veldrid.OpenGLBinding;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
@@ -26,11 +24,12 @@ namespace osu.Framework.Graphics.Veldrid
             {
                 HasMainSwapchain = true,
                 SwapchainDepthFormat = null,
-                SwapchainSrgbFormat = false,
+                // SwapchainSrgbFormat = false,
                 SyncToVerticalBlank = true,
                 PreferDepthRangeZeroToOne = true,
                 PreferStandardClipSpaceYDirection = true,
                 ResourceBindingModel = ResourceBindingModel.Improved,
+                // todo: should probably be removed, we don't want validation layers to be coupled with debug config.
                 Debug = DebugUtils.IsDebugBuild,
             };
 
@@ -161,13 +160,13 @@ namespace osu.Framework.Graphics.Veldrid
                     break;
 
                 case RuntimeInfo.Platform.macOS:
-                    // if (type == GraphicsBackend.Vulkan)
-                    // {
-                    //     // Vulkan's validation layer is busted with Veldrid running on macOS (i.e. MoltenVK).
-                    //     // Waiting on https://github.com/mellinoe/veldrid/pull/419.
-                    //     options.Debug = false;
-                    // }
-                    //
+                    if (type == GraphicsBackend.Vulkan)
+                    {
+                        // Vulkan's validation layer is busted with Veldrid on macOS.
+                        // todo: remove once https://github.com/mellinoe/veldrid/pull/419 is merged.
+                        options.Debug = false;
+                    }
+
                     swapchainDescription.Source = SwapchainSource.CreateNSWindow(window.WindowHandle);
                     break;
 

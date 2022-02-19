@@ -46,6 +46,8 @@ namespace osu.Framework.Platform
 {
     public abstract class GameHost : IIpcHost, IDisposable
     {
+        public static GameHost Instance;
+
         public IWindow Window { get; private set; }
 
         protected FrameworkDebugConfigManager DebugConfig { get; private set; }
@@ -285,6 +287,7 @@ namespace osu.Framework.Platform
             Options = options ?? new HostOptions();
 
             Name = gameName;
+            Instance = this;
 
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
             {
