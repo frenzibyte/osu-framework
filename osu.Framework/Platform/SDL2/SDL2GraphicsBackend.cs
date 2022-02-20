@@ -28,7 +28,7 @@ namespace osu.Framework.Platform.SDL2
                         // We may want to revisit this with a native implementation of Metal or otherwise,
                         // but right now using Vulkan would do for the time being.
                         // return GraphicsBackend.Metal;
-                        return GraphicsBackend.Vulkan;
+                        return GraphicsBackend.OpenGL;
 
                     case RuntimeInfo.Platform.Linux:
                         return GraphicsBackend.OpenGL;
