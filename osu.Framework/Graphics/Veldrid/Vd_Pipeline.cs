@@ -21,7 +21,6 @@ namespace osu.Framework.Graphics.Veldrid
             pipelineDescription = new GraphicsPipelineDescription
             {
                 BlendState = BlendStateDescription.SingleOverrideBlend,
-                DepthStencilState = new DepthStencilStateDescription(false, false, ComparisonKind.Less),
                 RasterizerState = new RasterizerStateDescription(FaceCullMode.Back, PolygonFillMode.Solid, FrontFace.CounterClockwise, false, false),
                 ShaderSet = new ShaderSetDescription(Array.Empty<VertexLayoutDescription>(), Array.Empty<VdShader>()),
                 Outputs = Device.SwapchainFramebuffer.OutputDescription,
@@ -75,7 +74,7 @@ namespace osu.Framework.Graphics.Veldrid
         #region Blending
 
         private static BlendingParameters lastBlendingParameters;
-        private static ColorWriteMask lastColorWriteMask;
+        private static ColorWriteMask? lastColorWriteMask;
 
         /// <summary>
         /// Sets the blending function to draw with.
