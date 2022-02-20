@@ -84,12 +84,12 @@ namespace osu.Framework.Graphics.Veldrid
         /// <param name="colorWriteMask">An optional per-component color writing mask</param>
         public static void SetBlend(BlendingParameters blendingParameters, ColorWriteMask colorWriteMask = ColorWriteMask.All)
         {
-            if (lastBlendingParameters == blendingParameters || lastColorWriteMask == colorWriteMask)
+            if (lastBlendingParameters == blendingParameters && lastColorWriteMask == colorWriteMask)
                 return;
 
             FlushCurrentBatch();
 
-            pipelineDescription.BlendState = new BlendStateDescription(RgbaFloat.White, blendingParameters.ToBlendAttachment(colorWriteMask));
+            pipelineDescription.BlendState = new BlendStateDescription(default, blendingParameters.ToBlendAttachment(colorWriteMask));
             lastBlendingParameters = blendingParameters;
             lastColorWriteMask = colorWriteMask;
         }
