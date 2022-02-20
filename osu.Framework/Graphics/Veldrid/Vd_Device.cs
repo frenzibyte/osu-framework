@@ -25,7 +25,7 @@ namespace osu.Framework.Graphics.Veldrid
             var options = new GraphicsDeviceOptions
             {
                 HasMainSwapchain = true,
-                SwapchainDepthFormat = null,
+                SwapchainDepthFormat = PixelFormat.R16_UNorm,
                 // SwapchainSrgbFormat = false,
                 SyncToVerticalBlank = true,
                 PreferDepthRangeZeroToOne = true,
