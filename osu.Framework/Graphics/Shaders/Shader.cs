@@ -144,7 +144,7 @@ namespace osu.Framework.Graphics.Shaders
                 }
                 else
                 {
-                    var result = SpirvCompilation.CompileVertexFragment(vertex.ShaderBytes, fragment.ShaderBytes, getCompilationTarget(Vd.Device.BackendType), new CrossCompileOptions(Vd.Device.IsDepthRangeZeroToOne, false));
+                    var result = SpirvCompilation.CompileVertexFragment(vertex.ShaderBytes, fragment.ShaderBytes, getCompilationTarget(Vd.Device.BackendType), new CrossCompileOptions(!Vd.Device.IsDepthRangeZeroToOne, false));
 
                     switch (Vd.Device.BackendType)
                     {
