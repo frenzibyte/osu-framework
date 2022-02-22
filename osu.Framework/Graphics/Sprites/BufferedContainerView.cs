@@ -138,7 +138,7 @@ namespace osu.Framework.Graphics.Sprites
             {
                 base.Draw(vertexAction);
 
-                if (shared?.MainBuffer?.VeldridTexture?.Available != true || shared.DrawVersion == -1)
+                if (shared?.MainBuffer?.Texture?.Available != true || shared.DrawVersion == -1)
                     return;
 
                 Shader.Bind();

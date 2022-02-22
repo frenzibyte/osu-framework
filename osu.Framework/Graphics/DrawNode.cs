@@ -272,10 +272,10 @@ namespace osu.Framework.Graphics
         protected void DrawFrameBuffer(FrameBuffer frameBuffer, Quad vertexQuad, ColourInfo drawColour, Action<TexturedVertex2D> vertexAction = null,
                                        Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null)
         {
-            RectangleF textureRect = new RectangleF(0, 0, frameBuffer.VeldridTexture.Width, frameBuffer.VeldridTexture.Height);
+            RectangleF textureRect = new RectangleF(0, 0, frameBuffer.Texture.Width, frameBuffer.Texture.Height);
 
-            if (frameBuffer.VeldridTexture.Bind())
-                DrawQuad(frameBuffer.VeldridTexture, vertexQuad, drawColour, textureRect, vertexAction, inflationPercentage, blendRangeOverride);
+            if (frameBuffer.Texture.Bind())
+                DrawQuad(frameBuffer.Texture, vertexQuad, drawColour, textureRect, vertexAction, inflationPercentage, blendRangeOverride);
         }
 
         /// <summary>

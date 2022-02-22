@@ -13,7 +13,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
     {
         private Framebuffer frameBuffer;
 
-        public VeldridTexture VeldridTexture { get; private set; }
+        public VeldridTexture Texture { get; private set; }
 
         private bool isInitialised;
 
@@ -44,22 +44,29 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 size = value;
 
                 if (isInitialised)
+                {
+                    Texture.Width = (int)Math.Ceiling(size.X);
+                    Texture.Height = (int)Math.Ceiling(size.Y);
+
+                    Texture.SetData(new TextureUpload());
+                    Texture.Upload();
+
                     // reinitialise to update framebuffer size.
-                    initialise();
+                    initialiseFrameBuffer();
+                }
             }
         }
 
-        private void initialise()
+        private void initialiseFrameBuffer()
         {
-            VeldridTexture?.Dispose();
-            frameBuffer?.Dispose();
+            Texture ??= new FrameBufferTexture(Size, filteringMode);
 
-            var description = new FramebufferDescription();
+            var description = new FramebufferDescription
+            {
+                ColorTargets = new FramebufferAttachmentDescription[1 + (colorFormats?.Length ?? 0)]
+            };
 
-            VeldridTexture = new FrameBufferVeldridTexture(Size, filteringMode);
-
-            description.ColorTargets = new FramebufferAttachmentDescription[1 + (colorFormats?.Length ?? 0)];
-            description.ColorTargets[0] = new FramebufferAttachmentDescription(VeldridTexture.TextureResourceSet.Texture, 0);
+            description.ColorTargets[0] = new FramebufferAttachmentDescription(Texture.TextureResourceSet.Texture, 0);
 
             if (colorFormats != null)
             {
@@ -76,6 +83,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 description.DepthTarget = new FramebufferAttachmentDescription(Vd.Factory.CreateTexture(targetDescription), 0);
             }
 
+            frameBuffer?.Dispose();
             frameBuffer = Vd.Factory.CreateFramebuffer(description);
         }
 
@@ -87,7 +95,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         {
             if (!isInitialised)
             {
-                initialise();
+                initialiseFrameBuffer();
                 isInitialised = true;
             }
 
@@ -121,8 +129,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
             if (isInitialised)
             {
-                VeldridTexture?.Dispose();
-                VeldridTexture = null;
+                Texture?.Dispose();
+                Texture = null;
 
                 Vd.UnbindFrameBuffer(frameBuffer);
 
@@ -143,9 +151,9 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
         #endregion
 
-        private class FrameBufferVeldridTexture : VeldridTextureSingle
+        private class FrameBufferTexture : VeldridTextureSingle
         {
-            public FrameBufferVeldridTexture(Vector2 size, FilteringMode filteringMode = FilteringMode.Linear)
+            public FrameBufferTexture(Vector2 size, FilteringMode filteringMode = FilteringMode.Linear)
                 : base((int)Math.Ceiling(size.X), (int)Math.Ceiling(size.Y), true, filteringMode)
             {
                 BypassTextureUploadQueueing = true;
