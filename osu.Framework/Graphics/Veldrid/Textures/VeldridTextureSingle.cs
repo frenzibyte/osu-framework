@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Development;
+using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Primitives;
@@ -14,6 +15,7 @@ using osu.Framework.Lists;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osuTK;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
@@ -67,7 +69,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         /// <param name="wrapModeT">The texture wrap mode in vertical direction.</param>
         /// <param name="initialisationColour">The colour to initialise texture levels with (in the case of sub region initial uploads).</param>
         public VeldridTextureSingle(int width, int height, bool manualMipmaps = false, FilteringMode filteringMode = FilteringMode.Linear,
-                                     WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None, Rgba32 initialisationColour = default)
+                                    WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None, Rgba32 initialisationColour = default)
             : base(wrapModeS, wrapModeT)
         {
             Width = width;
@@ -404,7 +406,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         /// <summary>
         /// Whether the current texture has mipmaps populated from a texture upload.
         /// </summary>
-        private bool textureHasMipmaps;
+        private bool uploadProvidedMipmaps;
 
         internal override bool Upload()
         {
@@ -425,7 +427,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 }
             }
 
-            if (didUpload && !manualMipmaps && !textureHasMipmaps)
+            if (didUpload && !manualMipmaps && !uploadProvidedMipmaps)
                 Vd.Commands.GenerateMipmaps(texture);
 
             return didUpload;
@@ -452,32 +454,21 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             }
         }
 
+        private int maximumLod;
+
         protected virtual unsafe void DoUpload(ITextureUpload upload)
         {
-            // Do we need to generate a new sampler?
-            if (sampler == null)
-            {
-                var samplerDescription = new SamplerDescription
-                {
-                    AddressModeU = SamplerAddressMode.Clamp,
-                    AddressModeV = SamplerAddressMode.Clamp,
-                    AddressModeW = SamplerAddressMode.Clamp,
-                    Filter = filteringMode.ToSamplerFilter(manualMipmaps),
-                    MinimumLod = 0,
-                    MaximumLod = MAX_MIPMAP_LEVELS,
-                    MaximumAnisotropy = 0
-                };
-
-                sampler = Vd.Factory.CreateSampler(samplerDescription);
-            }
-
-            // Do we need to generate a new texture?
             if (texture == null || texture.Width != width || texture.Height != height)
             {
                 textureResourceSet?.Dispose();
+                textureResourceSet = null;
+
+                sampler?.Dispose();
+                sampler = null;
+
                 texture?.Dispose();
 
-                textureHasMipmaps = false;
+                uploadProvidedMipmaps = false;
 
                 var usage = TextureUsage.Sampled;
 
@@ -487,45 +478,68 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
 
                 texture = Vd.Factory.CreateTexture(textureDescription);
-                textureResourceSet = new TextureResourceSet(texture, sampler);
-
-                Vd.BindTexture(this);
-
-                if (!upload.Data.IsEmpty)
-                    Vd.UpdateTexture(texture, upload.Bounds.X, upload.Bounds.Y, upload.Bounds.Width, upload.Bounds.Height, upload.Level, upload.Data);
+                initialiseLevel(0, width, height);
             }
-            // Just update content of the current texture
-            else if (!upload.Data.IsEmpty)
+
+            bool useUploadMipmaps = manualMipmaps || uploadProvidedMipmaps;
+
+            if (sampler == null || (useUploadMipmaps && maximumLod < upload.Level))
             {
-                Vd.BindTexture(this);
+                textureResourceSet?.Dispose();
+                textureResourceSet = null;
 
-                if (upload.Level > 0)
-                    textureHasMipmaps = true;
+                sampler?.Dispose();
 
-                int div = (int)Math.Pow(2, upload.Level);
+                maximumLod = useUploadMipmaps ? upload.Level : MAX_MIPMAP_LEVELS;
 
-                Vd.UpdateTexture(texture, upload.Bounds.X / div, upload.Bounds.Y / div, upload.Bounds.Width / div, upload.Bounds.Height / div, upload.Level, upload.Data);
+                var samplerDescription = new SamplerDescription
+                {
+                    AddressModeU = SamplerAddressMode.Clamp,
+                    AddressModeV = SamplerAddressMode.Clamp,
+                    AddressModeW = SamplerAddressMode.Clamp,
+                    Filter = filteringMode.ToSamplerFilter(manualMipmaps),
+                    MinimumLod = 0,
+                    MaximumLod = (uint)maximumLod,
+                    MaximumAnisotropy = 0
+                };
+
+                sampler = Vd.Factory.CreateSampler(samplerDescription);
+            }
+
+            if (!upload.Data.IsEmpty)
+            {
+                if (!useUploadMipmaps && upload.Level > 0)
+                {
+                    for (int i = 1; i < texture.MipLevels; i++)
+                        initialiseLevel(i, width >> i, height >> i);
+
+                    uploadProvidedMipmaps = true;
+                }
+
+                Vd.UpdateTexture(texture, upload.Bounds.X >> upload.Level, upload.Bounds.Y >> upload.Level, upload.Bounds.Width >> upload.Level, upload.Bounds.Height >> upload.Level, upload.Level, upload.Data);
+            }
+
+            textureResourceSet ??= new TextureResourceSet(texture, sampler);
+        }
+
+        private unsafe void initialiseLevel(int level, int width, int height)
+        {
+            using (var image = createBackingImage(width, height))
+            using (var pixels = image.CreateReadOnlyPixelSpan())
+            {
+                updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
+                Vd.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
             }
         }
 
-        // private unsafe void initializeLevel(int level, int width, int height)
-        // {
-        //     using (var image = createBackingImage(width, height))
-        //     using (var pixels = image.CreateReadOnlyPixelSpan())
-        //     {
-        //         updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
-        //         Vd.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
-        //     }
-        // }
-        //
-        // private Image<Rgba32> createBackingImage(int width, int height)
-        // {
-        //     // it is faster to initialise without a background specification if transparent black is all that's required.
-        //     return initialisationColour == default
-        //         ? new Image<Rgba32>(width, height)
-        //         : new Image<Rgba32>(width, height, initialisationColour);
-        // }
+        private Image<Rgba32> createBackingImage(int width, int height)
+        {
+            // it is faster to initialise without a background specification if transparent black is all that's required.
+            return initialisationColour == default
+                ? new Image<Rgba32>(width, height)
+                : new Image<Rgba32>(width, height, initialisationColour);
+        }
 
-        private static int calculateMipmapLevels(int width, int height) => Math.Min(1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2)), MAX_MIPMAP_LEVELS);
+        private static int calculateMipmapLevels(int width, int height) => 1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
     }
 }
