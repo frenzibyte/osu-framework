@@ -100,6 +100,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             }
 
             Vd.BindFrameBuffer(frameBuffer);
+            Vd.BindDefaultTexture();
         }
 
         /// <summary>
