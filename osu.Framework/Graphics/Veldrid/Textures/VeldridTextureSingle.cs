@@ -463,7 +463,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                     AddressModeV = SamplerAddressMode.Clamp,
                     AddressModeW = SamplerAddressMode.Clamp,
                     Filter = filteringMode.ToSamplerFilter(manualMipmaps),
-                    LodBias = 0,
                     MinimumLod = 0,
                     MaximumLod = MAX_MIPMAP_LEVELS,
                     MaximumAnisotropy = 0

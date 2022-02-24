@@ -12,5 +12,5 @@ layout(location = 0) out vec4 o_Colour;
 
 void main()
 {
-    o_Colour = toSRGB(v_Colour * wrappedTexture(wrap(v_TexCoord, v_TexRect), v_TexRect, m_Texture, m_Sampler));
+    o_Colour = toSRGB(v_Colour * wrappedTexture(wrap(v_TexCoord, v_TexRect), v_TexRect, m_Texture, m_Sampler, -0.9));
 }
