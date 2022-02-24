@@ -1,9 +1,8 @@
-#ifdef GL_ES
-    precision mediump float;
-#endif
-
+layout(location = 0) in vec2 v_MaskingPosition;
 layout(location = 1) in vec4 v_Colour;
 layout(location = 2) in vec2 v_TexCoord;
+layout(location = 3) in vec4 v_TexRect;
+layout(location = 4) in vec2 v_BlendRange;
 
 uniform texture2D m_Texture;
 uniform sampler m_Sampler;

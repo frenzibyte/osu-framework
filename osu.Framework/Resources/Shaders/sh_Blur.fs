@@ -2,7 +2,11 @@
 
 #define INV_SQRT_2PI 0.39894
 
+layout(location = 0) in highp vec2 v_MaskingPosition;
+layout(location = 1) in lowp vec4 v_Colour;
 layout(location = 2) in mediump vec2 v_TexCoord;
+layout(location = 3) in mediump vec4 v_TexRect;
+layout(location = 4) in mediump vec2 v_BlendRange;
 
 uniform lowp texture2D m_Texture;
 uniform lowp sampler m_Sampler;
