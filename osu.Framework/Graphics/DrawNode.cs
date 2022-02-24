@@ -274,6 +274,12 @@ namespace osu.Framework.Graphics
         {
             RectangleF textureRect = new RectangleF(0, 0, frameBuffer.Texture.Width, frameBuffer.Texture.Height);
 
+            if (!Vd.Device.IsUvOriginTopLeft)
+            {
+                textureRect.Y = textureRect.Height;
+                textureRect.Height = -textureRect.Y;
+            }
+
             if (frameBuffer.Texture.Bind())
                 DrawQuad(frameBuffer.Texture, vertexQuad, drawColour, textureRect, vertexAction, inflationPercentage, blendRangeOverride);
         }
