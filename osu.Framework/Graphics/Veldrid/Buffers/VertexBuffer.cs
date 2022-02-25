@@ -59,8 +59,6 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             var description = new BufferDescription((uint)(Size * STRIDE), BufferUsage.VertexBuffer);
 
             buffer = Vd.Factory.CreateBuffer(description);
-
-            Vd.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
         }
 
         ~VertexBuffer()
