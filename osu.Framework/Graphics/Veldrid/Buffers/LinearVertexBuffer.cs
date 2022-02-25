@@ -9,7 +9,22 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 {
     internal static class LinearIndexData
     {
-        public static int MaxAmountIndices;
+        private static int maxAmountIndices;
+
+        public static int MaxAmountIndices
+        {
+            get => maxAmountIndices;
+            set
+            {
+                if (value == maxAmountIndices)
+                    return;
+
+                maxAmountIndices = value;
+
+                indexBuffer?.Dispose();
+                indexBuffer = null;
+            }
+        }
 
         private static DeviceBuffer indexBuffer;
 
