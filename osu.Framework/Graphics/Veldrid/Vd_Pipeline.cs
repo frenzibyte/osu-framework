@@ -21,7 +21,7 @@ namespace osu.Framework.Graphics.Veldrid
             pipelineDescription = new GraphicsPipelineDescription
             {
                 BlendState = BlendStateDescription.SingleOverrideBlend,
-                RasterizerState = RasterizerStateDescription.CullNone,
+                RasterizerState = new RasterizerStateDescription(FaceCullMode.None, PolygonFillMode.Solid, default, false, false),
                 ShaderSet = new ShaderSetDescription(Array.Empty<VertexLayoutDescription>(), Array.Empty<VdShader>()),
                 Outputs = Device.SwapchainFramebuffer.OutputDescription,
             };
