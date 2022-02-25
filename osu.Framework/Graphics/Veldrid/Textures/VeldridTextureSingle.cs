@@ -403,11 +403,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         /// </summary>
         private readonly bool manualMipmaps;
 
-        /// <summary>
-        /// Whether the current texture has mipmaps populated from a texture upload.
-        /// </summary>
-        private bool uploadProvidedMipmaps;
-
         internal override bool Upload()
         {
             if (!Available)
@@ -427,7 +422,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 }
             }
 
-            if (didUpload && !manualMipmaps && !uploadProvidedMipmaps)
+            if (didUpload && !(manualMipmaps || maximumUploadedLod > 0))
                 Vd.Commands.GenerateMipmaps(texture);
 
             return didUpload;
@@ -454,9 +449,15 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             }
         }
 
-        private int maximumLod;
+        /// <summary>
+        /// The maximum number of mip levels provided by a <see cref="ITextureUpload"/>.
+        /// </summary>
+        /// <remarks>
+        /// This excludes automatic generation of mipmaps via the graphics backend.
+        /// </remarks>
+        private int maximumUploadedLod;
 
-        protected virtual unsafe void DoUpload(ITextureUpload upload)
+        protected virtual void DoUpload(ITextureUpload upload)
         {
             if (texture == null || texture.Width != width || texture.Height != height)
             {
@@ -468,8 +469,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
                 texture?.Dispose();
 
-                uploadProvidedMipmaps = false;
-
                 var usage = TextureUsage.Sampled;
 
                 if (!manualMipmaps)
@@ -478,45 +477,46 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
 
                 texture = Vd.Factory.CreateTexture(textureDescription);
-                initialiseLevel(0, width, height);
+                maximumUploadedLod = -1;
             }
 
-            bool useUploadMipmaps = manualMipmaps || uploadProvidedMipmaps;
+            int lastMaximumUploadedLod = maximumUploadedLod;
 
-            if (sampler == null || (useUploadMipmaps && maximumLod < upload.Level))
+            if (!upload.Data.IsEmpty)
+            {
+                // ensure all mip levels up to the target level are initialised.
+                if (upload.Level > maximumUploadedLod)
+                {
+                    for (int i = maximumUploadedLod + 1; i <= upload.Level; i++)
+                        initialiseLevel(i, width >> i, height >> i);
+
+                    maximumUploadedLod = upload.Level;
+                }
+
+                Vd.UpdateTexture(texture, upload.Bounds.X >> upload.Level, upload.Bounds.Y >> upload.Level, upload.Bounds.Width >> upload.Level, upload.Bounds.Height >> upload.Level, upload.Level, upload.Data);
+            }
+
+            if (sampler == null || maximumUploadedLod > lastMaximumUploadedLod)
             {
                 textureResourceSet?.Dispose();
                 textureResourceSet = null;
 
                 sampler?.Dispose();
 
-                maximumLod = useUploadMipmaps ? upload.Level : MAX_MIPMAP_LEVELS;
+                bool useUploadMipmaps = manualMipmaps || maximumUploadedLod > 0;
 
                 var samplerDescription = new SamplerDescription
                 {
                     AddressModeU = SamplerAddressMode.Clamp,
                     AddressModeV = SamplerAddressMode.Clamp,
                     AddressModeW = SamplerAddressMode.Clamp,
-                    Filter = filteringMode.ToSamplerFilter(manualMipmaps),
+                    Filter = filteringMode.ToSamplerFilter(useUploadMipmaps),
                     MinimumLod = 0,
-                    MaximumLod = (uint)maximumLod,
+                    MaximumLod = useUploadMipmaps ? (uint)maximumUploadedLod : MAX_MIPMAP_LEVELS,
                     MaximumAnisotropy = 0
                 };
 
                 sampler = Vd.Factory.CreateSampler(samplerDescription);
-            }
-
-            if (!upload.Data.IsEmpty)
-            {
-                if (!useUploadMipmaps && upload.Level > 0)
-                {
-                    for (int i = 1; i < texture.MipLevels; i++)
-                        initialiseLevel(i, width >> i, height >> i);
-
-                    uploadProvidedMipmaps = true;
-                }
-
-                Vd.UpdateTexture(texture, upload.Bounds.X >> upload.Level, upload.Bounds.Y >> upload.Level, upload.Bounds.Width >> upload.Level, upload.Bounds.Height >> upload.Level, upload.Level, upload.Data);
             }
 
             textureResourceSet ??= new TextureResourceSet(texture, sampler);
@@ -540,6 +540,8 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 : new Image<Rgba32>(width, height, initialisationColour);
         }
 
+        // todo: should this be limited to MAX_MIPMAP_LEVELS or was that constant supposed to be for automatic mipmap generation only?
+        // previous implementation was allocating mip levels all the way to 1x1 size when an ITextureUpload.Level > 0.
         private static int calculateMipmapLevels(int width, int height) => 1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
     }
 }

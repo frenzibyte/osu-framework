@@ -10,7 +10,6 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Statistics;
 using osuTK;
-using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using Shader = osu.Framework.Graphics.Shaders.Shader;
