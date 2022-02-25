@@ -42,7 +42,7 @@ namespace osu.Framework.Graphics.Veldrid
             description.ResourceLayouts = new ResourceLayout[2];
             description.ResourceLayouts[UNIFORM_RESOURCE_SLOT] = uniformLayout;
 
-            var defaultTexture = Factory.CreateTexture(TextureDescription.Texture2D(1, 2, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, TextureUsage.Sampled));
+            var defaultTexture = Factory.CreateTexture(TextureDescription.Texture2D(1, 1, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, TextureUsage.Sampled));
             Device.UpdateTexture(defaultTexture, new ReadOnlySpan<Rgba32>(new[] { new Rgba32(0, 0, 0) }), 0, 0, 0, 1, 1, 1, 0, 0);
             defaultTextureSet = new TextureResourceSet(defaultTexture, Device.LinearSampler);
         }
