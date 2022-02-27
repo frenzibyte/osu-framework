@@ -477,7 +477,12 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
 
                 texture = Vd.Factory.CreateTexture(textureDescription);
-                maximumUploadedLod = -1;
+
+                // todo: we should probably look into not having to allocate enough data for initialising textures
+                // similar to how OpenGL allows calling glTexImage2D with null data pointer.
+                initialiseLevel(0, width, height);
+
+                maximumUploadedLod = 0;
             }
 
             int lastMaximumUploadedLod = maximumUploadedLod;
@@ -513,7 +518,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                     Filter = filteringMode.ToSamplerFilter(useUploadMipmaps),
                     MinimumLod = 0,
                     MaximumLod = useUploadMipmaps ? (uint)maximumUploadedLod : MAX_MIPMAP_LEVELS,
-                    MaximumAnisotropy = 0
+                    MaximumAnisotropy = 0,
                 };
 
                 sampler = Vd.Factory.CreateSampler(samplerDescription);
@@ -541,7 +546,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         }
 
         // todo: should this be limited to MAX_MIPMAP_LEVELS or was that constant supposed to be for automatic mipmap generation only?
-        // previous implementation was allocating mip levels all the way to 1x1 size when an ITextureUpload.Level > 0.
+        // previous implementation was allocating mip levels all the way to 1x1 size when an ITextureUpload.Level > 0, therefore it's not limited here.
         private static int calculateMipmapLevels(int width, int height) => 1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
     }
 }
