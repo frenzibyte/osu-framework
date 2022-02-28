@@ -87,7 +87,7 @@ namespace osu.Framework.Graphics.Lines
                     // Center point
                     halfCircleBatch.Add(new TexturedVertex3D
                     {
-                        Position = new Vector3(screenOrigin.X, screenOrigin.Y, 1),
+                        Position = new Vector3(screenOrigin.X, screenOrigin.Y, 0),
                         TexturePosition = new Vector2(texRect.Right, texRect.Centre.Y),
                         Colour = originColour
                     });
@@ -95,7 +95,7 @@ namespace osu.Framework.Graphics.Lines
                     // First outer point
                     halfCircleBatch.Add(new TexturedVertex3D
                     {
-                        Position = new Vector3(current.X, current.Y, 0),
+                        Position = new Vector3(current.X, current.Y, 1),
                         TexturePosition = new Vector2(texRect.Left, texRect.Centre.Y),
                         Colour = currentColour
                     });
@@ -108,7 +108,7 @@ namespace osu.Framework.Graphics.Lines
                     // Second outer point
                     halfCircleBatch.Add(new TexturedVertex3D
                     {
-                        Position = new Vector3(current.X, current.Y, 0),
+                        Position = new Vector3(current.X, current.Y, 1),
                         TexturePosition = new Vector2(texRect.Left, texRect.Centre.Y),
                         Colour = currentColour
                     });
@@ -127,13 +127,13 @@ namespace osu.Framework.Graphics.Lines
 
                 quadBatch.Add(new TexturedVertex3D
                 {
-                    Position = new Vector3(screenLineRight.EndPoint.X, screenLineRight.EndPoint.Y, 0),
+                    Position = new Vector3(screenLineRight.EndPoint.X, screenLineRight.EndPoint.Y, 1),
                     TexturePosition = new Vector2(texRect.Left, texRect.Centre.Y),
                     Colour = colourAt(lineRight.EndPoint)
                 });
                 quadBatch.Add(new TexturedVertex3D
                 {
-                    Position = new Vector3(screenLineRight.StartPoint.X, screenLineRight.StartPoint.Y, 0),
+                    Position = new Vector3(screenLineRight.StartPoint.X, screenLineRight.StartPoint.Y, 1),
                     TexturePosition = new Vector2(texRect.Left, texRect.Centre.Y),
                     Colour = colourAt(lineRight.StartPoint)
                 });
@@ -141,8 +141,8 @@ namespace osu.Framework.Graphics.Lines
                 // Each "quad" of the slider is actually rendered as 2 quads, being split in half along the approximating line.
                 // On this line the depth is 1 instead of 0, which is done properly handle self-overlap using the depth buffer.
                 // Thus the middle vertices need to be added twice (once for each quad).
-                Vector3 firstMiddlePoint = new Vector3(screenLine.StartPoint.X, screenLine.StartPoint.Y, 1);
-                Vector3 secondMiddlePoint = new Vector3(screenLine.EndPoint.X, screenLine.EndPoint.Y, 1);
+                Vector3 firstMiddlePoint = new Vector3(screenLine.StartPoint.X, screenLine.StartPoint.Y, 0);
+                Vector3 secondMiddlePoint = new Vector3(screenLine.EndPoint.X, screenLine.EndPoint.Y, 0);
                 Color4 firstMiddleColour = colourAt(line.StartPoint);
                 Color4 secondMiddleColour = colourAt(line.EndPoint);
 
@@ -164,13 +164,13 @@ namespace osu.Framework.Graphics.Lines
 
                 quadBatch.Add(new TexturedVertex3D
                 {
-                    Position = new Vector3(screenLineLeft.EndPoint.X, screenLineLeft.EndPoint.Y, 0),
+                    Position = new Vector3(screenLineLeft.EndPoint.X, screenLineLeft.EndPoint.Y, 1),
                     TexturePosition = new Vector2(texRect.Left, texRect.Centre.Y),
                     Colour = colourAt(lineLeft.EndPoint)
                 });
                 quadBatch.Add(new TexturedVertex3D
                 {
-                    Position = new Vector3(screenLineLeft.StartPoint.X, screenLineLeft.StartPoint.Y, 0),
+                    Position = new Vector3(screenLineLeft.StartPoint.X, screenLineLeft.StartPoint.Y, 1),
                     TexturePosition = new Vector2(texRect.Left, texRect.Centre.Y),
                     Colour = colourAt(lineLeft.StartPoint)
                 });

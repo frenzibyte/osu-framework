@@ -404,7 +404,9 @@ namespace osu.Framework.Graphics.Veldrid
 
         private static void setProjectionMatrix(RectangleF rectangle)
         {
-            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(rectangle.Left, rectangle.Right, rectangle.Bottom, rectangle.Top, Device.IsDepthRangeZeroToOne ? 0f : -1f, 1f);
+            // Inverse the near/far values to not affect with depth values during multiplication.
+            // todo: replace this with a custom implementation or otherwise.
+            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(rectangle.Left, rectangle.Right, rectangle.Bottom, rectangle.Top, 1f, -1f);
 
             GlobalPropertyManager.Set(GlobalProperty.ProjMatrix, ProjectionMatrix);
         }

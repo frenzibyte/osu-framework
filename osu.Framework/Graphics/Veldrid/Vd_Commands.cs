@@ -107,7 +107,7 @@ namespace osu.Framework.Graphics.Veldrid
 
             Viewport = actualRect;
 
-            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, Device.IsDepthRangeZeroToOne ? 0 : -1, 1));
+            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, 0, 1));
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace osu.Framework.Graphics.Veldrid
 
             Viewport = actualRect;
 
-            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, Device.IsDepthRangeZeroToOne ? 0 : -1, 1));
+            Commands.SetViewport(0, new Viewport(Viewport.Left, Viewport.Top, Viewport.Width, Viewport.Height, 0, 1));
         }
 
         #endregion
