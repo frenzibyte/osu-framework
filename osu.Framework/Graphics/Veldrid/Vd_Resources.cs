@@ -181,7 +181,6 @@ namespace osu.Framework.Graphics.Veldrid
             fixed (T* ptr = data)
                 Device.UpdateTexture(staging.Texture, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), staging.X, staging.Y, 0, (uint)width, (uint)height, 1, 0, 0);
 
-            // Logger.Log($"Blitting from {x}x{y} to {width}x{height} textural data at level {level} to a texture with {texture.Width}x{texture.Height} dimensions.", LoggingTarget.Runtime, LogLevel.Important);
             Commands.CopyTexture(staging.Texture, staging.X, staging.Y, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
         }
 
