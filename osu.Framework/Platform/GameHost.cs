@@ -9,7 +9,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -19,6 +21,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
 using osu.Framework.Development;
+using osu.Framework.Extensions;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -463,7 +466,7 @@ namespace osu.Framework.Platform
             }
         }
 
-        private void drawFrame(Action preDraw = null)
+        private void drawFrame()
         {
             while (ExecutionState == ExecutionState.Running)
             {
@@ -484,8 +487,6 @@ namespace osu.Framework.Platform
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.Reset))
                         Vd.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
-
-                    preDraw?.Invoke();
 
                     if (!bypassFrontToBackPass.Value)
                     {
@@ -547,29 +548,34 @@ namespace osu.Framework.Platform
             {
                 int width = Window.ClientSize.Width;
                 int height = Window.ClientSize.Height;
-                var pixelData = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<Bgra32>(width * height);
+
+                Image<Rgba32> image = null;
 
                 DrawThread.Scheduler.Add(() =>
                 {
                     unsafe
                     {
-                        var format = Vd.DefaultFrameBuffer.ColorTargets.Single().Target.Format;
+                        var format = Vd.Backbuffer.ColorTargets.Single().Target.Format;
                         var target = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, format, TextureUsage.RenderTarget));
-                        var frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(null, target));
+                        var depth = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R16_UNorm, TextureUsage.DepthStencil));
+                        var frameBuffer = Vd.Factory.CreateFramebuffer(new FramebufferDescription(depth, target));
+
                         var staging = Vd.Factory.CreateTexture(TextureDescription.Texture2D(target.Width, target.Height, 1, 1, target.Format, TextureUsage.Staging));
 
                         // ReSharper disable AccessToDisposedClosure
+                        using (Vd.SetBackbuffer(frameBuffer))
                         using (Vd.BeginCommands(out var commands))
                         {
-                            drawFrame(() => Vd.BindFrameBuffer(frameBuffer));
+                            drawFrame();
 
                             commands.CopyTexture(target, staging);
                         }
 
                         var resource = Vd.Device.Map(staging, MapMode.Read);
+                        var data = new ReadOnlySpan<Bgra32>(resource.Data.ToPointer(), (int)resource.SizeInBytes);
 
-                        fixed (void* ptr = pixelData.Memory.Span)
-                            Buffer.MemoryCopy(resource.Data.ToPointer(), ptr, pixelData.Memory.Length * sizeof(Bgra32), resource.SizeInBytes);
+                        using (var buffer = Image.LoadPixelData(data, width, height))
+                            image = buffer.CloneAs<Rgba32>(buffer.GetConfiguration());
 
                         Vd.Device.Unmap(resource.Resource);
 
@@ -585,8 +591,7 @@ namespace osu.Framework.Platform
                 // this is required as attempting to use a TaskCompletionSource blocks the thread calling SetResult on some configurations.
                 await Task.Run(completionEvent.Wait).ConfigureAwait(false);
 
-                using (Image<Bgra32> image = Image.LoadPixelData<Bgra32>(pixelData.Memory.Span, width, height))
-                    return image.CloneAs<Rgba32>(image.GetConfiguration());
+                return image;
             }
         }
 

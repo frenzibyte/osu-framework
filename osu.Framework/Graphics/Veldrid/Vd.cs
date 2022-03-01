@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using osu.Framework.Allocation;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
@@ -63,9 +64,9 @@ namespace osu.Framework.Graphics.Veldrid
 
         public static float BackbufferDrawDepth { get; private set; }
 
-        public static bool UsingBackbuffer => frame_buffer_stack.Peek() == DefaultFrameBuffer;
+        public static bool UsingBackbuffer => frame_buffer_stack.Peek() == Backbuffer;
 
-        public static Framebuffer DefaultFrameBuffer;
+        public static Framebuffer Backbuffer;
 
         public static int MaxTextureSize { get; private set; } = 4096;
 
@@ -112,6 +113,8 @@ namespace osu.Framework.Graphics.Veldrid
             initialisePipeline();
             initialiseCommands();
             initialiseResources(ref pipelineDescription);
+
+            Backbuffer = Device.SwapchainFramebuffer;
 
             IsInitialized = true;
 
@@ -180,10 +183,14 @@ namespace osu.Framework.Graphics.Veldrid
             {
                 // todo: look for better window resize handling
                 Device.MainSwapchain.Resize((uint)size.X, (uint)size.Y);
+
                 currentSize = size;
             }
 
-            BindFrameBuffer(DefaultFrameBuffer = Device.SwapchainFramebuffer);
+            if (Backbuffer.IsDisposed)
+                Backbuffer = Device.SwapchainFramebuffer;
+
+            BindFrameBuffer(Backbuffer);
 
             Scissor = RectangleI.Empty;
             ScissorOffset = Vector2I.Zero;
@@ -532,5 +539,20 @@ namespace osu.Framework.Graphics.Veldrid
         /// </summary>
         /// <param name="drawDepth">The draw depth.</param>
         internal static void SetDrawDepth(float drawDepth) => BackbufferDrawDepth = drawDepth;
+
+        /// <summary>
+        /// Sets the current backbuffer.
+        /// </summary>
+        /// <remarks>
+        /// This is used for the ability to perform screenshots by submitting a full render pass to a specific framebuffer.
+        /// </remarks>
+        /// <param name="framebuffer">The framebuffer to be considered as the backbuffer.</param>
+        internal static IDisposable SetBackbuffer(Framebuffer framebuffer)
+        {
+            var currentBackbuffer = Backbuffer;
+            Backbuffer = framebuffer;
+
+            return new ValueInvokeOnDisposal<Framebuffer>(currentBackbuffer, c => Backbuffer = c);
+        }
     }
 }
