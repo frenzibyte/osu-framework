@@ -84,11 +84,7 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
         public virtual void Draw(Action<TexturedVertex2D> vertexAction)
         {
-            // Logger.Log("Set blending information");
-
             Vd.SetBlend(DrawColourInfo.Blending);
-
-            // Logger.Log($"Set draw depth to {drawDepth}");
 
             // This is the back-to-front (BTF) pass. The back-buffer depth test function used is GL_LESS.
             // The depth test will fail for samples that overlap the opaque interior of this <see cref="DrawNode"/> and any <see cref="DrawNode"/>s above this one.

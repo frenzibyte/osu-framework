@@ -78,15 +78,9 @@ namespace osu.Framework.Graphics.Sprites
             if (Texture?.Available != true)
                 return;
 
-            // Logger.Log("Binding shader to draw texture");
-
             Shader.Bind();
 
-            // Logger.Log("Draw texture");
-
             Blit(vertexAction);
-
-            // Logger.Log("Unbinding shader after drawing texture");
 
             Shader.Unbind();
         }
