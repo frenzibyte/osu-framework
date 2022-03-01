@@ -86,7 +86,7 @@ namespace osu.Framework.Graphics
         {
             Vd.SetBlend(DrawColourInfo.Blending);
 
-            // This is the back-to-front (BTF) pass. The back-buffer depth test function used is GL_LESS.
+            // This is the back-to-front (BTF) pass. The back-buffer depth test function used is "ComparisonKind.Less".
             // The depth test will fail for samples that overlap the opaque interior of this <see cref="DrawNode"/> and any <see cref="DrawNode"/>s above this one.
             Vd.SetDrawDepth(drawDepth);
         }
@@ -96,7 +96,7 @@ namespace osu.Framework.Graphics
         /// indicates that an opaque interior can be drawn for each relevant <see cref="DrawNode"/>.
         /// </summary>
         /// <remarks>
-        /// This is the front-to-back pass. The back-buffer depth test function used is GL_LESS.<br />
+        /// This is the front-to-back pass. The back-buffer depth test function used is "ComparisonKind.Less".<br />
         /// During this pass, the opaque interior is drawn BELOW ourselves. For this to occur, <see cref="drawDepth"/> is temporarily incremented and then decremented after drawing is complete.
         /// Other <see cref="DrawNode"/>s behind ourselves receive the incremented depth value before doing the same themselves, allowing early-z to take place during this pass.
         /// </remarks>
@@ -112,7 +112,7 @@ namespace osu.Framework.Graphics
             }
 
             // For an incoming depth value D, the opaque interior is drawn at depth D+e and the content is drawn at depth D.
-            // As such, when the GL_LESS test function is applied, the content will always pass the depth test for the same DrawNode (D < D+e).
+            // As such, when the "Less" test function is applied, the content will always pass the depth test for the same DrawNode (D < D+e).
 
             // Increment the depth.
             float previousDepthValue = depthValue;
