@@ -20,7 +20,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             pipelineDescription = new GraphicsPipelineDescription
             {
-                RasterizerState = new RasterizerStateDescription(FaceCullMode.None, PolygonFillMode.Solid, default, false, false),
+                RasterizerState = RasterizerStateDescription.CullNone,
                 Outputs = Device.SwapchainFramebuffer.OutputDescription,
             };
         }
