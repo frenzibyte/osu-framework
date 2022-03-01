@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using osu.Framework.Development;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using SharpGen.Runtime;
@@ -31,7 +30,7 @@ namespace osu.Framework.Graphics.Veldrid
                 PreferStandardClipSpaceYDirection = true,
                 ResourceBindingModel = ResourceBindingModel.Improved,
                 // todo: should probably be removed, we don't want validation layers to be coupled with debug config.
-                Debug = DebugUtils.IsDebugBuild,
+                Debug = false,
             };
 
             Device = createDevice(host.Window, options);

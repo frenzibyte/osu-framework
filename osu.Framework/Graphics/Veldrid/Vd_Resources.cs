@@ -95,9 +95,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             size ??= Marshal.SizeOf<T>();
 
-            var staging = staging_buffer_pool.Get(size.Value);
-            Device.UpdateBuffer(staging, 0, ref value, (uint)size);
-            Commands.CopyBuffer(staging, 0, buffer, (uint)offset, (uint)size);
+            Commands.UpdateBuffer(buffer, (uint)offset, ref value, (uint)size);
         }
 
         #endregion
@@ -176,12 +174,8 @@ namespace osu.Framework.Graphics.Veldrid
         public static unsafe void UpdateTexture<T>(Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data)
             where T : unmanaged
         {
-            var staging = staging_texture_pool.Get(width, height, texture.Format);
-
             fixed (T* ptr = data)
-                Device.UpdateTexture(staging.Texture, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), staging.X, staging.Y, 0, (uint)width, (uint)height, 1, 0, 0);
-
-            Commands.CopyTexture(staging.Texture, staging.X, staging.Y, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
+                Device.UpdateTexture(texture, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), (uint)x, (uint)y, 0, (uint)width, (uint)height, 1, (uint)level, 0);
         }
 
         private static readonly Dictionary<int, ResourceLayout> texture_layouts = new Dictionary<int, ResourceLayout>();

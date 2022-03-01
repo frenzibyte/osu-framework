@@ -11,7 +11,6 @@ using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Veldrid.Buffers;
-using osu.Framework.Graphics.Veldrid.Pooling;
 using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
@@ -39,10 +38,10 @@ namespace osu.Framework.Graphics.Veldrid
         internal static ulong ResetId { get; private set; }
 
         /// <summary>
-        /// The interval (in frames) before checking whether device resources should be freed.
+        /// The interval (in frames) before checking whether VBOs should be freed.
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
-        private const int resources_free_check_interval = 300;
+        private const int vbo_free_check_interval = 300;
 
         public static GraphicsDevice Device { get; private set; }
 
@@ -94,10 +93,6 @@ namespace osu.Framework.Graphics.Veldrid
         private static readonly List<IVertexBatch> batch_reset_list = new List<IVertexBatch>();
 
         private static readonly List<IVertexBuffer> vertex_buffers_in_use = new List<IVertexBuffer>();
-
-        private static readonly VeldridFencePool commands_execution_fence_pool = new VeldridFencePool();
-        private static readonly VeldridStagingBufferPool staging_buffer_pool = new VeldridStagingBufferPool();
-        private static readonly VeldridStagingTexturePool staging_texture_pool = new VeldridStagingTexturePool();
 
         public static bool IsInitialized { get; private set; }
 
@@ -214,8 +209,7 @@ namespace osu.Framework.Graphics.Veldrid
             PushDepthInfo(DepthInfo.Default);
             Clear(new ClearInfo(Colour4.Black));
 
-            freeUnusedResources();
-            releaseUsedResources();
+            freeUnusedVertexBuffers();
 
             stat_texture_uploads_queued.Value = texture_upload_queue.Count;
             stat_texture_uploads_dequeued.Value = 0;
@@ -303,38 +297,18 @@ namespace osu.Framework.Graphics.Veldrid
         /// <param name="buffer">The <see cref="IVertexBuffer"/> in use.</param>
         internal static void RegisterVertexBufferUse(IVertexBuffer buffer) => vertex_buffers_in_use.Add(buffer);
 
-        /// <summary>
-        /// Frees resources unused after a while of frames.
-        /// </summary>
-        private static void freeUnusedResources()
+        private static void freeUnusedVertexBuffers()
         {
-            if (ResetId % resources_free_check_interval != 0)
+            if (ResetId % vbo_free_check_interval != 0)
                 return;
 
             foreach (var buf in vertex_buffers_in_use)
             {
-                if (buf.InUse && ResetId - buf.LastUseResetId > resources_free_check_interval)
+                if (buf.InUse && ResetId - buf.LastUseResetId > vbo_free_check_interval)
                     buf.Free();
             }
 
             vertex_buffers_in_use.RemoveAll(b => !b.InUse);
-
-            commands_execution_fence_pool.FreeUnusedResources(resources_free_check_interval);
-            staging_buffer_pool.FreeUnusedResources(resources_free_check_interval);
-            staging_texture_pool.FreeUnusedResources(resources_free_check_interval);
-        }
-
-        /// <summary>
-        /// Releases resources marked as used to become available for subsequent consumption.
-        /// </summary>
-        private static void releaseUsedResources()
-        {
-            if (!(commands_execution_fence_pool.LatestSignaledUseID is ulong latestSignaledUseID))
-                return;
-
-            commands_execution_fence_pool.ReleaseUsedResources(latestSignaledUseID);
-            staging_buffer_pool.ReleaseUsedResources(latestSignaledUseID);
-            staging_texture_pool.ReleaseUsedResources(latestSignaledUseID);
         }
 
         private static readonly Stack<Vector2I> scissor_offset_stack = new Stack<Vector2I>();

@@ -43,7 +43,7 @@ namespace osu.Framework.Graphics.Veldrid
             return new ValueInvokeOnDisposal<CommandList>(commands, c =>
             {
                 Commands.End();
-                Device.SubmitCommands(Commands, commands_execution_fence_pool.Get());
+                Device.SubmitCommands(Commands);
 
                 Commands = null;
             });
