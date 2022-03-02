@@ -28,7 +28,7 @@ namespace osu.Framework.Platform.SDL2
                         // We may want to revisit this with a native implementation of Metal or otherwise,
                         // but right now using Vulkan would do for the time being.
                         // return GraphicsBackend.Metal;
-                        return GraphicsBackend.Vulkan;
+                        return GraphicsBackend.OpenGL;
 
                     case RuntimeInfo.Platform.Linux:
                         return GraphicsBackend.OpenGL;
@@ -69,7 +69,23 @@ namespace osu.Framework.Platform.SDL2
         }
 
         private IntPtr openGLContext;
-        private OpenGLPlatformInfo info;
+
+        public SDL2GraphicsBackend()
+        {
+            // These attributes cannot be set after creating an SDL window, therefore we can only set them here.
+            if (Type == GraphicsBackend.OpenGL)
+            {
+                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
+                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 2);
+            }
+            else if (Type == GraphicsBackend.OpenGLES)
+            {
+                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
+                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+                SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 0);
+            }
+        }
 
         public void Initialise(IWindow window)
         {
@@ -77,36 +93,6 @@ namespace osu.Framework.Platform.SDL2
                 throw new InvalidOperationException($"The specified window is not of type {nameof(SDL2DesktopWindow)}.");
 
             sdlWindow = sdl2DesktopWindow;
-
-            if (Type == GraphicsBackend.OpenGL || Type == GraphicsBackend.OpenGLES)
-            {
-                openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
-
-                if (openGLContext == IntPtr.Zero)
-                    throw new InvalidOperationException($"Failed to create an SDL2 GL context ({SDL.SDL_GetError()})");
-
-                if (Type == GraphicsBackend.OpenGL)
-                {
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 2);
-                }
-                else
-                {
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-                    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 0);
-                }
-
-                info = new OpenGLPlatformInfo(openGLContext,
-                    s => SDL.SDL_GL_GetProcAddress(s),
-                    c => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, c),
-                    () => SDL.SDL_GL_GetCurrentContext(),
-                    () => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, IntPtr.Zero),
-                    c => SDL.SDL_GL_DeleteContext(c),
-                    () => SDL.SDL_GL_SwapWindow(sdlWindow.SDLWindowHandle),
-                    value => SDL.SDL_GL_SetSwapInterval(value ? 1 : 0));
-            }
         }
 
         public Size GetDrawableSize()
@@ -138,8 +124,19 @@ namespace osu.Framework.Platform.SDL2
 
         void IHasOpenGLCapability.PrepareOpenGL(out OpenGLPlatformInfo info)
         {
-            SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, openGLContext);
-            info = this.info;
+            openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
+
+            if (openGLContext == IntPtr.Zero)
+                throw new InvalidOperationException($"Failed to create an SDL2 GL context ({SDL.SDL_GetError()})");
+
+            info = new OpenGLPlatformInfo(openGLContext,
+                s => SDL.SDL_GL_GetProcAddress(s),
+                c => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, c),
+                () => SDL.SDL_GL_GetCurrentContext(),
+                () => SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, IntPtr.Zero),
+                c => SDL.SDL_GL_DeleteContext(c),
+                () => SDL.SDL_GL_SwapWindow(sdlWindow.SDLWindowHandle),
+                value => SDL.SDL_GL_SetSwapInterval(value ? 1 : 0));
         }
     }
 }
