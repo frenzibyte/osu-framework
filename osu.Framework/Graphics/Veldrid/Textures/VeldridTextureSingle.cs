@@ -58,6 +58,19 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         public override RectangleI Bounds => new RectangleI(0, 0, Width, Height);
 
+        protected virtual TextureUsage Usages
+        {
+            get
+            {
+                var usages = TextureUsage.Sampled;
+
+                if (!manualMipmaps)
+                    usages |= TextureUsage.GenerateMipmaps;
+
+                return usages;
+            }
+        }
+
         /// <summary>
         /// Creates a new <see cref="VeldridTextureSingle"/>.
         /// </summary>
@@ -469,12 +482,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
                 texture?.Dispose();
 
-                var usage = TextureUsage.Sampled;
-
-                if (!manualMipmaps)
-                    usage |= TextureUsage.GenerateMipmaps;
-
-                var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, usage);
+                var textureDescription = TextureDescription.Texture2D((uint)width, (uint)height, (uint)calculateMipmapLevels(width, height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, Usages);
 
                 texture = Vd.Factory.CreateTexture(textureDescription);
 
