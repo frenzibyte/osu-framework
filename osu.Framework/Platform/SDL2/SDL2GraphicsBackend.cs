@@ -124,6 +124,8 @@ namespace osu.Framework.Platform.SDL2
 
         void IHasOpenGLCapability.PrepareOpenGL(out OpenGLPlatformInfo info)
         {
+            // todo: OpenGL is currently broken because a context is created here instead of at Initialize.
+            // this is probably because all of these calls are happening on a different thread, since SDL is not thread-safe.
             openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
 
             if (openGLContext == IntPtr.Zero)
