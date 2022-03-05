@@ -278,9 +278,14 @@ namespace osu.Framework.Threading
 
             lock (queueLock)
             {
-                timedTasks.AddInPlace(task);
-                if (timedTasks.Count % LOG_EXCESSSIVE_QUEUE_LENGTH_INTERVAL == 0)
-                    Logger.Log($"{this} has {timedTasks.Count} timed tasks pending", LoggingTarget.Performance);
+                if (task.ExecutionTime > currentTime || task.RepeatInterval > -1)
+                {
+                    timedTasks.AddInPlace(task);
+                    if (timedTasks.Count % LOG_EXCESSSIVE_QUEUE_LENGTH_INTERVAL == 0)
+                        Logger.Log($"{this} has {timedTasks.Count} timed tasks pending", LoggingTarget.Performance);
+                }
+                else
+                    enqueue(task);
             }
         }
 
