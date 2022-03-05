@@ -635,5 +635,21 @@ namespace osu.Framework.Tests.Threading
             scheduler.Update();
             Assert.That(invocations, Is.EqualTo(1));
         }
+
+        /// <summary>
+        /// Ensures that enqueueing a task with <see cref="Scheduler.AddDelayed"/> and zero delay executes before a regular <see cref="Scheduler.Add(Action, bool)"/>.
+        /// </summary>
+        [Test]
+        public void TestZeroDelayDelegateExecutesBeforeNoDelay()
+        {
+            bool firstInvoked = false;
+            bool secondInvokedInOrder = false;
+
+            scheduler.AddDelayed(() => firstInvoked = true, 0);
+            scheduler.Add(() => secondInvokedInOrder = firstInvoked);
+
+            scheduler.Update();
+            Assert.That(secondInvokedInOrder, Is.True);
+        }
     }
 }
