@@ -7,8 +7,8 @@ using osu.Framework.Graphics.Veldrid.Vertices;
 
 namespace osu.Framework.Graphics.Rendering
 {
-    // Todo: Eventually replace GLWrapper with this.
-    public class OpenGLRenderer : IRenderer
+    // Todo: Eventually replace Vd with this.
+    public class VeldridRenderer : IRenderer
     {
         private readonly Stack<QuadBatch<TexturedVertex2D>> quadBatches = new Stack<QuadBatch<TexturedVertex2D>>();
 

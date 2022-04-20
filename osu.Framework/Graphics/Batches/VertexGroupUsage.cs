@@ -5,7 +5,7 @@
 
 using System;
 using osu.Framework.Graphics.Batches.Internal;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 
 namespace osu.Framework.Graphics.Batches
 {
@@ -15,7 +15,7 @@ namespace osu.Framework.Graphics.Batches
     /// <typeparam name="TInput">The input vertex type.</typeparam>
     // This object MUST be readonly and is recommended to be passed around as an `in` parameter.
     public readonly ref struct VertexGroupUsage<TInput>
-        where TInput : struct, IEquatable<TInput>, IVertex
+        where TInput : unmanaged, IEquatable<TInput>, IVertex
     {
         /// <summary>
         /// Whether vertices need to be uploaded for the batch.

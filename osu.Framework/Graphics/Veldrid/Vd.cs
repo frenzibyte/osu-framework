@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Development;
-using osu.Framework.Graphics.Batches;
+using osu.Framework.Graphics.Batches.Internal;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Veldrid.Buffers;
@@ -36,6 +36,14 @@ namespace osu.Framework.Graphics.Veldrid
         /// The amount of times <see cref="Reset"/> has been invoked.
         /// </summary>
         internal static ulong ResetId { get; private set; }
+
+        /// <summary>
+        /// The amount of times <see cref="Reset"/> has been invoked for the current tree.
+        /// </summary>
+        internal static ulong CurrentTreeResetId => tree_reset_ids[currentTreeIndex];
+
+        private static readonly ulong[] tree_reset_ids = new ulong[MAX_DRAW_NODES];
+        private static int currentTreeIndex;
 
         /// <summary>
         /// The interval (in frames) before checking whether VBOs should be freed.
@@ -138,9 +146,11 @@ namespace osu.Framework.Graphics.Veldrid
 
         private static Vector2 currentSize;
 
-        public static void Reset(Vector2 size)
+        public static void Reset(Vector2 size, int treeIndex)
         {
             ResetId++;
+            tree_reset_ids[treeIndex]++;
+            currentTreeIndex = treeIndex;
 
             Trace.Assert(shader_stack.Count == 0);
 

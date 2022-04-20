@@ -6,7 +6,7 @@
 using System;
 using System.Diagnostics;
 using osu.Framework.Graphics.Batches.Internal;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 
 namespace osu.Framework.Graphics.Batches
 {
@@ -18,7 +18,7 @@ namespace osu.Framework.Graphics.Batches
     /// </remarks>
     /// <typeparam name="TVertex">The input/output vertex type.</typeparam>
     public class VertexGroup<TVertex> : VertexGroup<TVertex, TVertex>
-        where TVertex : struct, IEquatable<TVertex>, IVertex
+        where TVertex : unmanaged, IEquatable<TVertex>, IVertex
     {
         public VertexGroup()
             : base(v => v)
@@ -36,7 +36,7 @@ namespace osu.Framework.Graphics.Batches
     /// <typeparam name="TOutput">The output vertex type.</typeparam>
     public class VertexGroup<TInput, TOutput> : IVertexGroup
         where TInput : struct, IEquatable<TInput>, IVertex
-        where TOutput : struct, IEquatable<TOutput>, IVertex
+        where TOutput : unmanaged, IEquatable<TOutput>, IVertex
     {
         /// <summary>
         /// The <see cref="VertexBatch{T}"/> to which this group's vertices were last added.

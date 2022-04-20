@@ -158,9 +158,9 @@ namespace osu.Framework.Graphics.Batches
         /// <exception cref="InvalidOperationException">When the same <see cref="VertexGroup{TVertex}"/> is used multiple times in a single draw frame.</exception>
         /// <exception cref="InvalidOperationException">When attempting to nest <see cref="VertexGroup{TVertex}"/> usages.</exception>
         public VertexGroupUsage<TInput> BeginUsage<TInput>(DrawNode drawNode, VertexGroup<TInput, T> vertices)
-            where TInput : struct, IEquatable<TInput>, IVertex
+            where TInput : unmanaged, IEquatable<TInput>, IVertex
         {
-            ulong frameIndex = GLWrapper.CurrentTreeResetId;
+            ulong frameIndex = Vd.CurrentTreeResetId;
 
             // Disallow reusing the same group multiple times in the same draw frame.
             if (vertices.FrameIndex == frameIndex)

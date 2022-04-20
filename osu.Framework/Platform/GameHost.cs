@@ -507,7 +507,7 @@ namespace osu.Framework.Platform
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.Reset))
                     {
-                        Vd.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                        Vd.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height), buffer.Index);
                         renderer.Reset();
                     }
 

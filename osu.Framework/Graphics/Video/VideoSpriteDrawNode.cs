@@ -4,8 +4,6 @@
 using osu.Framework.Graphics.Rendering;
 using osuTK;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Veldrid.Vertices;
-=======
 
 namespace osu.Framework.Graphics.Video
 {

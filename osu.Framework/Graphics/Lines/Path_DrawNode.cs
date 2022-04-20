@@ -38,7 +38,7 @@ namespace osu.Framework.Graphics.Lines
             // We multiply the size param by 3 such that the amount of vertices is a multiple of the amount of vertices
             // per primitive (triangles in this case). Otherwise overflowing the batch will result in wrong
             // grouping of vertices into primitives.
-            private readonly LinearBatch<TexturedVertex3D> halfCircleBatch = new LinearBatch<TexturedVertex3D>(MAX_RES * 100 * 3, 10, PrimitiveTopology.TriangleList);
+            private readonly LinearBatch<TexturedVertex3D> halfCircleBatch = new LinearBatch<TexturedVertex3D>(MAX_RES * 100 * 3, PrimitiveTopology.TriangleList);
             private readonly QuadBatch<TexturedVertex3D> quadBatch = new QuadBatch<TexturedVertex3D>(200);
 
             public PathDrawNode(Path source)

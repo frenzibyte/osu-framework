@@ -13,14 +13,14 @@ namespace osu.Framework.Graphics.Batches
     {
         private readonly PrimitiveTopology topology;
 
-        [Obsolete("Use `LinearBatch(int size, PrimitiveType type)` instead.")] // Can be removed 2022-11-09
+        [Obsolete("Use `LinearBatch(int size, PrimitiveToplogy type)` instead.")] // Can be removed 2022-11-09
         // ReSharper disable once UnusedParameter.Local
-        public LinearBatch(int size, int maxBuffers, PrimitiveTopology type)
-            : this(size, type)
+        public LinearBatch(int size, int maxBuffers, PrimitiveTopology topology)
+            : this(size, topology)
         {
         }
 
-        public LinearBatch(int size, PrimitiveTopology type)
+        public LinearBatch(int size, PrimitiveTopology topology)
             : base(size)
         {
             this.topology = topology;

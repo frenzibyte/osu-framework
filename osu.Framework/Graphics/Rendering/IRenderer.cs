@@ -3,8 +3,8 @@
 
 using System;
 using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.OpenGL.Textures;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Veldrid.Textures;
+using osu.Framework.Graphics.Veldrid.Vertices;
 
 namespace osu.Framework.Graphics.Rendering
 {
@@ -31,7 +31,7 @@ namespace osu.Framework.Graphics.Rendering
 
         // Todo: This should eventually be replaced with a "BeginVertices" method instead.
         /// <summary>
-        /// Begins a grouping of vertices. Each quad requires <see cref="TextureGLSingle.VERTICES_PER_QUAD"/> to be fully formed.
+        /// Begins a grouping of vertices. Each quad requires <see cref="VeldridTextureSingle.VERTICES_PER_QUAD"/> to be fully formed.
         /// </summary>
         /// <param name="drawNode">The owner of the vertices.</param>
         /// <param name="vertices">The grouping of vertices.</param>

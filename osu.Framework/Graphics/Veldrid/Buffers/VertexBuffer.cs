@@ -2,14 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Statistics;
-using SixLabors.ImageSharp.Memory;
 using Veldrid;
-using osuTK.Graphics.ES30;
 using BufferUsage = Veldrid.BufferUsage;
 
 namespace osu.Framework.Graphics.Veldrid.Buffers
@@ -17,7 +13,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
     public abstract class VertexBuffer<T> : IVertexBuffer, IDisposable
         where T : unmanaged, IEquatable<T>, IVertex
     {
-        internal static readonly int STRIDE = VertexUtils<DepthWrappingVertex<T>>.STRIDE;
+        private static readonly int stride = VertexUtils<DepthWrappingVertex<T>>.STRIDE;
 
 #if DEBUG && !NO_VBO_CONSISTENCY_CHECKS
         internal readonly DepthWrappingVertex<T>[] Vertices;
@@ -53,11 +49,11 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         {
             ThreadSafety.EnsureDrawThread();
 
-            var description = new BufferDescription((uint)(Size * STRIDE), BufferUsage.VertexBuffer);
+            var description = new BufferDescription((uint)(Size * stride), BufferUsage.VertexBuffer);
 
             buffer = Vd.Factory.CreateBuffer(description);
 
-            int size = Size * STRIDE;
+            int size = Size * stride;
             // Vd.Commands.UpdateBuffer(buffer, 0, IntPtr.Zero, size);
             vertex_memory_statistic.Value += size;
 
@@ -119,12 +115,20 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
             VertexUploadQueue<T>.Upload();
 
-            Bind(true);
+            Bind();
 
             int countVertices = endIndex - startIndex;
             Vd.DrawPrimitives(Topology, ToElementIndex(startIndex), ToElements(countVertices));
 
             Unbind();
+        }
+
+        internal void UpdateRange(int start, int count, ref DepthWrappingVertex<T> value)
+        {
+            if (buffer == null)
+                Initialise();
+
+            Vd.UpdateBuffer(buffer, start * stride, ref value, count * stride);
         }
 
         public ulong LastUseResetId { get; private set; }
@@ -144,7 +148,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 Vertices.AsSpan().Clear();
 #endif
 
-                vertex_memory_statistic.Value -= Size * STRIDE;
+                vertex_memory_statistic.Value -= Size * stride;
             }
 
             LastUseResetId = 0;

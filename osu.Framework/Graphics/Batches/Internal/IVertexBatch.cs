@@ -4,7 +4,7 @@
 #nullable enable
 
 using System;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Veldrid.Vertices;
 
 namespace osu.Framework.Graphics.Batches.Internal
 {
