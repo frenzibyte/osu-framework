@@ -24,10 +24,7 @@ namespace osu.Framework.Platform.SDL2
 
                     case RuntimeInfo.Platform.macOS:
                     case RuntimeInfo.Platform.iOS:
-                        // Veldrid's implementation of Metal is not really on par with D3D11/Vulkan.
-                        // We may want to revisit this with a native implementation of Metal or otherwise,
-                        // but right now using Vulkan would do for the time being.
-                        return GraphicsBackend.Vulkan;
+                        return GraphicsBackend.Metal;
 
                     case RuntimeInfo.Platform.Linux:
                         return GraphicsBackend.OpenGL;
