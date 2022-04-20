@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using SDL2;
 using SharpGen.Runtime;
 using Veldrid;
 using Veldrid.OpenGLBinding;
@@ -173,14 +174,13 @@ namespace osu.Framework.Graphics.Veldrid
                     break;
 
                 case RuntimeInfo.Platform.macOS:
-                    if (type == GraphicsBackend.Vulkan)
-                    {
-                        // Vulkan's validation layer is busted with Veldrid on macOS.
-                        // todo: remove once https://github.com/mellinoe/veldrid/pull/419 is merged.
-                        options.Debug = false;
-                    }
+                    if (window is SDL2DesktopWindow sdlWindow)
+                        // todo: depends on https://github.com/mellinoe/veldrid/pull/426 to actually work.
+                        // alternative would be for veldrid to support Hi-DPI.
+                        swapchainDescription.Source = SwapchainSource.CreateNSView(SDL.SDL_Metal_CreateView(sdlWindow.SDLWindowHandle));
+                    else
+                        swapchainDescription.Source = SwapchainSource.CreateNSWindow(window.WindowHandle);
 
-                    swapchainDescription.Source = SwapchainSource.CreateNSWindow(window.WindowHandle);
                     break;
 
                 case RuntimeInfo.Platform.Linux:
