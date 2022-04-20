@@ -89,6 +89,11 @@ namespace osu.Framework.Platform.SDL2
                 throw new InvalidOperationException($"The specified window is not of type {nameof(SDL2DesktopWindow)}.");
 
             sdlWindow = sdl2DesktopWindow;
+
+            // on apple devices, the GL context must be created on the main input/window thread.
+            // if it was to be created in a separate thread, that'll result in a deadlock inside the method.
+            if (RuntimeInfo.IsApple)
+                openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
         }
 
         public Size GetDrawableSize()
@@ -120,9 +125,13 @@ namespace osu.Framework.Platform.SDL2
 
         void IHasOpenGLCapability.PrepareOpenGL(out OpenGLPlatformInfo info)
         {
-            // todo: OpenGL is currently broken because a context is created here instead of at Initialize.
-            // this is probably because all of these calls are happening on a different thread, since SDL is not thread-safe.
-            openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
+            // since the GL context is created on the window thread, we have to make the context current on the draw thread here.
+            // todo: SDL shouldn't be called from any thread other than the window thread to begin with, or should it?
+            if (RuntimeInfo.IsApple)
+                SDL.SDL_GL_MakeCurrent(sdlWindow.SDLWindowHandle, openGLContext);
+            else
+                // on non-apple devices, it is best to create the context here... for some reason.
+                openGLContext = SDL.SDL_GL_CreateContext(sdlWindow.SDLWindowHandle);
 
             if (openGLContext == IntPtr.Zero)
                 throw new InvalidOperationException($"Failed to create an SDL2 GL context ({SDL.SDL_GetError()})");
