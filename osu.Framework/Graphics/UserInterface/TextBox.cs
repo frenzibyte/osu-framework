@@ -979,7 +979,7 @@ namespace osu.Framework.Graphics.UserInterface
         /// Full data about the composition events is processed by <see cref="handleImeComposition"/> "passively"
         /// so we shouldn't take any action on key events we receive.
         /// </remarks>
-        protected bool ImeCompositionActive => textInputBound && textInput.ImeActive || imeCompositionLength > 0;
+        protected bool ImeCompositionActive => (textInputBound && textInput.ImeActive) || imeCompositionLength > 0;
 
         #region Input event handling
 
@@ -1002,7 +1002,11 @@ namespace osu.Framework.Graphics.UserInterface
 
                 case Key.KeypadEnter:
                 case Key.Enter:
-                    // same rationale as comment above.
+                    // alt-enter is commonly used to toggle fullscreen.
+                    if (e.AltPressed)
+                        return false;
+
+                    // same rationale as comment in case statement above.
                     if (!e.Repeat)
                         Commit();
                     return true;

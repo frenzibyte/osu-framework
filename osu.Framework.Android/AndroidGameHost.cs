@@ -40,9 +40,9 @@ namespace osu.Framework.Android
 
         protected override IWindow CreateWindow() => new AndroidGameWindow(gameView);
 
-        protected override bool LimitedMemoryEnvironment => true;
-
         public override bool CanExit => false;
+
+        public override bool CanSuspendToBackground => true;
 
         public override bool OnScreenKeyboardOverlapsGameWindow => true;
 
@@ -67,11 +67,9 @@ namespace osu.Framework.Android
             Application.Context.GetExternalFilesDir(string.Empty)!.ToString(),
         };
 
-        public override void OpenFileExternally(string filename)
-            => throw new NotImplementedException();
+        public override bool OpenFileExternally(string filename) => false;
 
-        public override void PresentFileExternally(string filename)
-            => throw new NotImplementedException();
+        public override bool PresentFileExternally(string filename) => false;
 
         public override void OpenUrlExternally(string url)
         {
@@ -89,5 +87,10 @@ namespace osu.Framework.Android
 
         public override VideoDecoder CreateVideoDecoder(Stream stream)
             => new AndroidVideoDecoder(stream);
+
+        public override bool SuspendToBackground()
+        {
+            return gameView.Activity.MoveTaskToBack(true);
+        }
     }
 }

@@ -76,24 +76,12 @@ namespace osu.Framework.Graphics.Video
 
                 var textures = new Texture[3];
 
-                for (int i = 0; i < textures.Length; i++)
+                for (uint i = 0; i < textures.Length; i++)
                 {
-                    int width, height;
+                    int width = videoUpload.GetPlaneWidth(i);
+                    int height = videoUpload.GetPlaneHeight(i);
 
-                    if (i == 0)
-                    {
-                        width = videoUpload.Frame->width;
-                        height = videoUpload.Frame->height;
-
-                        textureSize += width * height;
-                    }
-                    else
-                    {
-                        width = (videoUpload.Frame->width + 1) / 2;
-                        height = (videoUpload.Frame->height + 1) / 2;
-
-                        textureSize += width * height;
-                    }
+                    textureSize += width * height;
 
                     textures[i] = Vd.Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, PixelFormat.R8_UNorm, TextureUsage.Sampled));
                 }
@@ -101,14 +89,10 @@ namespace osu.Framework.Graphics.Video
                 textureResourceSet = new TextureResourceSet(textures, Vd.Device.LinearSampler);
             }
 
-            Vd.BindTexture(TextureResourceSet);
-
-            for (int i = 0; i < TextureResourceSet.Textures.Count; i++)
+            for (uint i = 0; i < TextureResourceSet.Textures.Count; i++)
             {
-                int width = videoUpload.Frame->width / (i > 0 ? 2 : 1);
-                int height = videoUpload.Frame->height / (i > 0 ? 2 : 1);
-                var data = new ReadOnlySpan<byte>(videoUpload.Frame->data[(uint)i], width * height);
-                Vd.UpdateTexture(TextureResourceSet.Textures[i], 0, 0, width, height, 0, data);
+                var data = new ReadOnlySpan<byte>(videoUpload.Frame->data[i], videoUpload.GetPlaneWidth(i) * videoUpload.GetPlaneHeight(i));
+                Vd.UpdateTexture(TextureResourceSet.Textures[(int)i], 0, 0, videoUpload.GetPlaneWidth(i), videoUpload.GetPlaneHeight(i), 0, data);
 
                 // GL.PixelStore(PixelStoreParameter.UnpackRowLength, videoUpload.Frame->linesize[(uint)i]);
                 // GL.TexSubImage2D(TextureTarget2d.Texture2D, 0, 0, 0, videoUpload.Frame->width / (i > 0 ? 2 : 1), videoUpload.Frame->height / (i > 0 ? 2 : 1),

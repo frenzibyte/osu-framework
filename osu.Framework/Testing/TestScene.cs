@@ -29,7 +29,7 @@ namespace osu.Framework.Testing
 {
     [ExcludeFromDynamicCompile]
     [TestFixture]
-    public abstract class TestScene : Container, IDynamicallyCompile
+    public abstract class TestScene : Container
     {
         public readonly FillFlowContainer<Drawable> StepsContainer;
         private readonly Container content;
@@ -46,8 +46,6 @@ namespace osu.Framework.Testing
         /// A nested game instance, if added via <see cref="AddGame"/>.
         /// </summary>
         private Game nestedGame;
-
-        public object DynamicCompilationOriginal { get; internal set; }
 
         [BackgroundDependencyLoader]
         private void load(GameHost host)
@@ -105,8 +103,6 @@ namespace osu.Framework.Testing
 
         protected TestScene()
         {
-            DynamicCompilationOriginal = this;
-
             Name = RemovePrefix(GetType().ReadableName());
 
             RelativeSizeAxes = Axes.Both;
@@ -199,7 +195,7 @@ namespace osu.Framework.Testing
                 if (loadableStep != null)
                 {
                     if (actionRepetition == 0)
-                        Logger.Log($"🔸 Step #{actionIndex + 1} {loadableStep?.Text}");
+                        Logger.Log($"🔸 Step #{actionIndex + 1} {loadableStep.Text}");
 
                     scroll.ScrollIntoView(loadableStep);
                     loadableStep.PerformStep();
