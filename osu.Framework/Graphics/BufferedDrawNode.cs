@@ -6,7 +6,11 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Graphics.Veldrid.Vertices;
+using osu.Framework.Graphics.Batches;
+using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.OpenGL.Buffers;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Statistics;
 using osuTK;
 using osuTK.Graphics;
@@ -39,6 +43,8 @@ namespace osu.Framework.Graphics
         private Vector2 frameBufferScale;
         private Vector2 frameBufferSize;
         private IDrawable rootNodeCached;
+        private readonly VertexGroup<TexturedVertex2D> intermediateVertices = new VertexGroup<TexturedVertex2D>();
+        private readonly VertexGroup<TexturedVertex2D> finalVertices = new VertexGroup<TexturedVertex2D>();
 
         public BufferedDrawNode(IBufferedDrawable source, DrawNode child, BufferedDrawNodeSharedData sharedData)
             : base(source)
@@ -81,7 +87,7 @@ namespace osu.Framework.Graphics
         /// <returns>A version representing this <see cref="DrawNode"/>'s state.</returns>
         protected virtual long GetDrawVersion() => InvalidationID;
 
-        public sealed override void Draw(Action<TexturedVertex2D> vertexAction)
+        public sealed override void Draw(IRenderer renderer)
         {
             if (RequiresRedraw)
             {
@@ -99,12 +105,14 @@ namespace osu.Framework.Graphics
                         Vd.PushOrtho(screenSpaceDrawRectangle);
                         Vd.Clear(new ClearInfo(backgroundColour));
 
-                        Child.Draw(vertexAction);
+                        Child.Draw(renderer);
 
                         Vd.PopOrtho();
                     }
 
-                    PopulateContents();
+                    // The framebuffers are only drawn to while not cached, so a group separate from the final group is required for this intermediate use.
+                    using (var usage = renderer.BeginQuads(this, intermediateVertices))
+                        PopulateContents(usage);
                 }
 
                 SharedData.DrawVersion = GetDrawVersion();
@@ -112,8 +120,10 @@ namespace osu.Framework.Graphics
 
             Shader.Bind();
 
-            base.Draw(vertexAction);
-            DrawContents();
+            base.Draw(renderer);
+
+            using (var usage = renderer.BeginQuads(this, finalVertices))
+                DrawContents(usage);
 
             Shader.Unbind();
         }
@@ -122,16 +132,16 @@ namespace osu.Framework.Graphics
         /// Populates the contents of the effect buffers of <see cref="SharedData"/>.
         /// This is invoked after <see cref="Child"/> has been rendered to the main buffer.
         /// </summary>
-        protected virtual void PopulateContents()
+        protected virtual void PopulateContents(in VertexGroupUsage<TexturedVertex2D> usage)
         {
         }
 
         /// <summary>
         /// Draws the applicable effect buffers of <see cref="SharedData"/> to the back buffer.
         /// </summary>
-        protected virtual void DrawContents()
+        protected virtual void DrawContents(in VertexGroupUsage<TexturedVertex2D> usage)
         {
-            DrawFrameBuffer(SharedData.MainBuffer, DrawRectangle, DrawColourInfo.Colour);
+            DrawFrameBuffer(usage, SharedData.MainBuffer, DrawRectangle, DrawColourInfo.Colour);
         }
 
         /// <summary>
@@ -154,7 +164,8 @@ namespace osu.Framework.Graphics
             // Disable masking for generating the frame buffer since masking will be re-applied
             // when actually drawing later on anyways. This allows more information to be captured
             // in the frame buffer and helps with cached buffers being re-used.
-            RectangleI screenSpaceMaskingRect = new RectangleI((int)Math.Floor(screenSpaceDrawRectangle.X), (int)Math.Floor(screenSpaceDrawRectangle.Y), (int)frameBufferSize.X + 1, (int)frameBufferSize.Y + 1);
+            RectangleI screenSpaceMaskingRect = new RectangleI((int)Math.Floor(screenSpaceDrawRectangle.X), (int)Math.Floor(screenSpaceDrawRectangle.Y), (int)frameBufferSize.X + 1,
+                (int)frameBufferSize.Y + 1);
 
             Vd.PushMaskingInfo(new MaskingInfo
             {

@@ -21,8 +21,10 @@ using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Veldrid;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -33,6 +35,7 @@ using osu.Framework.Timing;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
@@ -54,6 +57,13 @@ namespace osu.Framework.Platform
         protected FrameworkConfigManager Config { get; private set; }
 
         private InputConfigManager inputConfig { get; set; }
+
+        private static readonly QuadBatch<TexturedVertex2D>[] default_quad_batch =
+        {
+            new QuadBatch<TexturedVertex2D>(100),
+            new QuadBatch<TexturedVertex2D>(100),
+            new QuadBatch<TexturedVertex2D>(100),
+        };
 
         /// <summary>
         /// Whether the <see cref="IWindow"/> is active (in the foreground).
@@ -460,6 +470,7 @@ namespace osu.Framework.Platform
         private long lastDrawFrameId;
 
         private readonly DepthValue depthValue = new DepthValue();
+        private readonly IRenderer renderer = new VeldridRenderer();
 
         protected virtual void DrawFrame()
         {
@@ -495,7 +506,12 @@ namespace osu.Framework.Platform
                     }
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.Reset))
+                    {
                         Vd.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                        renderer.Reset();
+                    }
+
+                    renderer.PushQuadBatch(default_quad_batch[buffer.Index]);
 
                     if (!bypassFrontToBackPass.Value)
                     {
@@ -505,7 +521,7 @@ namespace osu.Framework.Platform
                         Vd.PushDepthInfo(DepthInfo.Default);
 
                         // Front pass
-                        buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
+                        buffer.Object.DrawOpaqueInteriorSubTree(renderer, depthValue);
 
                         Vd.PopDepthInfo();
                         Vd.SetBlend(BlendingParameters.None);
@@ -520,7 +536,7 @@ namespace osu.Framework.Platform
                     }
 
                     // Back pass
-                    buffer.Object.Draw(null);
+                    buffer.Object.Draw(renderer);
 
                     Vd.PopDepthInfo();
 

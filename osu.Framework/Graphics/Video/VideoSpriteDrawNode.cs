@@ -1,10 +1,11 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
+using osu.Framework.Graphics.Rendering;
 using osuTK;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Veldrid.Vertices;
+=======
 
 namespace osu.Framework.Graphics.Video
 {
@@ -18,12 +19,12 @@ namespace osu.Framework.Graphics.Video
             video = source;
         }
 
-        public override void Draw(Action<TexturedVertex2D> vertexAction)
+        public override void Draw(IRenderer renderer)
         {
             var yuvCoeff = video.ConversionMatrix;
             Shader.GetUniform<Matrix3>("yuvCoeff").UpdateValue(ref yuvCoeff);
 
-            base.Draw(vertexAction);
+            base.Draw(renderer);
         }
     }
 }

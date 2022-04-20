@@ -32,8 +32,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         public const int MAX_MIPMAP_LEVELS = 3;
 
-        private static readonly Action<TexturedVertex2D> default_quad_action = new QuadBatch<TexturedVertex2D>(100, 1000).AddAction;
-
         private readonly Queue<ITextureUpload> uploadQueue = new Queue<ITextureUpload>();
 
         /// <summary>
@@ -233,11 +231,14 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         public const int VERTICES_PER_TRIANGLE = 4;
 
-        internal override void DrawTriangle(Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+        internal override void DrawTriangle(in VertexGroupUsage<TexturedVertex2D> vertices, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null,
                                             Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
         {
             if (!Available)
                 throw new ObjectDisposedException(ToString(), "Can not draw a triangle with a disposed texture.");
+
+            if (vertices.TrySkip(VERTICES_PER_TRIANGLE))
+                return;
 
             RectangleF texRect = GetTextureRect(textureRect);
             Vector2 inflationAmount = inflationPercentage.HasValue ? new Vector2(inflationPercentage.Value.X * texRect.Width, inflationPercentage.Value.Y * texRect.Height) : Vector2.Zero;
@@ -259,8 +260,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             RectangleF coordRect = GetTextureRect(textureCoords ?? textureRect);
             RectangleF inflatedCoordRect = coordRect.Inflate(inflationAmount);
 
-            vertexAction ??= default_quad_action;
-
             // We split the triangle into two, such that we can obtain smooth edges with our
             // texture coordinate trick. We might want to revert this to drawing a single
             // triangle in case we ever need proper texturing, or if the additional vertices
@@ -268,7 +267,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             SRGBColour topColour = (drawColour.TopLeft + drawColour.TopRight) / 2;
             SRGBColour bottomColour = (drawColour.BottomLeft + drawColour.BottomRight) / 2;
 
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = vertexTriangle.P0,
                 TexturePosition = new Vector2((inflatedCoordRect.Left + inflatedCoordRect.Right) / 2, inflatedCoordRect.Top),
@@ -276,7 +275,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 BlendRange = inflationAmount,
                 Colour = topColour.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = vertexTriangle.P1,
                 TexturePosition = new Vector2(inflatedCoordRect.Left, inflatedCoordRect.Bottom),
@@ -284,7 +283,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 BlendRange = inflationAmount,
                 Colour = drawColour.BottomLeft.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = (vertexTriangle.P1 + vertexTriangle.P2) / 2,
                 TexturePosition = new Vector2((inflatedCoordRect.Left + inflatedCoordRect.Right) / 2, inflatedCoordRect.Bottom),
@@ -292,7 +291,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 BlendRange = inflationAmount,
                 Colour = bottomColour.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = vertexTriangle.P2,
                 TexturePosition = new Vector2(inflatedCoordRect.Right, inflatedCoordRect.Bottom),
@@ -306,11 +305,14 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         public const int VERTICES_PER_QUAD = 4;
 
-        internal override void DrawQuad(Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null,
-                                        Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
+        internal override void DrawQuad(in VertexGroupUsage<TexturedVertex2D> vertices, Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null,
+                                        Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
         {
             if (!Available)
                 throw new ObjectDisposedException(ToString(), "Can not draw a quad with a disposed texture.");
+
+            if (vertices.TrySkip(VERTICES_PER_QUAD))
+                return;
 
             RectangleF texRect = GetTextureRect(textureRect);
             Vector2 inflationAmount = inflationPercentage.HasValue ? new Vector2(inflationPercentage.Value.X * texRect.Width, inflationPercentage.Value.Y * texRect.Height) : Vector2.Zero;
@@ -333,9 +335,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             RectangleF inflatedCoordRect = coordRect.Inflate(inflationAmount);
             Vector2 blendRange = blendRangeOverride ?? inflationAmount;
 
-            vertexAction ??= default_quad_action;
-
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = vertexQuad.BottomLeft,
                 TexturePosition = new Vector2(inflatedCoordRect.Left, inflatedCoordRect.Bottom),
@@ -343,7 +343,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 BlendRange = blendRange,
                 Colour = drawColour.BottomLeft.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = vertexQuad.BottomRight,
                 TexturePosition = new Vector2(inflatedCoordRect.Right, inflatedCoordRect.Bottom),
@@ -351,7 +351,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 BlendRange = blendRange,
                 Colour = drawColour.BottomRight.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = vertexQuad.TopRight,
                 TexturePosition = new Vector2(inflatedCoordRect.Right, inflatedCoordRect.Top),
@@ -359,7 +359,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 BlendRange = blendRange,
                 Colour = drawColour.TopRight.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            vertices.Add(new TexturedVertex2D
             {
                 Position = vertexQuad.TopLeft,
                 TexturePosition = new Vector2(inflatedCoordRect.Left, inflatedCoordRect.Top),

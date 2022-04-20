@@ -2,47 +2,44 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Buffers;
+using osu.Framework.Graphics.OpenGL.Buffers;
+using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Statistics;
 using SixLabors.ImageSharp.Memory;
 using Veldrid;
+using osuTK.Graphics.ES30;
+using BufferUsage = Veldrid.BufferUsage;
 
 namespace osu.Framework.Graphics.Veldrid.Buffers
 {
     public abstract class VertexBuffer<T> : IVertexBuffer, IDisposable
         where T : unmanaged, IEquatable<T>, IVertex
     {
-        protected static readonly int STRIDE = VertexUtils<DepthWrappingVertex<T>>.STRIDE;
+        internal static readonly int STRIDE = VertexUtils<DepthWrappingVertex<T>>.STRIDE;
 
-        private Memory<DepthWrappingVertex<T>> vertexMemory;
-        private IMemoryOwner<DepthWrappingVertex<T>> memoryOwner;
+#if DEBUG && !NO_VBO_CONSISTENCY_CHECKS
+        internal readonly DepthWrappingVertex<T>[] Vertices;
+#endif
 
         private DeviceBuffer buffer;
+
+        private static readonly DepthWrappingVertex<T>[] upload_queue = new DepthWrappingVertex<T>[1024];
+
+        // ReSharper disable once StaticMemberInGenericType
+        private static readonly GlobalStatistic<int> vertex_memory_statistic = GlobalStatistics.Get<int>("Native", $"{nameof(VertexBuffer<T>)}");
 
         protected VertexBuffer(int amountVertices)
         {
             Size = amountVertices;
+
+#if DEBUG && !NO_VBO_CONSISTENCY_CHECKS
+            Vertices = new DepthWrappingVertex<T>[amountVertices];
+#endif
         }
 
-        /// <summary>
-        /// Sets the vertex at a specific index of this <see cref="VertexBuffer{T}"/>.
-        /// </summary>
-        /// <param name="vertexIndex">The index of the vertex.</param>
-        /// <param name="vertex">The vertex.</param>
-        /// <returns>Whether the vertex changed.</returns>
-        public bool SetVertex(int vertexIndex, T vertex)
-        {
-            ref var currentVertex = ref getMemory().Span[vertexIndex];
-
-            bool isNewVertex = !currentVertex.Vertex.Equals(vertex) || currentVertex.BackbufferDrawDepth != Vd.BackbufferDrawDepth;
-
-            currentVertex.Vertex = vertex;
-            currentVertex.BackbufferDrawDepth = Vd.BackbufferDrawDepth;
-
-            return isNewVertex;
-        }
+        public void SetVertex(int index, T vertex) => VertexUploadQueue<T>.Enqueue(this, index, vertex);
 
         /// <summary>
         /// Gets the number of vertices in this <see cref="VertexBuffer{T}"/>.
@@ -59,6 +56,12 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             var description = new BufferDescription((uint)(Size * STRIDE), BufferUsage.VertexBuffer);
 
             buffer = Vd.Factory.CreateBuffer(description);
+
+            int size = Size * STRIDE;
+            // Vd.Commands.UpdateBuffer(buffer, 0, IntPtr.Zero, size);
+            vertex_memory_statistic.Value += size;
+
+            Vd.RegisterVertexBufferUse(this);
         }
 
         ~VertexBuffer()
@@ -89,6 +92,9 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString(), "Can not bind disposed vertex buffers.");
 
+            if (buffer == null)
+                Initialise();
+
             Vd.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
         }
 
@@ -109,48 +115,16 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
         public void DrawRange(int startIndex, int endIndex)
         {
-            if (buffer == null)
-                Initialise();
+            LastUseResetId = Vd.ResetId;
 
-            Bind();
+            VertexUploadQueue<T>.Upload();
+
+            Bind(true);
 
             int countVertices = endIndex - startIndex;
             Vd.DrawPrimitives(Topology, ToElementIndex(startIndex), ToElements(countVertices));
 
             Unbind();
-        }
-
-        public void Update()
-        {
-            UpdateRange(0, Size);
-        }
-
-        public void UpdateRange(int startIndex, int endIndex)
-        {
-            if (buffer == null)
-                Initialise();
-
-            int countVertices = endIndex - startIndex;
-            Vd.UpdateBuffer(buffer, startIndex * STRIDE, ref getMemory().Span[startIndex], countVertices * STRIDE);
-
-            FrameStatistics.Add(StatisticsCounterType.VerticesUpl, countVertices);
-        }
-
-        private ref Memory<DepthWrappingVertex<T>> getMemory()
-        {
-            ThreadSafety.EnsureDrawThread();
-
-            if (!InUse)
-            {
-                memoryOwner = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<DepthWrappingVertex<T>>(Size, AllocationOptions.Clean);
-                vertexMemory = memoryOwner.Memory;
-
-                Vd.RegisterVertexBufferUse(this);
-            }
-
-            LastUseResetId = Vd.ResetId;
-
-            return ref vertexMemory;
         }
 
         public ulong LastUseResetId { get; private set; }
@@ -165,11 +139,13 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
                 buffer.Dispose();
                 buffer = null;
-            }
 
-            memoryOwner?.Dispose();
-            memoryOwner = null;
-            vertexMemory = Memory<DepthWrappingVertex<T>>.Empty;
+#if DEBUG && !NO_VBO_CONSISTENCY_CHECKS
+                Vertices.AsSpan().Clear();
+#endif
+
+                vertex_memory_statistic.Value -= Size * STRIDE;
+            }
 
             LastUseResetId = 0;
         }

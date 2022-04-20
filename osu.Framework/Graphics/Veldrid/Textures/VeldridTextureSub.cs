@@ -2,8 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Graphics.Colour;
+using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Veldrid.Vertices;
 using osuTK;
@@ -71,16 +72,16 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         public override RectangleF GetTextureRect(RectangleF? textureRect) => parent.GetTextureRect(boundsInParent(textureRect));
 
-        internal override void DrawTriangle(Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null,
+        internal override void DrawTriangle(in VertexGroupUsage<TexturedVertex2D> vertices, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null,
                                             Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
         {
-            parent.DrawTriangle(vertexTriangle, drawColour, boundsInParent(textureRect), vertexAction, inflationPercentage, boundsInParent(textureCoords));
+            parent.DrawTriangle(vertices, vertexTriangle, drawColour, boundsInParent(textureRect), inflationPercentage, boundsInParent(textureCoords));
         }
 
-        internal override void DrawQuad(Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null,
-                                        Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
+        internal override void DrawQuad(in VertexGroupUsage<TexturedVertex2D> vertices, Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null,
+                                        Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
         {
-            parent.DrawQuad(vertexQuad, drawColour, boundsInParent(textureRect), vertexAction, inflationPercentage: inflationPercentage, blendRangeOverride: blendRangeOverride, boundsInParent(textureCoords));
+            parent.DrawQuad(vertices, vertexQuad, drawColour, boundsInParent(textureRect), inflationPercentage, blendRangeOverride, boundsInParent(textureCoords));
         }
 
         internal override bool Bind(WrapMode wrapModeS, WrapMode wrapModeT)
