@@ -92,10 +92,6 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             Vd.BindVertexBuffer(buffer, VertexUtils<DepthWrappingVertex<T>>.Layout);
         }
 
-        public virtual void Unbind()
-        {
-        }
-
         protected virtual int ToElements(int vertices) => vertices;
 
         protected virtual int ToElementIndex(int vertexIndex) => vertexIndex;
@@ -116,8 +112,6 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
             int countVertices = endIndex - startIndex;
             Vd.DrawPrimitives(Topology, ToElementIndex(startIndex), ToElements(countVertices));
-
-            Unbind();
         }
 
         public void Update()
@@ -161,8 +155,6 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         {
             if (buffer != null)
             {
-                Unbind();
-
                 buffer.Dispose();
                 buffer = null;
             }
