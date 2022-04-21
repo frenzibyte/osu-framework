@@ -10,6 +10,7 @@ using osu.Framework.Platform;
 using SDL2;
 using SharpGen.Runtime;
 using Veldrid;
+using Veldrid.MetalBindings;
 using Veldrid.OpenGLBinding;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
@@ -107,7 +108,7 @@ namespace osu.Framework.Graphics.Veldrid
 
                         MaxTextureSize = (int)properties.limits.maxImageDimension2D;
 
-                        string backend = RuntimeInfo.IsApple ? "MoltenVK" : "Vulkan";
+                        string vulkanName = RuntimeInfo.IsApple ? "MoltenVK" : "Vulkan";
                         string extensions = string.Join(" ", instanceExtensions.Concat(deviceExtensions).Select(e => Marshal.PtrToStringUTF8((IntPtr)e.extensionName)));
 
                         string apiVersion = $"{properties.apiVersion >> 22}.{(properties.apiVersion >> 12) & 0x3FFU}.{properties.apiVersion & 0xFFFU}";
@@ -121,11 +122,11 @@ namespace osu.Framework.Graphics.Veldrid
                         else // Vulkan's convention
                             driverVersion = $"{properties.driverVersion >> 22}.{(properties.driverVersion >> 12) & 0x3FFU}.{properties.driverVersion & 0xFFFU}";
 
-                        Logger.Log($@"{backend} Initialized
-                                    {backend} API Version:    {apiVersion}
-                                    {backend} Driver Version: {driverVersion}
-                                    {backend} Device:         {Marshal.PtrToStringUTF8((IntPtr)properties.deviceName)}
-                                    {backend} Extensions:     {extensions}");
+                        Logger.Log($@"{vulkanName} Initialized
+                                    {vulkanName} API Version:    {apiVersion}
+                                    {vulkanName} Driver Version: {driverVersion}
+                                    {vulkanName} Device:         {Marshal.PtrToStringUTF8((IntPtr)properties.deviceName)}
+                                    {vulkanName} Extensions:     {extensions}");
                         break;
                     }
 
@@ -143,6 +144,28 @@ namespace osu.Framework.Graphics.Veldrid
                                     Direct3D 11 Dedicated Video Memory:  {adapter.Description.DedicatedVideoMemory / 1024 / 1024} MB
                                     Direct3D 11 Dedicated System Memory: {adapter.Description.DedicatedSystemMemory / 1024 / 1024} MB
                                     Direct3D 11 Shared System Memory:    {adapter.Description.SharedSystemMemory / 1024 / 1024} MB");
+                        break;
+                    }
+
+                    case GraphicsBackend.Metal:
+                    {
+                        var info = Device.GetMetalInfo();
+
+                        string[] featureSetParts = info.MaxFeatureSet.ToString().Split('_');
+                        string featureDevice = featureSetParts[0];
+                        string featureFamily = featureSetParts[1].Replace("GPUFamily", string.Empty);
+                        string featureVersion = featureSetParts[2];
+
+                        // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+                        if (info.MaxFeatureSet <= MTLFeatureSet.iOS_GPUFamily4_v1)
+                            MaxTextureSize = info.MaxFeatureSet <= MTLFeatureSet.iOS_GPUFamily1_v4 ? 8192 : 16384;
+                        else if (info.MaxFeatureSet <= MTLFeatureSet.tvOS_GPUFamily2_v1)
+                            MaxTextureSize = info.MaxFeatureSet <= MTLFeatureSet.tvOS_GPUFamily1_v3 ? 8192 : 16384;
+                        else
+                            MaxTextureSize = 16384;
+
+                        Logger.Log($@"Metal Initialized
+                                    Metal Feature Set: {featureDevice} GPU family {featureFamily} ({featureVersion})");
                         break;
                     }
                 }
