@@ -516,7 +516,7 @@ namespace osu.Framework.Platform
                     else
                     {
                         // Disable depth testing
-                        Vd.PushDepthInfo(new DepthInfo());
+                        Vd.PushDepthInfo(new DepthInfo(false, false));
                     }
 
                     // Back pass

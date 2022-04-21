@@ -14,7 +14,7 @@ namespace osu.Framework.Graphics.Veldrid
         /// <summary>
         /// The default depth properties.
         /// </summary>
-        public static DepthInfo Default => new DepthInfo(true);
+        public static DepthInfo Default => new DepthInfo(true, false);
 
         /// <summary>
         /// Whether depth testing should occur.
@@ -31,7 +31,7 @@ namespace osu.Framework.Graphics.Veldrid
         /// </summary>
         public readonly ComparisonKind Function;
 
-        public DepthInfo(bool depthTest = true, bool writeDepth = true, ComparisonKind function = ComparisonKind.Less)
+        public DepthInfo(bool depthTest, bool writeDepth, ComparisonKind function = ComparisonKind.Less)
         {
             DepthTest = depthTest;
             WriteDepth = writeDepth;

@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osuTK.Graphics;
+
 namespace osu.Framework.Graphics.Veldrid
 {
     /// <summary>
@@ -11,7 +13,7 @@ namespace osu.Framework.Graphics.Veldrid
         /// <summary>
         /// The default clear properties.
         /// </summary>
-        public static ClearInfo Default => new ClearInfo(default);
+        public static ClearInfo Default => new ClearInfo(Color4.Black);
 
         /// <summary>
         /// The colour to write to the frame buffer.
@@ -28,7 +30,7 @@ namespace osu.Framework.Graphics.Veldrid
         /// </summary>
         public readonly int Stencil;
 
-        public ClearInfo(Colour4 colour = default, double depth = 1f, int stencil = 0)
+        public ClearInfo(Colour4 colour, double depth = 1f, int stencil = 0)
         {
             Colour = colour;
             Depth = depth;

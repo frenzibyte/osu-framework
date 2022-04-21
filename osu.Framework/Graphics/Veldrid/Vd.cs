@@ -207,7 +207,7 @@ namespace osu.Framework.Graphics.Veldrid
             }, true);
 
             PushDepthInfo(DepthInfo.Default);
-            Clear(new ClearInfo(Colour4.Black));
+            Clear(ClearInfo.Default);
 
             freeUnusedVertexBuffers();
 
