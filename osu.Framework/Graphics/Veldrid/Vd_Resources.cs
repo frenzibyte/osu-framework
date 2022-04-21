@@ -170,12 +170,26 @@ namespace osu.Framework.Graphics.Veldrid
         /// <param name="height">The height of the update region.</param>
         /// <param name="level">The texture level.</param>
         /// <param name="data">The textural data.</param>
+        /// <param name="bufferRowLength">An optional length per row on the given <paramref name="data"/>.</param>
         /// <typeparam name="T">The pixel type.</typeparam>
-        public static unsafe void UpdateTexture<T>(Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data)
+        public static unsafe void UpdateTexture<T>(Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data, int? bufferRowLength = null)
             where T : unmanaged
         {
             fixed (T* ptr = data)
-                Device.UpdateTexture(texture, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), (uint)x, (uint)y, 0, (uint)width, (uint)height, 1, (uint)level, 0);
+            {
+                if (bufferRowLength != null)
+                {
+                    var staging = Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, texture.Format, TextureUsage.Staging));
+
+                    for (uint yi = 0; yi < height; yi++)
+                        Device.UpdateTexture(staging, (IntPtr)(ptr + yi * bufferRowLength.Value), (uint)width, 0, yi, 0, (uint)width, 1, 1, 0, 0);
+
+                    Commands.CopyTexture(staging, texture);
+                    staging.Dispose();
+                }
+                else
+                    Device.UpdateTexture(texture, (IntPtr)ptr, (uint)(data.Length * sizeof(T)), (uint)x, (uint)y, 0, (uint)width, (uint)height, 1, (uint)level, 0);
+            }
         }
 
         private static readonly Dictionary<int, ResourceLayout> texture_layouts = new Dictionary<int, ResourceLayout>();
