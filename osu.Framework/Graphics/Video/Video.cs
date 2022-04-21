@@ -166,7 +166,7 @@ namespace osu.Framework.Graphics.Video
                 var tex = lastFrame.Texture;
 
                 // Check if the new frame has been uploaded so we don't display an old frame
-                if ((tex?.VeldridTexture as VideoVeldridTexture)?.UploadComplete ?? false)
+                if ((tex?.VeldridTexture as VideoTexture)?.UploadComplete ?? false)
                 {
                     Sprite.Texture = tex;
                     UpdateSizing();

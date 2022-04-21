@@ -12,7 +12,7 @@ using Texture = Veldrid.Texture;
 
 namespace osu.Framework.Graphics.Video
 {
-    internal unsafe class VideoVeldridTexture : VeldridTextureSingle
+    internal unsafe class VideoTexture : VeldridTextureSingle
     {
         private TextureResourceSet textureResourceSet;
 
@@ -21,7 +21,7 @@ namespace osu.Framework.Graphics.Video
         /// </summary>
         public bool UploadComplete { get; private set; }
 
-        public VideoVeldridTexture(int width, int height, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
+        public VideoTexture(int width, int height, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
             : base(width, height, true, FilteringMode.Linear, wrapModeS, wrapModeT)
         {
         }
@@ -91,12 +91,12 @@ namespace osu.Framework.Graphics.Video
 
             for (uint i = 0; i < TextureResourceSet.Textures.Count; i++)
             {
-                var data = new ReadOnlySpan<byte>(videoUpload.Frame->data[i], videoUpload.GetPlaneWidth(i) * videoUpload.GetPlaneHeight(i));
-                Vd.UpdateTexture(TextureResourceSet.Textures[(int)i], 0, 0, videoUpload.GetPlaneWidth(i), videoUpload.GetPlaneHeight(i), 0, data);
+                int width = videoUpload.GetPlaneWidth(i);
+                int height = videoUpload.GetPlaneHeight(i);
+                int rowLength = videoUpload.Frame->linesize[i];
+                byte* data = videoUpload.Frame->data[i];
 
-                // GL.PixelStore(PixelStoreParameter.UnpackRowLength, videoUpload.Frame->linesize[(uint)i]);
-                // GL.TexSubImage2D(TextureTarget2d.Texture2D, 0, 0, 0, videoUpload.Frame->width / (i > 0 ? 2 : 1), videoUpload.Frame->height / (i > 0 ? 2 : 1),
-                //     PixelFormat.Red, PixelType.UnsignedByte, (IntPtr)videoUpload.Frame->data[(uint)i]);
+                Vd.UpdateTexture(textureResourceSet.Textures[(int)i], 0, 0, width, height, 0, new ReadOnlySpan<byte>(data, rowLength * height), rowLength);
             }
 
             UploadComplete = true;
