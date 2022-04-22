@@ -23,14 +23,14 @@ namespace osu.Framework.Tests.Visual.Containers
     public class TestSceneFrontToBack : GridTestScene
     {
         private SpriteText labelDrawables;
-        private QueryingCompositeDrawableDrawNode drawNode;
-        private SpriteText labelFrag;
-        private SpriteText labelFrag2;
+
+        // private QueryingCompositeDrawableDrawNode drawNode;
+        // private SpriteText labelFrag;
+        // private SpriteText labelFrag2;
+
         private float currentScale = 1;
 
         private const int cell_count = 4;
-
-        protected override DrawNode CreateDrawNode() => drawNode = new QueryingCompositeDrawableDrawNode(this);
 
         public TestSceneFrontToBack()
             : base(cell_count / 2, cell_count / 2)
@@ -80,8 +80,8 @@ namespace osu.Framework.Tests.Visual.Containers
                         Children = new Drawable[]
                         {
                             labelDrawables = new SpriteText { Font = FrameworkFont.Condensed },
-                            labelFrag = new SpriteText { Font = FrameworkFont.Condensed },
-                            labelFrag2 = new SpriteText { Font = FrameworkFont.Condensed },
+                            // labelFrag = new SpriteText { Font = FrameworkFont.Condensed },
+                            // labelFrag2 = new SpriteText { Font = FrameworkFont.Condensed },
                         }
                     },
                 }
@@ -92,12 +92,13 @@ namespace osu.Framework.Tests.Visual.Containers
         {
             base.Update();
 
-            if (drawNode != null)
-            {
-                labelDrawables.Text = $"boxes: {Cell(1).Children.Count * cell_count:N0}";
-                labelFrag.Text = $"samples ({nameof(DrawNode.Draw)}): {drawNode.DrawSamples:N0}";
-                labelFrag2.Text = $"samples ({nameof(DrawNode.DrawOpaqueInteriorSubTree)}): {drawNode.DrawOpaqueInteriorSubTreeSamples:N0}";
-            }
+            labelDrawables.Text = $"boxes: {Cell(1).Children.Count * cell_count:N0}";
+
+            // if (drawNode != null)
+            // {
+            //     labelFrag.Text = $"samples ({nameof(DrawNode.Draw)}): {drawNode.DrawSamples:N0}";
+            //     labelFrag2.Text = $"samples ({nameof(DrawNode.DrawOpaqueInteriorSubTree)}): {drawNode.DrawOpaqueInteriorSubTreeSamples:N0}";
+            // }
         }
 
         private void addMoreDrawables(Texture texture, RectangleF textureRect)
@@ -121,55 +122,57 @@ namespace osu.Framework.Tests.Visual.Containers
             }
         }
 
-        // todo: either remove this or figure out a similar way in Veldrid.
-        private class QueryingCompositeDrawableDrawNode : CompositeDrawableDrawNode
-        {
-            // private int queryObject = -1;
+        // protected override DrawNode CreateDrawNode() => drawNode = new QueryingCompositeDrawableDrawNode(this);
 
-            public int DrawSamples { get; private set; }
-            public int DrawOpaqueInteriorSubTreeSamples { get; private set; }
-
-            public QueryingCompositeDrawableDrawNode(CompositeDrawable source)
-                : base(source)
-            {
-            }
-
-            internal override void DrawOpaqueInteriorSubTree(DepthValue depthValue, Action<TexturedVertex2D> vertexAction)
-            {
-                startQuery();
-                base.DrawOpaqueInteriorSubTree(depthValue, vertexAction);
-                DrawOpaqueInteriorSubTreeSamples = endQuery();
-            }
-
-            public override void ApplyState()
-            {
-                DrawSamples = 0;
-                DrawOpaqueInteriorSubTreeSamples = 0;
-                base.ApplyState();
-            }
-
-            public override void Draw(Action<TexturedVertex2D> vertexAction)
-            {
-                startQuery();
-                base.Draw(vertexAction);
-                DrawSamples = endQuery();
-            }
-
-            private int endQuery()
-            {
-                // GL.EndQuery(QueryTarget.SamplesPassed);
-                // GL.GetQueryObject(queryObject, GetQueryObjectParam.QueryResult, out int result);
-
-                return 0;
-            }
-
-            private void startQuery()
-            {
-                // if (queryObject == -1)
-                //     queryObject = GL.GenQuery();
-                //
-                // GL.BeginQuery(QueryTarget.SamplesPassed, queryObject);
-            }
-        }
+        // todo: veldrid does not support occlusion queries yet.
+        // private class QueryingCompositeDrawableDrawNode : CompositeDrawableDrawNode
+        // {
+        //     // private int queryObject = -1;
+        //
+        //     public int DrawSamples { get; private set; }
+        //     public int DrawOpaqueInteriorSubTreeSamples { get; private set; }
+        //
+        //     public QueryingCompositeDrawableDrawNode(CompositeDrawable source)
+        //         : base(source)
+        //     {
+        //     }
+        //
+        //     internal override void DrawOpaqueInteriorSubTree(DepthValue depthValue, Action<TexturedVertex2D> vertexAction)
+        //     {
+        //         startQuery();
+        //         base.DrawOpaqueInteriorSubTree(depthValue, vertexAction);
+        //         DrawOpaqueInteriorSubTreeSamples = endQuery();
+        //     }
+        //
+        //     public override void ApplyState()
+        //     {
+        //         DrawSamples = 0;
+        //         DrawOpaqueInteriorSubTreeSamples = 0;
+        //         base.ApplyState();
+        //     }
+        //
+        //     public override void Draw(Action<TexturedVertex2D> vertexAction)
+        //     {
+        //         startQuery();
+        //         base.Draw(vertexAction);
+        //         DrawSamples = endQuery();
+        //     }
+        //
+        //     private int endQuery()
+        //     {
+        //         // GL.EndQuery(QueryTarget.SamplesPassed);
+        //         // GL.GetQueryObject(queryObject, GetQueryObjectParam.QueryResult, out int result);
+        //
+        //         return 0;
+        //     }
+        //
+        //     private void startQuery()
+        //     {
+        //         // if (queryObject == -1)
+        //         //     queryObject = GL.GenQuery();
+        //         //
+        //         // GL.BeginQuery(QueryTarget.SamplesPassed, queryObject);
+        //     }
+        // }
     }
 }
