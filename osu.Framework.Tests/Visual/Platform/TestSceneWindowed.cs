@@ -1,10 +1,10 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Drawing;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Configuration;
 using osu.Framework.Platform;
 
@@ -33,8 +33,8 @@ namespace osu.Framework.Tests.Visual.Platform
         [SetUp]
         public void SetUp() => Schedule(() =>
         {
-            sdlWindow.MinSize = new Size(640, 480);
-            sdlWindow.MaxSize = new Size(9999, 9999);
+            setWindowMinSize(new Size(640, 480));
+            setWindowMaxSize(new Size(int.MaxValue, int.MaxValue));
             sdlWindow.Resizable = true;
         });
 
@@ -47,40 +47,41 @@ namespace osu.Framework.Tests.Visual.Platform
         [Test]
         public void TestMinimumSize()
         {
-            AddStep("set client size 640x480", () => setWindowSize(new Size(640, 480)));
-            AddStep("set minimum size to 1024x768", () => sdlWindow.MinSize = new Size(1024, 768));
-            assertWindowSize(new Size(1024, 768));
+            const int min_width = 1024;
+            const int min_height = 768;
 
-            AddStep("set client size 1440x900", () => setWindowSize(new Size(1440, 900)));
             AddStep("set client size 640x480", () => setWindowSize(new Size(640, 480)));
-            assertWindowSize(new Size(1024, 768));
+            AddStep($"set minimum size to {min_width}x{min_height}", () => setWindowMinSize(new Size(min_width, min_height)));
+            assertWindowSize(new Size(min_width, min_height));
 
-            AddStep("overlapping size throws", () => Assert.Throws<InvalidOperationException>(() => sdlWindow.MinSize = sdlWindow.MaxSize + new Size(1, 1)));
-            AddStep("negative size throws", () => Assert.Throws<InvalidOperationException>(() => sdlWindow.MinSize = new Size(-500, -500)));
+            AddStep("set client size 1280x720", () => setWindowSize(new Size(1280, 720)));
+            AddStep("set client size 640x480", () => setWindowSize(new Size(640, 480)));
+            assertWindowSize(new Size(min_width, min_height));
         }
 
         [Test]
         public void TestMaximumSize()
         {
-            AddStep("set client size to 1024x768", () => setWindowSize(new Size(1024, 768)));
-            AddStep("set maximum size to 720x720", () => sdlWindow.MaxSize = new Size(720, 720));
-            assertWindowSize(new Size(720, 720));
+            const int max_width = 1024;
+            const int max_height = 768;
+
+            AddStep("set client size to 1280x720", () => setWindowSize(new Size(1280, 720)));
+            AddStep($"set maximum size to {max_width}x{max_height}", () => setWindowMaxSize(new Size(max_width, max_height)));
+            assertWindowSize(new Size(max_width, max_height));
 
             AddStep("set client size 640x480", () => setWindowSize(new Size(640, 480)));
-            AddStep("set client size 1024x768", () => setWindowSize(new Size(1024, 768)));
-            assertWindowSize(new Size(720, 720));
-
-            AddStep("overlapping size throws", () => Assert.Throws<InvalidOperationException>(() => sdlWindow.MaxSize = sdlWindow.MinSize - new Size(1, 1)));
-            AddStep("negative size throws", () => Assert.Throws<InvalidOperationException>(() => sdlWindow.MaxSize = new Size(-1, -1)));
-            AddStep("zero size throws", () => Assert.Throws<InvalidOperationException>(() => sdlWindow.MaxSize = new Size(0, 0)));
+            AddStep("set client size 1280x720", () => setWindowSize(new Size(1280, 720)));
+            assertWindowSize(new Size(max_width, max_height));
         }
 
-        private void setWindowSize(Size clientSize) => config.SetValue(FrameworkSetting.WindowedSize, (clientSize / sdlWindow.Scale).ToSize());
+        private void setWindowSize(Size size) => config.SetValue(FrameworkSetting.WindowedSize, (size / sdlWindow.Scale).ToSize());
+        private void setWindowMinSize(Size minSize) => ((BindableSize)config.GetBindable<Size>(FrameworkSetting.WindowedSize)).MinValue = minSize;
+        private void setWindowMaxSize(Size maxSize) => ((BindableSize)config.GetBindable<Size>(FrameworkSetting.WindowedSize)).MaxValue = maxSize;
 
-        private void assertWindowSize(Size clientSize)
+        private void assertWindowSize(Size size)
         {
-            AddAssert($"client size = {clientSize.Width}x{clientSize.Height}", () => sdlWindow.ClientSize == clientSize);
-            AddAssert($"size in config = {clientSize.Width}x{clientSize.Height}", () => config.Get<Size>(FrameworkSetting.WindowedSize) == (clientSize / sdlWindow.Scale).ToSize());
+            AddAssert($"client size = {size.Width}x{size.Height}", () => sdlWindow.ClientSize == (size * sdlWindow.Scale).ToSize());
+            AddAssert($"size in config = {size.Width}x{size.Height}", () => config.Get<Size>(FrameworkSetting.WindowedSize) == size);
         }
     }
 }
