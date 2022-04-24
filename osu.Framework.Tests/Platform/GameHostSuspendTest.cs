@@ -92,9 +92,9 @@ namespace osu.Framework.Tests.Platform
                 this.threadMode = threadMode;
             }
 
-            protected override void SetupConfig(IDictionary<FrameworkSetting, object> defaultOverrides)
+            protected override void SetupConfig(IDictionary<FrameworkSetting, object> defaultOverrides, IDictionary<FrameworkSetting, (object, object)> rangeOverrides)
             {
-                base.SetupConfig(defaultOverrides);
+                base.SetupConfig(defaultOverrides, rangeOverrides);
                 Config.SetValue(FrameworkSetting.ExecutionMode, threadMode);
             }
         }

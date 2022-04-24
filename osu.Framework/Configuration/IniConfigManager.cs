@@ -22,8 +22,8 @@ namespace osu.Framework.Configuration
 
         private readonly Storage storage;
 
-        public IniConfigManager(Storage storage, IDictionary<TLookup, object> defaultOverrides = null)
-            : base(defaultOverrides)
+        public IniConfigManager(Storage storage, IDictionary<TLookup, object> defaultOverrides = null, IDictionary<TLookup, (object, object)> rangeOverrides = null)
+            : base(defaultOverrides, rangeOverrides)
         {
             this.storage = storage;
 

@@ -73,11 +73,21 @@ namespace osu.Framework
 
         /// <summary>
         /// Provide <see cref="FrameworkSetting"/> defaults which should override those provided by osu-framework.
-        /// <remarks>
-        /// Please check https://github.com/ppy/osu-framework/blob/master/osu.Framework/Configuration/FrameworkConfigManager.cs for expected types.
-        /// </remarks>
         /// </summary>
+        /// <remarks>
+        /// Please check <see cref="FrameworkConfigManager"/> for expected types.
+        /// </remarks>
+        /// <returns>A dictionary of <see cref="FrameworkSetting"/>s and their preferred default values.</returns>
         protected internal virtual IDictionary<FrameworkSetting, object> GetFrameworkConfigDefaults() => null;
+
+        /// <summary>
+        /// Provide <see cref="FrameworkSetting"/> ranges which should override those provided by osu-framework.
+        /// </summary>
+        /// <remarks>
+        /// Please check <see cref="FrameworkConfigManager"/> for expected types.
+        /// </remarks>
+        /// <returns>A dictionary of <see cref="FrameworkSetting"/>s and their preferred minimum and maximum ranges.</returns>
+        protected internal virtual IDictionary<FrameworkSetting, (object, object)> GetFrameworkConfigRanges() => null;
 
         /// <summary>
         /// Creates the <see cref="Storage"/> where this <see cref="Game"/> will reside.

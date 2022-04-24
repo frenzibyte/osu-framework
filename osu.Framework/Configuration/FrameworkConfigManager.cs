@@ -47,8 +47,8 @@ namespace osu.Framework.Configuration
 #pragma warning restore 618
         }
 
-        public FrameworkConfigManager(Storage storage, IDictionary<FrameworkSetting, object> defaultOverrides = null)
-            : base(storage, defaultOverrides)
+        public FrameworkConfigManager(Storage storage, IDictionary<FrameworkSetting, object> defaultOverrides = null, IDictionary<FrameworkSetting, (object, object)> rangeOverrides = null)
+            : base(storage, defaultOverrides, rangeOverrides)
         {
         }
 

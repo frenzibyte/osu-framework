@@ -706,7 +706,9 @@ namespace osu.Framework.Platform
 
                 populateInputHandlers();
 
-                SetupConfig(game.GetFrameworkConfigDefaults() ?? new Dictionary<FrameworkSetting, object>());
+                SetupConfig(
+                    game.GetFrameworkConfigDefaults() ?? new Dictionary<FrameworkSetting, object>(),
+                    game.GetFrameworkConfigRanges() ?? new Dictionary<FrameworkSetting, (object, object)>());
 
                 initialiseInputHandlers();
 
@@ -946,13 +948,13 @@ namespace osu.Framework.Platform
 
         private Bindable<string> threadLocale;
 
-        protected virtual void SetupConfig(IDictionary<FrameworkSetting, object> defaultOverrides)
+        protected virtual void SetupConfig(IDictionary<FrameworkSetting, object> defaultOverrides, IDictionary<FrameworkSetting, (object, object)> rangeOverrides)
         {
             if (!defaultOverrides.ContainsKey(FrameworkSetting.WindowMode))
                 defaultOverrides.Add(FrameworkSetting.WindowMode, Window?.DefaultWindowMode ?? WindowMode.Windowed);
 
             Dependencies.Cache(DebugConfig = new FrameworkDebugConfigManager());
-            Dependencies.Cache(Config = new FrameworkConfigManager(Storage, defaultOverrides));
+            Dependencies.Cache(Config = new FrameworkConfigManager(Storage, defaultOverrides, rangeOverrides));
 
             windowMode = Config.GetBindable<WindowMode>(FrameworkSetting.WindowMode);
             windowMode.BindValueChanged(mode =>

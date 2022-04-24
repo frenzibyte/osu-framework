@@ -54,11 +54,11 @@ namespace osu.Framework.Platform
             this.realtime = realtime;
         }
 
-        protected override void SetupConfig(IDictionary<FrameworkSetting, object> defaultOverrides)
+        protected override void SetupConfig(IDictionary<FrameworkSetting, object> defaultOverrides, IDictionary<FrameworkSetting, (object, object)> rangeOverrides)
         {
             defaultOverrides[FrameworkSetting.AudioDevice] = "No sound";
 
-            base.SetupConfig(defaultOverrides);
+            base.SetupConfig(defaultOverrides, rangeOverrides);
 
             if (Enum.TryParse<ExecutionMode>(Environment.GetEnvironmentVariable("OSU_EXECUTION_MODE"), out var mode))
             {

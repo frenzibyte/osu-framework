@@ -20,6 +20,7 @@ namespace osu.Framework.Configuration
         protected virtual bool AddMissingEntries => true;
 
         private readonly IDictionary<TLookup, object> defaultOverrides;
+        private readonly IDictionary<TLookup, (object, object)> rangeOverrides;
 
         protected readonly Dictionary<TLookup, IBindable> ConfigStore = new Dictionary<TLookup, IBindable>();
 
@@ -27,9 +28,11 @@ namespace osu.Framework.Configuration
         /// Initialise a new <see cref="ConfigManager{TLookup}"/>
         /// </summary>
         /// <param name="defaultOverrides">Dictionary of overrides which should take precedence over defaults specified by the <see cref="ConfigManager{TLookup}"/> implementation.</param>
-        protected ConfigManager(IDictionary<TLookup, object> defaultOverrides = null)
+        /// <param name="rangeOverrides">Dictionary of overrides which should take precedence over ranges specified by the <see cref="ConfigManager{TLookup}"/> implementation.</param>
+        protected ConfigManager(IDictionary<TLookup, object> defaultOverrides = null, IDictionary<TLookup, (object, object)> rangeOverrides = null)
         {
             this.defaultOverrides = defaultOverrides;
+            this.rangeOverrides = rangeOverrides;
         }
 
         /// <summary>
@@ -68,6 +71,7 @@ namespace osu.Framework.Configuration
         protected BindableDouble SetDefault(TLookup lookup, double value, double? min = null, double? max = null, double? precision = null)
         {
             value = getDefault(lookup, value);
+            (min, max) = getRange(lookup, min, max);
 
             if (!(GetOriginalBindable<double>(lookup) is BindableDouble bindable))
             {
@@ -99,6 +103,7 @@ namespace osu.Framework.Configuration
         protected BindableFloat SetDefault(TLookup lookup, float value, float? min = null, float? max = null, float? precision = null)
         {
             value = getDefault(lookup, value);
+            (min, max) = getRange(lookup, min, max);
 
             if (!(GetOriginalBindable<float>(lookup) is BindableFloat bindable))
             {
@@ -129,6 +134,7 @@ namespace osu.Framework.Configuration
         protected BindableInt SetDefault(TLookup lookup, int value, int? min = null, int? max = null)
         {
             value = getDefault(lookup, value);
+            (min, max) = getRange(lookup, min, max);
 
             if (!(GetOriginalBindable<int>(lookup) is BindableInt bindable))
             {
@@ -183,6 +189,7 @@ namespace osu.Framework.Configuration
         protected BindableSize SetDefault(TLookup lookup, Size value, Size? min = null, Size? max = null)
         {
             value = getDefault(lookup, value);
+            (min, max) = getRange(lookup, min, max);
 
             if (!(GetOriginalBindable<Size>(lookup) is BindableSize bindable))
             {
@@ -235,6 +242,14 @@ namespace osu.Framework.Configuration
                 return (TValue)found;
 
             return fallback;
+        }
+
+        private (TValue, TValue) getRange<TValue>(TLookup lookup, TValue fallbackMin, TValue fallbackMax)
+        {
+            if (rangeOverrides != null && rangeOverrides.TryGetValue(lookup, out (object, object) found))
+                return ((TValue, TValue))found;
+
+            return (fallbackMin, fallbackMax);
         }
 
         private Bindable<TValue> set<TValue>(TLookup lookup, TValue value)
