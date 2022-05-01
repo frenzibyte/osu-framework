@@ -2,7 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Runtime.CompilerServices;
-#if NET6_0_OR_GREATER
+#if NET6_0
 using System.Reflection.Metadata;
 using osu.Framework.Testing;
 
