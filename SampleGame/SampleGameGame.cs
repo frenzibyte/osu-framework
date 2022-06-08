@@ -2,34 +2,21 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework;
-using osu.Framework.Graphics;
-using osuTK;
-using osuTK.Graphics;
-using osu.Framework.Graphics.Shapes;
 using osu.Framework.Allocation;
+using osuTK;
 
 namespace SampleGame
 {
     public class SampleGameGame : Game
     {
-        private Box box;
-
         [BackgroundDependencyLoader]
         private void load()
         {
-            Add(box = new Box
+            AddInternal(new AudioLatencyTester
             {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                Size = new Vector2(150, 150),
-                Colour = Color4.Tomato
+                Scale = new Vector2(2f),
+                Size = new Vector2(0.5f),
             });
-        }
-
-        protected override void Update()
-        {
-            base.Update();
-            box.Rotation += (float)Time.Elapsed / 10;
         }
     }
 }
