@@ -3,8 +3,12 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Audio;
+using osu.Framework.Audio.Sample;
+using osu.Framework.Audio.Track;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Audio;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.OpenGL.Vertices;
@@ -39,7 +43,7 @@ namespace osu.Framework.Tests.Visual.Containers
         }
 
         [BackgroundDependencyLoader]
-        private void load(FrameworkDebugConfigManager debugConfig, TextureStore store)
+        private void load(FrameworkDebugConfigManager debugConfig, TextureStore store, ITrackStore tracks)
         {
             var texture = store.Get(@"sample-texture");
             var repeatedTexture = store.Get(@"sample-texture", WrapMode.Repeat, WrapMode.Repeat);
@@ -52,6 +56,7 @@ namespace osu.Framework.Tests.Visual.Containers
             AddStep("add sprites with edge clamp", () => addMoreDrawables(edgeClampedTexture, new RectangleF(0.25f, 0.25f, 0.5f, 0.5f)));
             AddStep("add sprites with border clamp", () => addMoreDrawables(borderClampedTexture, new RectangleF(0.25f, 0.25f, 0.5f, 0.5f)));
             AddStep("add boxes", () => addMoreDrawables(Texture.WhitePixel, new RectangleF(0, 0, 1, 1)));
+
             AddToggleStep("disable front to back", val =>
             {
                 debugConfig.SetValue(DebugSetting.BypassFrontToBackPass, val);
@@ -87,7 +92,16 @@ namespace osu.Framework.Tests.Visual.Containers
                     },
                 }
             });
+
+            DrawableTrack track;
+
+            Add(track = new DrawableTrack(tracks.Get("sample-track")));
+
+            track.Start();
         }
+
+        [Resolved]
+        private ISampleStore sampleStore { get; set; }
 
         protected override void Update()
         {
@@ -99,6 +113,9 @@ namespace osu.Framework.Tests.Visual.Containers
                 labelFrag.Text = $"samples ({nameof(DrawNode.Draw)}): {drawNode.DrawSamples:N0}";
                 labelFrag2.Text = $"samples ({nameof(DrawNode.DrawOpaqueInteriorSubTree)}): {drawNode.DrawOpaqueInteriorSubTreeSamples:N0}";
             }
+
+            if (Time.Current % 1000 < 25)
+                sampleStore.Get("long.mp3").Play();
         }
 
         private void addMoreDrawables(Texture texture, RectangleF textureRect)
