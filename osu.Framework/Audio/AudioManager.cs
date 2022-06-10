@@ -15,6 +15,7 @@ using osu.Framework.Audio.Mixing.Bass;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
+using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.IO.Stores;
@@ -53,6 +54,8 @@ namespace osu.Framework.Audio
         /// The thread audio operations (mainly Bass calls) are ran on.
         /// </summary>
         private readonly AudioThread thread;
+
+        private readonly FrameworkConfigManager config;
 
         /// <summary>
         /// The global mixer which all tracks are routed into by default.
@@ -138,8 +141,10 @@ namespace osu.Framework.Audio
         /// <param name="audioThread">The host's audio thread.</param>
         /// <param name="trackStore">The resource store containing all audio tracks to be used in the future.</param>
         /// <param name="sampleStore">The sample store containing all audio samples to be used in the future.</param>
-        public AudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore)
+        public AudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore, FrameworkConfigManager config)
         {
+            this.config = config;
+
             thread = audioThread;
 
             thread.RegisterManager(this);
@@ -233,7 +238,7 @@ namespace osu.Framework.Audio
 
         private AudioMixer createAudioMixer(AudioMixer globalMixer, string identifier)
         {
-            var mixer = new BassAudioMixer(globalMixer, identifier);
+            var mixer = new BassAudioMixer(globalMixer, identifier, config);
             AddItem(mixer);
             return mixer;
         }
@@ -361,7 +366,7 @@ namespace osu.Framework.Audio
 
             // reduce latency to a known sane minimum.
             Bass.DeviceBufferLength = 10;
-            Bass.PlaybackBufferLength = 100;
+            Bass.PlaybackBufferLength = config.Get<int>(FrameworkSetting.PlaybackBufferLength);
 
             // ensure there are no brief delays on audio operations (causing stream stalls etc.) after periods of silence.
             Bass.DeviceNonStop = true;

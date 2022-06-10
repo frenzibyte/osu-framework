@@ -22,6 +22,9 @@ namespace osu.Framework.Configuration
         protected override void InitialiseDefaults()
         {
             SetDefault(FrameworkSetting.ShowLogOverlay, false);
+            SetDefault(FrameworkSetting.MixerBufferLength, 0, 0, 100);
+            SetDefault(FrameworkSetting.MixerThreads, 1, 1, 5);
+            SetDefault(FrameworkSetting.PlaybackBufferLength, 100, 6, 100);
 
             SetDefault(FrameworkSetting.WindowedSize, new Size(1366, 768), new Size(640, 480), new Size(65536, 65536));
             SetDefault(FrameworkSetting.ConfineMouseMode, ConfineMouseMode.Fullscreen);
@@ -104,5 +107,9 @@ namespace osu.Framework.Configuration
 
         [Obsolete("Input-related settings are now stored in InputConfigManager. Adjustments should be made via Host.AvailableInputHandlers bindables directly.")] // can be removed 20210911
         MapAbsoluteInputToWindow,
+
+        PlaybackBufferLength,
+        MixerBufferLength,
+        MixerThreads
     }
 }

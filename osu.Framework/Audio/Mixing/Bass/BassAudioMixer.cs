@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using ManagedBass;
 using ManagedBass.Mix;
 using osu.Framework.Bindables;
+using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Extensions.ObjectExtensions;
@@ -24,6 +25,8 @@ namespace osu.Framework.Audio.Mixing.Bass
     /// </summary>
     internal class BassAudioMixer : AudioMixer, IBassAudio
     {
+        private readonly FrameworkConfigManager config;
+
         /// <summary>
         /// The handle for this mixer.
         /// </summary>
@@ -46,9 +49,11 @@ namespace osu.Framework.Audio.Mixing.Bass
         /// </summary>
         /// <param name="globalMixer"><inheritdoc /></param>
         /// <param name="identifier">An identifier displayed on the audio mixer visualiser.</param>
-        public BassAudioMixer(AudioMixer? globalMixer, string identifier)
+        public BassAudioMixer(AudioMixer? globalMixer, string identifier, FrameworkConfigManager config)
             : base(globalMixer, identifier)
         {
+            this.config = config;
+
             EnqueueAction(createMixer);
         }
 
@@ -283,8 +288,10 @@ namespace osu.Framework.Audio.Mixing.Bass
             if (Handle == 0)
                 return;
 
-            // Lower latency is valued more for the time since we are not using complex DSP effects. Disable buffering on the mixer channel in order for data to be produced immediately.
-            ManagedBass.Bass.ChannelSetAttribute(Handle, ChannelAttribute.Buffer, 0);
+            // Buffering may be required to avoid underruns on some platforms.
+            // This may need to be disabled on nested audio mixers, if that is feasible.
+            ManagedBass.Bass.ChannelSetAttribute(Handle, ChannelAttribute.Buffer, config.Get<int>(FrameworkSetting.MixerBufferLength));
+            ManagedBass.Bass.ChannelSetAttribute(Handle, (ChannelAttribute)0x15001, config.Get<int>(FrameworkSetting.MixerThreads));
 
             // Register all channels that were previously played prior to the mixer being loaded.
             var toAdd = activeChannels.ToArray();
