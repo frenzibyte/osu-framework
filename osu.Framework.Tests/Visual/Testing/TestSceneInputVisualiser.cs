@@ -35,7 +35,7 @@ namespace osu.Framework.Tests.Visual.Testing
             };
 
             vis.Show();
-            // vis.Target = target;
+            vis.Target = target;
         }
     }
 }

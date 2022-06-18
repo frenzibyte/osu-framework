@@ -7,19 +7,15 @@ using osu.Framework.Input;
 namespace osu.Framework.Graphics.Visualisation
 {
     [Cached]
-    internal class InputVisualiser : ToolWindow, IContainVisualisedDrawables, IRequireHighFrequencyMousePosition
+    internal class InputVisualiser : VisualisationToolWindow
     {
         public InputVisualiser()
             : base("Input Queue", "(Ctrl+F4 to toggle)")
         {
         }
 
-        public void AddVisualiser(VisualisedDrawable visualiser)
-        {
-        }
+        protected override VisualisationInspector CreateInspector() => new InputInspector();
 
-        public void RemoveVisualiser(VisualisedDrawable visualiser)
-        {
-        }
+        protected override bool ValidForVisualisation(Drawable drawable) => drawable is InputManager;
     }
 }

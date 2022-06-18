@@ -18,10 +18,8 @@ namespace osu.Framework.Graphics.Visualisation
         public Action GoUpOneParent;
         public Action ToggleInspector;
 
-        internal DrawableInspector DrawableInspector { get; private set; }
-
         [Resolved]
-        private DrawVisualiser visualiser { get; set; }
+        private VisualisationToolWindow visualiser { get; set; }
 
         public VisualisedDrawable Target
         {
@@ -34,8 +32,26 @@ namespace osu.Framework.Graphics.Visualisation
             }
         }
 
-        public TreeContainer()
-            : base("Draw Visualiser", "(Ctrl+F1 to toggle)")
+        private VisualisationInspector inspector;
+
+        public VisualisationInspector Inspector
+        {
+            get => inspector;
+            set
+            {
+                if (inspector == value)
+                    return;
+
+                if (inspector != null)
+                    MainHorizontalContent.Remove(inspector);
+
+                inspector = value;
+                MainHorizontalContent.Add(value);
+            }
+        }
+
+        public TreeContainer(string title, string keyHelpText, bool hasInspector = false)
+            : base(title, keyHelpText)
         {
             AddInternal(waitingText = new SpriteText
             {
@@ -48,8 +64,6 @@ namespace osu.Framework.Graphics.Visualisation
             AddButton(@"choose target", () => ChooseTarget?.Invoke());
             AddButton(@"up one parent", () => GoUpOneParent?.Invoke());
             AddButton(@"toggle inspector", () => ToggleInspector?.Invoke());
-
-            MainHorizontalContent.Add(DrawableInspector = new DrawableInspector());
         }
 
         protected override void Update()
