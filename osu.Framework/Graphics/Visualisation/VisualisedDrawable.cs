@@ -57,10 +57,12 @@ namespace osu.Framework.Graphics.Visualisation
         private const float row_height = 20;
 
         [Resolved]
-        private DrawVisualiser visualiser { get; set; }
+        private VisualisationToolWindow visualiser { get; set; }
 
         [Resolved]
         private TreeContainer tree { get; set; }
+
+        public Func<Drawable, bool> ValidForVisualisation { get; set; }
 
         public VisualisedDrawable(Drawable d)
         {
@@ -242,22 +244,26 @@ namespace osu.Framework.Graphics.Visualisation
             // Don't add individual characters of SpriteText
             if (Target is SpriteText) return;
 
-            visualiser.GetVisualiserFor(drawable).SetContainer(this);
+            foreach (var valid in visualiser.GetValidVisualisersFor(drawable))
+                valid.SetContainer(this);
         }
 
         private void removeChild(Drawable drawable)
         {
-            var vis = visualiser.GetVisualiserFor(drawable);
-            if (vis.currentContainer == this)
-                vis.SetContainer(null);
+            foreach (var valid in visualiser.GetValidVisualisersFor(drawable))
+            {
+                if (valid.currentContainer == this)
+                    valid.SetContainer(null);
+            }
         }
 
         private void depthChanged(Drawable drawable)
         {
-            var vis = visualiser.GetVisualiserFor(drawable);
-
-            vis.currentContainer?.RemoveVisualiser(vis);
-            vis.currentContainer?.AddVisualiser(vis);
+            foreach (var valid in visualiser.GetValidVisualisersFor(drawable))
+            {
+                valid.currentContainer?.RemoveVisualiser(valid);
+                valid.currentContainer?.AddVisualiser(valid);
+            }
         }
 
         void IContainVisualisedDrawables.AddVisualiser(VisualisedDrawable visualiser)

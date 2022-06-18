@@ -5,7 +5,6 @@
 
 using System;
 using System.Linq;
-using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.IEnumerableExtensions;
@@ -14,13 +13,8 @@ using osu.Framework.Graphics.UserInterface;
 
 namespace osu.Framework.Graphics.Visualisation
 {
-    internal class DrawableInspector : VisibilityContainer
+    internal class DrawableInspector : VisualisationInspector
     {
-        [Cached]
-        public Bindable<Drawable> InspectedDrawable { get; private set; } = new Bindable<Drawable>();
-
-        private const float width = 600;
-
         private readonly GridContainer content;
         private readonly TabControl<Tab> inspectorTabControl;
         private readonly Container tabContentContainer;
@@ -29,9 +23,6 @@ namespace osu.Framework.Graphics.Visualisation
 
         public DrawableInspector()
         {
-            Width = width;
-            RelativeSizeAxes = Axes.Y;
-
             Child = content = new GridContainer
             {
                 RelativeSizeAxes = Axes.Both,
@@ -94,7 +85,7 @@ namespace osu.Framework.Graphics.Visualisation
 
         protected override void PopIn()
         {
-            this.ResizeWidthTo(width, 500, Easing.OutQuint);
+            base.PopIn();
 
             inspectorTabControl.Current.Value = Tab.Properties;
             content.Show();
@@ -102,9 +93,8 @@ namespace osu.Framework.Graphics.Visualisation
 
         protected override void PopOut()
         {
+            base.PopOut();
             content.Hide();
-
-            this.ResizeWidthTo(0, 500, Easing.OutQuint);
         }
 
         private enum Tab
