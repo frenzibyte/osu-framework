@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using osu.Framework.Extensions;
 using osu.Framework.Graphics.Sprites;
 using osuTK.Graphics;
 
@@ -28,7 +29,7 @@ namespace osu.Framework.Graphics.UserInterface
                 Add(text = new SpriteText
                 {
                     Margin = new MarginPadding(2),
-                    Text = value.ToString(),
+                    Text = value.GetLocalisableDescription(),
                     Font = FrameworkFont.Regular.With(size: 18),
                 });
             }
