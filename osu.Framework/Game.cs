@@ -259,6 +259,26 @@ namespace osu.Framework
 
         private Bindable<ExecutionMode> executionMode;
 
+        internal void ShowDrawVisualiser(Drawable target)
+        {
+            ensureDrawVisualiserLoaded();
+
+            drawVisualiser.Show();
+            drawVisualiser.Target = target;
+        }
+
+        private void ensureDrawVisualiserLoaded()
+        {
+            if (drawVisualiser == null)
+            {
+                LoadComponentAsync(drawVisualiser = new DrawVisualiser
+                {
+                    ToolPosition = getToolCascadeLocation(0),
+                    Depth = float.MinValue / 2,
+                }, AddInternal);
+            }
+        }
+
         public bool OnPressed(KeyBindingPressEvent<FrameworkAction> e)
         {
             if (e.Repeat)
@@ -286,16 +306,7 @@ namespace osu.Framework
                     return true;
 
                 case FrameworkAction.ToggleDrawVisualiser:
-
-                    if (drawVisualiser == null)
-                    {
-                        LoadComponentAsync(drawVisualiser = new DrawVisualiser
-                        {
-                            ToolPosition = getCascadeLocation(0),
-                            Depth = float.MinValue / 2,
-                        }, AddInternal);
-                    }
-
+                    ensureDrawVisualiserLoaded();
                     drawVisualiser.ToggleVisibility();
                     return true;
 
@@ -306,7 +317,7 @@ namespace osu.Framework
                         LoadComponentAsync(globalStatistics = new GlobalStatisticsDisplay
                         {
                             Depth = float.MinValue / 2,
-                            Position = getCascadeLocation(1),
+                            Position = getToolCascadeLocation(1),
                         }, AddInternal);
                     }
 
@@ -319,7 +330,7 @@ namespace osu.Framework
                     {
                         LoadComponentAsync(textureVisualiser = new TextureVisualiser
                         {
-                            Position = getCascadeLocation(2),
+                            Position = getToolCascadeLocation(2),
                             Depth = float.MinValue / 2,
                         }, AddInternal);
                     }
@@ -333,7 +344,7 @@ namespace osu.Framework
                     {
                         LoadComponentAsync(inputVisualiser = new InputVisualiser
                         {
-                            Position = getCascadeLocation(3),
+                            Position = getToolCascadeLocation(3),
                             Depth = float.MinValue / 2,
                         }, AddInternal);
                     }
@@ -346,7 +357,7 @@ namespace osu.Framework
                     {
                         LoadComponentAsync(audioMixerVisualiser = new AudioMixerVisualiser
                         {
-                            Position = getCascadeLocation(4),
+                            Position = getToolCascadeLocation(4),
                             Depth = float.MinValue / 2,
                         }, AddInternal);
                     }
@@ -382,9 +393,6 @@ namespace osu.Framework
             }
 
             return false;
-
-            static Vector2 getCascadeLocation(int index)
-                => new Vector2(100 + index * (TitleBar.HEIGHT + 10));
         }
 
         public void OnReleased(KeyBindingReleaseEvent<FrameworkAction> e)
@@ -457,5 +465,7 @@ namespace osu.Framework
             localFonts?.Dispose();
             localFonts = null;
         }
+
+        private static Vector2 getToolCascadeLocation(int index) => new Vector2(100 + index * (TitleBar.HEIGHT + 10));
     }
 }
