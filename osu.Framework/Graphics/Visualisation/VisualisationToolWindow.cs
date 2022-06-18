@@ -44,7 +44,7 @@ namespace osu.Framework.Graphics.Visualisation
             Children = new Drawable[]
             {
                 overlay = new InfoOverlay(),
-                treeContainer = new TreeContainer(title, keyHelpText, true)
+                treeContainer = new TreeContainer(title, keyHelpText)
                 {
                     State = { BindTarget = State },
                     Inspector = CreateInspector(),
@@ -54,7 +54,7 @@ namespace osu.Framework.Graphics.Visualisation
                         Target = null;
                     },
                     GoUpOneParent = goUpOneParent,
-                    ToggleInspector = toggleInspector,
+                    ToggleInspector = ToggleInspector,
                 },
                 new CursorContainer(),
             };
@@ -108,7 +108,7 @@ namespace osu.Framework.Graphics.Visualisation
             }
         }
 
-        private void toggleInspector()
+        protected void ToggleInspector()
         {
             if (targetVisualiser == null)
                 return;

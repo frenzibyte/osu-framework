@@ -50,7 +50,7 @@ namespace osu.Framework.Graphics.Visualisation
             }
         }
 
-        public TreeContainer(string title, string keyHelpText, bool hasInspector = false)
+        public TreeContainer(string title, string keyHelpText)
             : base(title, keyHelpText)
         {
             AddInternal(waitingText = new SpriteText
