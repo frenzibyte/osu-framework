@@ -65,6 +65,8 @@ namespace osu.Framework
 
         private TextureVisualiser textureVisualiser;
 
+        private InputVisualiser inputVisualiser;
+
         private LogOverlay logOverlay;
 
         private AudioMixerVisualiser audioMixerVisualiser;
@@ -325,12 +327,26 @@ namespace osu.Framework
                     textureVisualiser.ToggleVisibility();
                     return true;
 
+                case FrameworkAction.ToggleInputVisualiser:
+
+                    if (inputVisualiser == null)
+                    {
+                        LoadComponentAsync(inputVisualiser = new InputVisualiser
+                        {
+                            Position = getCascadeLocation(3),
+                            Depth = float.MinValue / 2,
+                        }, AddInternal);
+                    }
+
+                    inputVisualiser.ToggleVisibility();
+                    return true;
+
                 case FrameworkAction.ToggleAudioMixerVisualiser:
                     if (audioMixerVisualiser == null)
                     {
                         LoadComponentAsync(audioMixerVisualiser = new AudioMixerVisualiser
                         {
-                            Position = getCascadeLocation(3),
+                            Position = getCascadeLocation(4),
                             Depth = float.MinValue / 2,
                         }, AddInternal);
                     }
