@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using JetBrains.Annotations;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osuTK;
@@ -21,6 +23,11 @@ namespace osu.Framework.Graphics.Visualisation
 {
     internal class VisualisedDrawable : Container, IContainVisualisedDrawables
     {
+        /// <summary>
+        /// Whether this <see cref="VisualisedDrawable"/> should display a visualisation of its hierarchy.
+        /// </summary>
+        private readonly bool hierarchy;
+
         private const int line_height = 12;
 
         public Drawable Target { get; }
@@ -50,7 +57,11 @@ namespace osu.Framework.Graphics.Visualisation
         private Drawable activityInvalidate;
         private Drawable activityAutosize;
         private Drawable activityLayout;
+
+        [CanBeNull]
         private VisualisedDrawableFlow flow;
+
+        [CanBeNull]
         private Container connectionContainer;
 
         private const float row_width = 10;
@@ -62,10 +73,10 @@ namespace osu.Framework.Graphics.Visualisation
         [Resolved]
         private TreeContainer tree { get; set; }
 
-        public Func<Drawable, bool> ValidForVisualisation { get; set; }
-
-        public VisualisedDrawable(Drawable d)
+        public VisualisedDrawable(Drawable d, bool hierarchy = true)
         {
+            this.hierarchy = hierarchy;
+
             Target = d;
         }
 
@@ -79,13 +90,6 @@ namespace osu.Framework.Graphics.Visualisation
 
             AddRange(new Drawable[]
             {
-                flow = new VisualisedDrawableFlow
-                {
-                    Direction = FillDirection.Vertical,
-                    RelativeSizeAxes = Axes.X,
-                    AutoSizeAxes = Axes.Y,
-                    Position = new Vector2(row_width, row_height)
-                },
                 new Container
                 {
                     AutoSizeAxes = Axes.Both,
@@ -157,36 +161,50 @@ namespace osu.Framework.Graphics.Visualisation
                 },
             });
 
-            const float connection_width = 1;
-
-            AddInternal(connectionContainer = new Container
+            if (hierarchy)
             {
-                Colour = FrameworkColour.Green,
-                RelativeSizeAxes = Axes.Y,
-                Width = connection_width,
-                Children = new Drawable[]
+                const float connection_width = 1;
+
+                AddRangeInternal(new Drawable[]
                 {
-                    new Box
+                    flow = new VisualisedDrawableFlow
                     {
-                        RelativeSizeAxes = Axes.Both,
-                        EdgeSmoothness = new Vector2(0.5f),
+                        Direction = FillDirection.Vertical,
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Position = new Vector2(row_width, row_height),
+                        Depth = 1f,
                     },
-                    new Box
+                    connectionContainer = new Container
                     {
-                        Anchor = Anchor.TopRight,
-                        Origin = Anchor.CentreLeft,
-                        Y = row_height / 2,
-                        Width = row_width / 2,
-                        EdgeSmoothness = new Vector2(0.5f),
+                        Colour = FrameworkColour.Green,
+                        RelativeSizeAxes = Axes.Y,
+                        Width = connection_width,
+                        Children = new Drawable[]
+                        {
+                            new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                EdgeSmoothness = new Vector2(0.5f),
+                            },
+                            new Box
+                            {
+                                Anchor = Anchor.TopRight,
+                                Origin = Anchor.CentreLeft,
+                                Y = row_height / 2,
+                                Width = row_width / 2,
+                                EdgeSmoothness = new Vector2(0.5f),
+                            }
+                        }
                     }
-                }
-            });
+                });
+
+                var compositeTarget = Target as CompositeDrawable;
+                compositeTarget?.AliveInternalChildren.ForEach(addChild);
+            }
 
             previewBox.Position = new Vector2(9, 0);
             previewBox.Size = new Vector2(line_height, line_height);
-
-            var compositeTarget = Target as CompositeDrawable;
-            compositeTarget?.AliveInternalChildren.ForEach(addChild);
 
             updateSpecifics();
         }
@@ -201,7 +219,11 @@ namespace osu.Framework.Graphics.Visualisation
 
         public bool TopLevel
         {
-            set => connectionContainer.Alpha = value ? 0 : 1;
+            set
+            {
+                if (connectionContainer != null)
+                    connectionContainer.Alpha = value ? 0 : 1;
+            }
         }
 
         private void attachEvents()
@@ -212,9 +234,13 @@ namespace osu.Framework.Graphics.Visualisation
             if (Target is CompositeDrawable da)
             {
                 da.OnAutoSize += onAutoSize;
-                da.ChildBecameAlive += addChild;
-                da.ChildDied += removeChild;
-                da.ChildDepthChanged += depthChanged;
+
+                if (hierarchy)
+                {
+                    da.ChildBecameAlive += addChild;
+                    da.ChildDied += removeChild;
+                    da.ChildDepthChanged += childDepthChanged;
+                }
             }
 
             if (Target is FlowContainer<Drawable> df) df.OnLayout += onLayout;
@@ -228,9 +254,13 @@ namespace osu.Framework.Graphics.Visualisation
             if (Target is CompositeDrawable da)
             {
                 da.OnAutoSize -= onAutoSize;
-                da.ChildBecameAlive -= addChild;
-                da.ChildDied -= removeChild;
-                da.ChildDepthChanged -= depthChanged;
+
+                if (hierarchy)
+                {
+                    da.ChildBecameAlive -= addChild;
+                    da.ChildDied -= removeChild;
+                    da.ChildDepthChanged -= childDepthChanged;
+                }
             }
 
             if (Target is FlowContainer<Drawable> df) df.OnLayout -= onLayout;
@@ -238,6 +268,8 @@ namespace osu.Framework.Graphics.Visualisation
 
         private void addChild(Drawable drawable)
         {
+            Debug.Assert(hierarchy);
+
             // Make sure to never add the DrawVisualiser (recursive scenario)
             if (drawable == visualiser) return;
 
@@ -250,6 +282,8 @@ namespace osu.Framework.Graphics.Visualisation
 
         private void removeChild(Drawable drawable)
         {
+            Debug.Assert(hierarchy);
+
             foreach (var valid in visualiser.GetValidVisualisersFor(drawable))
             {
                 if (valid.currentContainer == this)
@@ -257,8 +291,10 @@ namespace osu.Framework.Graphics.Visualisation
             }
         }
 
-        private void depthChanged(Drawable drawable)
+        private void childDepthChanged(Drawable drawable)
         {
+            Debug.Assert(hierarchy);
+
             foreach (var valid in visualiser.GetValidVisualisersFor(drawable))
             {
                 valid.currentContainer?.RemoveVisualiser(valid);
@@ -273,21 +309,24 @@ namespace osu.Framework.Graphics.Visualisation
 
             visualiser.Depth = visualiser.Target.Depth;
 
-            flow.Add(visualiser);
+            flow?.Add(visualiser);
         }
 
-        void IContainVisualisedDrawables.RemoveVisualiser(VisualisedDrawable visualiser) => flow.Remove(visualiser);
+        void IContainVisualisedDrawables.RemoveVisualiser(VisualisedDrawable visualiser) => flow?.Remove(visualiser);
 
         public VisualisedDrawable FindVisualisedDrawable(Drawable drawable)
         {
             if (drawable == Target)
                 return this;
 
-            foreach (var child in flow)
+            if (flow != null)
             {
-                var vis = child.FindVisualisedDrawable(drawable);
-                if (vis != null)
-                    return vis;
+                foreach (var child in flow)
+                {
+                    var vis = child.FindVisualisedDrawable(drawable);
+                    if (vis != null)
+                        return vis;
+                }
             }
 
             return null;
@@ -363,7 +402,7 @@ namespace osu.Framework.Graphics.Visualisation
 
         public void Expand()
         {
-            flow.FadeIn();
+            flow?.FadeIn();
             updateSpecifics();
 
             isExpanded = true;
@@ -372,12 +411,12 @@ namespace osu.Framework.Graphics.Visualisation
         public void ExpandAll()
         {
             Expand();
-            flow.ForEach(f => f.Expand());
+            flow?.ForEach(f => f.Expand());
         }
 
         public void Collapse()
         {
-            flow.FadeOut();
+            flow?.FadeOut();
             updateSpecifics();
 
             isExpanded = false;
@@ -412,7 +451,7 @@ namespace osu.Framework.Graphics.Visualisation
 
             text.Text = Target.ToString();
             text2.Text = $"({Target.DrawPosition.X:#,0},{Target.DrawPosition.Y:#,0}) {Target.DrawSize.X:#,0}x{Target.DrawSize.Y:#,0}"
-                         + (!isExpanded && childCount > 0 ? $@" ({childCount} children)" : string.Empty);
+                         + (hierarchy && !isExpanded && childCount > 0 ? $@" ({childCount} children)" : string.Empty);
 
             Alpha = Target.IsPresent ? 1 : 0.3f;
         }
