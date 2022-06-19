@@ -21,6 +21,12 @@ namespace osu.Framework.Graphics.Visualisation
         private InputQueueVisualiser positionalVisualiser = null!;
         private InputQueueVisualiser nonPositionalVisualiser = null!;
 
+        /// <summary>
+        /// The drawable which was initially selected upon choosing target.
+        /// Unlike <see cref="VisualisationInspector.InspectedDrawable"/>, which can only contain valid drawables.
+        /// </summary>
+        public readonly Bindable<Drawable> SelectedDrawable = new Bindable<Drawable>();
+
         [BackgroundDependencyLoader]
         private void load()
         {
@@ -55,11 +61,13 @@ namespace osu.Framework.Graphics.Visualisation
                             {
                                 positionalVisualiser = new InputQueueVisualiser(InputQueueType.Positional)
                                 {
-                                    InspectedDrawable = { BindTarget = InspectedDrawable },
+                                    SelectedDrawable = { BindTarget = SelectedDrawable },
+                                    InspectedInput = { BindTarget = InspectedDrawable },
                                 },
                                 nonPositionalVisualiser = new InputQueueVisualiser(InputQueueType.NonPositional)
                                 {
-                                    InspectedDrawable = { BindTarget = InspectedDrawable },
+                                    SelectedDrawable = { BindTarget = SelectedDrawable },
+                                    InspectedInput = { BindTarget = InspectedDrawable },
                                 },
                             }
                         }

@@ -15,7 +15,8 @@ namespace osu.Framework.Graphics.Visualisation
 
         private FillFlowContainer<VisualisedDrawable> flow = null!;
 
-        public Bindable<Drawable> InspectedDrawable { get; } = new Bindable<Drawable>();
+        public readonly Bindable<Drawable> InspectedInput = new Bindable<Drawable>();
+        public readonly Bindable<Drawable> SelectedDrawable = new Bindable<Drawable>();
 
         public InputQueueVisualiser(InputQueueType type)
         {
@@ -43,10 +44,10 @@ namespace osu.Framework.Graphics.Visualisation
         {
             base.Update();
 
-            if (InspectedDrawable.Value == null)
+            if (InspectedInput.Value == null)
                 return;
 
-            var inputManager = (InputManager)InspectedDrawable.Value;
+            var inputManager = (InputManager)InspectedInput.Value;
 
             var queue = type == InputQueueType.Positional
                 ? inputManager.PositionalInputQueue
@@ -55,7 +56,11 @@ namespace osu.Framework.Graphics.Visualisation
             flow.Clear(false);
 
             foreach (var drawable in queue)
-                getVisualiserFor(drawable).SetContainer(this);
+            {
+                var visualiser = getVisualiserFor(drawable);
+                visualiser.IsHighlighted = visualiser.Target == SelectedDrawable.Value;
+                visualiser.SetContainer(this);
+            }
         }
 
         [Resolved]

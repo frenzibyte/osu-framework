@@ -2,31 +2,34 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
-using osu.Framework.Input.Events;
 
 namespace osu.Framework.Graphics.Visualisation
 {
     [Cached]
     internal class InputVisualiser : VisualisationToolWindow
     {
+        private readonly Bindable<Drawable> selectedDrawable = new Bindable<Drawable>();
+
         public InputVisualiser()
             : base("Input Queue", "(Ctrl+F4 to toggle)")
         {
         }
 
-        protected override bool OnClick(ClickEvent e)
+        protected override void OnTargetSelected(Drawable target, Drawable validTarget)
         {
-            bool found = base.OnClick(e);
+            selectedDrawable.Value = target;
 
-            if (found && Inspector.State.Value == Visibility.Hidden)
+            if (Inspector.State.Value == Visibility.Hidden)
                 ToggleInspector();
-
-            return found;
         }
 
-        protected override VisualisationInspector CreateInspector() => new InputInspector();
+        protected override VisualisationInspector CreateInspector() => new InputInspector
+        {
+            SelectedDrawable = { BindTarget = selectedDrawable },
+        };
 
         protected override bool ValidForVisualisation(Drawable drawable) => drawable is InputManager;
     }

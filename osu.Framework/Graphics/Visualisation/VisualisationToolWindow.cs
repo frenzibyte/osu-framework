@@ -343,11 +343,22 @@ namespace osu.Framework.Graphics.Visualisation
                     targetVisualiser.ExpandAll();
 
                     Searching = false;
+
+                    OnTargetSelected(cursorTarget.Parent, Target);
                     return true;
                 }
             }
 
             return base.OnClick(e);
+        }
+
+        /// <summary>
+        /// Invoked when a target is found and clicked at.
+        /// </summary>
+        /// <param name="target">The drawable which was clicked on.</param>
+        /// <param name="validTarget">The nearest parent of the clicked drawable valid for visualisation.</param>
+        protected virtual void OnTargetSelected(Drawable target, Drawable validTarget)
+        {
         }
 
         private readonly Dictionary<Drawable, VisualisedDrawable> visCache = new Dictionary<Drawable, VisualisedDrawable>();

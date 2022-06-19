@@ -41,9 +41,12 @@ namespace osu.Framework.Graphics.Visualisation
             {
                 isHighlighted = value;
 
-                updateColours();
-                if (value)
-                    Expand();
+                if (IsLoaded)
+                {
+                    updateColours();
+                    if (value)
+                        Expand();
+                }
             }
         }
 
