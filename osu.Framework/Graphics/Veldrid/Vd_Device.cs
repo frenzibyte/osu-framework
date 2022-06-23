@@ -92,16 +92,18 @@ namespace osu.Framework.Graphics.Veldrid
                         var device = info.PhysicalDevice;
 
                         uint instanceExtensionsCount = 0;
-                        VulkanNative.vkEnumerateInstanceExtensionProperties(string.Empty, ref instanceExtensionsCount, IntPtr.Zero);
+                        var result = VulkanNative.vkEnumerateInstanceExtensionProperties((byte*)null, ref instanceExtensionsCount, IntPtr.Zero);
 
                         var instanceExtensions = new VkExtensionProperties[(int)instanceExtensionsCount];
-                        VulkanNative.vkEnumerateInstanceExtensionProperties(string.Empty, ref instanceExtensionsCount, ref instanceExtensions[0]);
+                        if (result == VkResult.Success && instanceExtensionsCount > 0)
+                            VulkanNative.vkEnumerateInstanceExtensionProperties((byte*)null, ref instanceExtensionsCount, ref instanceExtensions[0]);
 
                         uint deviceExetnsionsCount = 0;
-                        VulkanNative.vkEnumerateDeviceExtensionProperties(device, string.Empty, ref deviceExetnsionsCount, IntPtr.Zero);
+                        result = VulkanNative.vkEnumerateDeviceExtensionProperties(device, (byte*)null, ref deviceExetnsionsCount, IntPtr.Zero);
 
                         var deviceExtensions = new VkExtensionProperties[(int)deviceExetnsionsCount];
-                        VulkanNative.vkEnumerateDeviceExtensionProperties(device, string.Empty, ref deviceExetnsionsCount, ref deviceExtensions[0]);
+                        if (result == VkResult.Success && deviceExetnsionsCount > 0)
+                            VulkanNative.vkEnumerateDeviceExtensionProperties(device, (byte*)null, ref deviceExetnsionsCount, ref deviceExtensions[0]);
 
                         VkPhysicalDeviceProperties properties;
                         VulkanNative.vkGetPhysicalDeviceProperties(device, &properties);
