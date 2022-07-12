@@ -89,14 +89,14 @@ namespace osu.Framework.Graphics.Veldrid
             }
         }
 
-        public static SamplerFilter ToSamplerFilter(this All mode)
+        public static SamplerFilter ToSamplerFilter(this TextureFilteringMode mode)
         {
             switch (mode)
             {
-                case All.Linear:
+                case TextureFilteringMode.Linear:
                     return SamplerFilter.MinLinear_MagLinear_MipLinear;
 
-                case All.Nearest:
+                case TextureFilteringMode.Nearest:
                     return SamplerFilter.MinPoint_MagPoint_MipPoint;
 
                 default:
