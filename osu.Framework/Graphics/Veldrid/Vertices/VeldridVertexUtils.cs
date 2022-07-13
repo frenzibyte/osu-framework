@@ -8,8 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using osu.Framework.Graphics.Batches;
-using osu.Framework.Graphics.OpenGL.Vertices;
+using osu.Framework.Graphics.Rendering.Vertices;
 using Veldrid;
 
 namespace osu.Framework.Graphics.Veldrid.Vertices
@@ -18,7 +17,7 @@ namespace osu.Framework.Graphics.Veldrid.Vertices
     /// Utility class providing functionality to generate <see cref="VertexLayoutDescription"/> from vertex structures for Veldrid.
     /// </summary>
     internal static class VeldridVertexUtils<T>
-        where T : struct, IVertex
+        where T : unmanaged, IVertex
     {
         /// <summary>
         /// The stride of the vertex of type <typeparamref name="T"/>.
