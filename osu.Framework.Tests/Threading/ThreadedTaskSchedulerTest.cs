@@ -6,6 +6,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using osu.Framework.Logging;
 using osu.Framework.Threading;
 
 namespace osu.Framework.Tests.Threading
@@ -62,6 +63,27 @@ namespace osu.Framework.Tests.Threading
 
                 exited.Set();
             });
+
+            Assert.That(exited.Wait(30000));
+        }
+
+        [Test]
+        public void EnsureScheduledTaskReturnOnDisposal()
+        {
+            ManualResetEventSlim exited = new ManualResetEventSlim();
+
+            using (var taskScheduler = new ThreadedTaskScheduler(4, "test"))
+            {
+                Task.Run(async () =>
+                {
+                    // ReSharper disable once AccessToDisposedClosure
+                    await Task.Factory.StartNew(() => { }, default, TaskCreationOptions.HideScheduler, taskScheduler).ConfigureAwait(false);
+                    exited.Set();
+                }, default).ContinueWith(t =>
+                {
+                    exited.Set();
+                }, TaskContinuationOptions.OnlyOnCanceled);
+            }
 
             Assert.That(exited.Wait(30000));
         }
