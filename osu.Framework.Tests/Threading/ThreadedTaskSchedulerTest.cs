@@ -70,18 +70,21 @@ namespace osu.Framework.Tests.Threading
         public void EnsureScheduledTaskReturnsOnDisposal()
         {
             ManualResetEventSlim exited = new ManualResetEventSlim();
+            CancellationTokenSource cts = new CancellationTokenSource();
 
             using (var taskScheduler = new ThreadedTaskScheduler(4, "test"))
             {
                 Task.Run(async () =>
                 {
                     // ReSharper disable AccessToDisposedClosure
-                    await Task.Factory.StartNew(() => { }, taskScheduler.CancellationToken, TaskCreationOptions.HideScheduler, taskScheduler).ConfigureAwait(false);
+                    await Task.Factory.StartNew(() => { }, cts.Token, TaskCreationOptions.HideScheduler, taskScheduler).ConfigureAwait(false);
                     // ReSharper restore AccessToDisposedClosure
-                }, taskScheduler.CancellationToken).ContinueWith(_ =>
+                }, cts.Token).ContinueWith(_ =>
                 {
                     exited.Set();
                 }, TaskContinuationOptions.OnlyOnCanceled);
+
+                cts.Cancel();
             }
 
             Assert.That(exited.Wait(30000));
