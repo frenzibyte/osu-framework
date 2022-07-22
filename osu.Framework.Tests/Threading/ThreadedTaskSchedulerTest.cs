@@ -6,7 +6,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using osu.Framework.Logging;
 using osu.Framework.Threading;
 
 namespace osu.Framework.Tests.Threading
@@ -68,7 +67,7 @@ namespace osu.Framework.Tests.Threading
         }
 
         [Test]
-        public void EnsureScheduledTaskReturnOnDisposal()
+        public void EnsureScheduledTaskReturnsOnDisposal()
         {
             ManualResetEventSlim exited = new ManualResetEventSlim();
 
@@ -76,10 +75,10 @@ namespace osu.Framework.Tests.Threading
             {
                 Task.Run(async () =>
                 {
-                    // ReSharper disable once AccessToDisposedClosure
-                    await Task.Factory.StartNew(() => { }, default, TaskCreationOptions.HideScheduler, taskScheduler).ConfigureAwait(false);
-                    exited.Set();
-                }, default).ContinueWith(t =>
+                    // ReSharper disable AccessToDisposedClosure
+                    await Task.Factory.StartNew(() => { }, taskScheduler.CancellationToken, TaskCreationOptions.HideScheduler, taskScheduler).ConfigureAwait(false);
+                    // ReSharper restore AccessToDisposedClosure
+                }, taskScheduler.CancellationToken).ContinueWith(_ =>
                 {
                     exited.Set();
                 }, TaskContinuationOptions.OnlyOnCanceled);

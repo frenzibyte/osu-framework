@@ -29,6 +29,14 @@ namespace osu.Framework.Threading
 
         private int runningTaskCount;
 
+        public readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+
+        /// <summary>
+        /// A <see cref="CancellationToken"/> which is cancelled on disposal of this scheduler.
+        /// Used for signaling all tasks to abort execution before awaiting on a scheduled task.
+        /// </summary>
+        public CancellationToken CancellationToken => CancellationTokenSource.Token;
+
         public string GetStatusString() => $"{name} concurrency:{MaximumConcurrencyLevel} running:{runningTaskCount} pending:{pendingTaskCount}";
 
         /// <summary>
@@ -36,7 +44,8 @@ namespace osu.Framework.Threading
         /// </summary>
         /// <param name="numberOfThreads">The number of threads that should be created and used by this scheduler.</param>
         /// <param name="name">The thread name to give threads in this pool.</param>
-        public ThreadedTaskScheduler(int numberOfThreads, string name)
+        /// <param name="cancellationTokenSource"></param>
+        public ThreadedTaskScheduler(int numberOfThreads, string name, CancellationTokenSource cancellationTokenSource = default)
         {
             if (numberOfThreads < 1)
                 throw new ArgumentOutOfRangeException(nameof(numberOfThreads));
@@ -66,14 +75,14 @@ namespace osu.Framework.Threading
         {
             try
             {
-                foreach (var t in tasks.GetConsumingEnumerable())
+                foreach (var t in tasks.GetConsumingEnumerable(CancellationToken))
                 {
                     Interlocked.Increment(ref runningTaskCount);
                     TryExecuteTask(t);
                     Interlocked.Decrement(ref runningTaskCount);
                 }
             }
-            catch (ObjectDisposedException)
+            catch (OperationCanceledException)
             {
                 // tasks may have been disposed. there's no easy way to check on this other than catch for it.
             }
@@ -87,12 +96,12 @@ namespace osu.Framework.Threading
         {
             try
             {
-                tasks.Add(task);
+                tasks.Add(task, CancellationToken);
             }
-            catch (ObjectDisposedException)
+            catch (OperationCanceledException)
             {
-                // tasks may have been disposed. there's no easy way to check on this other than catch for it.
-                Logger.Log($"Task was attempted to be run on a {nameof(ThreadedTaskScheduler)} ({name}) after it was disposed. Will be silently dropped.");
+                throw new InvalidOperationException($"Task was attempted to be run on a {nameof(ThreadedTaskScheduler)} ({name}) after it was disposed. "
+                                                    + $"Consider using {nameof(ThreadedTaskScheduler)}.{nameof(CancellationToken)} to halt operation on disposal before queuing tasks.");
             }
         }
 
@@ -140,6 +149,7 @@ namespace osu.Framework.Threading
 
             isDisposed = true;
 
+            CancellationTokenSource.Cancel();
             tasks.CompleteAdding();
 
             foreach (var thread in threads)
