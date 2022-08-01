@@ -1,11 +1,9 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.Collections.Generic;
-
 namespace osu.Framework.Bindables
 {
-    public interface IBindableDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>, ICanBeDisabled, IHasDefaultValue, IUnbindable, IHasDescription
+    public interface IBindableDictionary<TKey, TValue> : IBindableDictionaryTarget<TKey, TValue>, IUnbindableDictionary<TKey, TValue>, ICanBeDisabled, IHasDescription
         where TKey : notnull
     {
         /// <summary>
@@ -17,7 +15,7 @@ namespace osu.Framework.Bindables
         /// Binds self to another bindable such that we receive any values and value limitations of the bindable we bind width.
         /// </summary>
         /// <param name="them">The foreign bindable. This should always be the most permanent end of the bind (ie. a ConfigManager)</param>
-        void BindTo(IBindableDictionary<TKey, TValue> them);
+        void BindTo(IBindableDictionaryTarget<TKey, TValue> them);
 
         /// <summary>
         /// Bind an action to <see cref="CollectionChanged"/> with the option of running the bound action once immediately
@@ -31,12 +29,9 @@ namespace osu.Framework.Bindables
         /// An alias of <see cref="BindTo"/> provided for use in object initializer scenarios.
         /// Passes the provided value as the foreign (more permanent) bindable.
         /// </summary>
-        sealed IBindableDictionary<TKey, TValue> BindTarget
+        sealed IBindableDictionaryTarget<TKey, TValue> BindTarget
         {
             set => BindTo(value);
         }
-
-        /// <inheritdoc cref="IBindable.GetBoundCopy"/>
-        IBindableDictionary<TKey, TValue> GetBoundCopy();
     }
 }

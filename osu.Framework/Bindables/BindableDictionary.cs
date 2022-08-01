@@ -399,7 +399,25 @@ namespace osu.Framework.Bindables
             UnbindBindings();
         }
 
-        public void UnbindFrom(IUnbindable them)
+        public void UnbindFrom(BindableDictionary<TKey, TValue> them)
+        {
+            if (!(them is BindableDictionary<TKey, TValue> tThem))
+                throw new InvalidCastException($"Can't unbind a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
+
+            removeWeakReference(tThem.weakReference);
+            tThem.removeWeakReference(weakReference);
+        }
+
+        void IUnbindableDictionary<TKey, TValue>.UnbindFrom(IBindableDictionaryTarget<TKey, TValue> them)
+        {
+            if (!(them is BindableDictionary<TKey, TValue> tThem))
+                throw new InvalidCastException($"Can't unbind a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
+
+            removeWeakReference(tThem.weakReference);
+            tThem.removeWeakReference(weakReference);
+        }
+
+        void IUnbindable.UnbindFrom(IBindableTarget them)
         {
             if (!(them is BindableDictionary<TKey, TValue> tThem))
                 throw new InvalidCastException($"Can't unbind a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -424,7 +442,7 @@ namespace osu.Framework.Bindables
 
         #region IBindableCollection
 
-        void IBindable.BindTo(IBindable them)
+        void IBindable.BindTo(IBindableTarget them)
         {
             if (!(them is BindableDictionary<TKey, TValue> tThem))
                 throw new InvalidCastException($"Can't bind to a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -432,7 +450,7 @@ namespace osu.Framework.Bindables
             BindTo(tThem);
         }
 
-        void IBindableDictionary<TKey, TValue>.BindTo(IBindableDictionary<TKey, TValue> them)
+        void IBindableDictionary<TKey, TValue>.BindTo(IBindableDictionaryTarget<TKey, TValue> them)
         {
             if (!(them is BindableDictionary<TKey, TValue> tThem))
                 throw new InvalidCastException($"Can't bind to a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -496,9 +514,9 @@ namespace osu.Framework.Bindables
         /// <inheritdoc cref="IBindable.CreateInstance"/>
         protected virtual BindableDictionary<TKey, TValue> CreateInstance() => new BindableDictionary<TKey, TValue>();
 
-        IBindable IBindable.GetBoundCopy() => GetBoundCopy();
+        IBindable IBindableTarget.GetBoundCopy() => GetBoundCopy();
 
-        IBindableDictionary<TKey, TValue> IBindableDictionary<TKey, TValue>.GetBoundCopy() => GetBoundCopy();
+        IBindableDictionary<TKey, TValue> IBindableDictionaryTarget<TKey, TValue>.GetBoundCopy() => GetBoundCopy();
 
         /// <inheritdoc cref="IBindable.GetBoundCopy"/>
         public BindableDictionary<TKey, TValue> GetBoundCopy() => IBindable.GetBoundCopyImplementation(this);

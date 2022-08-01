@@ -596,7 +596,7 @@ namespace osu.Framework.Tests.Bindables
                 IsBound = true;
             }
 
-            public override void UnbindFrom(IUnbindable them)
+            public override void UnbindFrom(Bindable<int> them)
             {
                 base.UnbindFrom(them);
                 IsBound = false;

@@ -477,13 +477,29 @@ namespace osu.Framework.Bindables
             UnbindBindings();
         }
 
-        public virtual void UnbindFrom(IUnbindable them)
+        public virtual void UnbindFrom(BindableList<T> them)
         {
             if (!(them is BindableList<T> tThem))
                 throw new InvalidCastException($"Can't unbind a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
 
             removeWeakReference(tThem.weakReference);
             tThem.removeWeakReference(weakReference);
+        }
+
+        void IUnbindableList<T>.UnbindFrom(IBindableListTarget<T> them)
+        {
+            if (!(them is BindableList<T> tThem))
+                throw new InvalidCastException($"Can't unbind a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
+
+            UnbindFrom(tThem);
+        }
+
+        void IUnbindable.UnbindFrom(IBindableTarget them)
+        {
+            if (!(them is BindableList<T> tThem))
+                throw new InvalidCastException($"Can't unbind a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
+
+            UnbindFrom(tThem);
         }
 
         #endregion IUnbindable
@@ -555,7 +571,7 @@ namespace osu.Framework.Bindables
             notifyCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Move, item, newIndex, oldIndex));
         }
 
-        void IBindable.BindTo(IBindable them)
+        void IBindable.BindTo(IBindableTarget them)
         {
             if (!(them is BindableList<T> tThem))
                 throw new InvalidCastException($"Can't bind to a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -563,7 +579,7 @@ namespace osu.Framework.Bindables
             BindTo(tThem);
         }
 
-        void IBindableList<T>.BindTo(IBindableList<T> them)
+        void IBindableList<T>.BindTo(IBindableListTarget<T> them)
         {
             if (!(them is BindableList<T> tThem))
                 throw new InvalidCastException($"Can't bind to a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -627,9 +643,9 @@ namespace osu.Framework.Bindables
         /// <inheritdoc cref="IBindable.CreateInstance"/>
         protected virtual BindableList<T> CreateInstance() => new BindableList<T>();
 
-        IBindable IBindable.GetBoundCopy() => GetBoundCopy();
+        IBindable IBindableTarget.GetBoundCopy() => GetBoundCopy();
 
-        IBindableList<T> IBindableList<T>.GetBoundCopy() => GetBoundCopy();
+        IBindableList<T> IBindableListTarget<T>.GetBoundCopy() => GetBoundCopy();
 
         /// <inheritdoc cref="IBindableList{T}.GetBoundCopy"/>
         public BindableList<T> GetBoundCopy() => IBindable.GetBoundCopyImplementation(this);

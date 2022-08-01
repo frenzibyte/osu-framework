@@ -26,10 +26,20 @@ namespace osu.Framework.Bindables
         void UnbindAll();
 
         /// <summary>
-        /// Unbinds ourselves from another <see cref="IBindable"/> such that we stop receiving updates it.
-        /// The other <see cref="IBindable"/> will also stop receiving any events from us.
+        /// Unbinds ourselves from an <see cref="IBindableTarget"/> such that we stop receiving updates it.
+        /// The <see cref="IBindableTarget"/> will also stop receiving any events from us.
         /// </summary>
-        /// <param name="them">The other bindable.</param>
-        void UnbindFrom(IUnbindable them);
+        /// <param name="them">The bind target.</param>
+        void UnbindFrom(IBindableTarget them);
+    }
+
+    public interface IUnbindable<T> : IUnbindable
+    {
+        /// <summary>
+        /// Unbinds ourselves from an <see cref="IBindableTarget{T}"/> such that we stop receiving updates it.
+        /// The <see cref="IBindableTarget{T}"/> will also stop receiving any events from us.
+        /// </summary>
+        /// <param name="them">The bind target.</param>
+        void UnbindFrom(IBindableTarget<T> them);
     }
 }

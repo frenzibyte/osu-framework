@@ -3,7 +3,6 @@
 
 #nullable disable
 
-using System.Collections.Generic;
 using System.Collections.Specialized;
 
 namespace osu.Framework.Bindables
@@ -12,13 +11,13 @@ namespace osu.Framework.Bindables
     /// A readonly interface which can be bound to other <see cref="IBindableList{T}"/>s in order to watch for state and content changes.
     /// </summary>
     /// <typeparam name="T">The type of value encapsulated by this <see cref="IBindableList{T}"/>.</typeparam>
-    public interface IBindableList<T> : IReadOnlyList<T>, ICanBeDisabled, IHasDefaultValue, IUnbindable, IHasDescription, INotifyCollectionChanged
+    public interface IBindableList<T> : IBindableListTarget<T>, IUnbindableList<T>, ICanBeDisabled, IHasDescription, INotifyCollectionChanged
     {
         /// <summary>
         /// Binds self to another bindable such that we receive any values and value limitations of the bindable we bind width.
         /// </summary>
         /// <param name="them">The foreign bindable. This should always be the most permanent end of the bind (ie. a ConfigManager)</param>
-        void BindTo(IBindableList<T> them);
+        void BindTo(IBindableListTarget<T> them);
 
         /// <summary>
         /// Bind an action to <see cref="INotifyCollectionChanged.CollectionChanged"/> with the option of running the bound action once immediately
@@ -32,12 +31,9 @@ namespace osu.Framework.Bindables
         /// An alias of <see cref="BindTo"/> provided for use in object initializer scenarios.
         /// Passes the provided value as the foreign (more permanent) bindable.
         /// </summary>
-        sealed IBindableList<T> BindTarget
+        sealed IBindableListTarget<T> BindTarget
         {
             set => BindTo(value);
         }
-
-        /// <inheritdoc cref="IBindable.GetBoundCopy"/>
-        IBindableList<T> GetBoundCopy();
     }
 }

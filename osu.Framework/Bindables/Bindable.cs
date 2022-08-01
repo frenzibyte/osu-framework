@@ -154,7 +154,7 @@ namespace osu.Framework.Bindables
 
         protected LockedWeakList<Bindable<T>> Bindings { get; private set; }
 
-        void IBindable.BindTo(IBindable them)
+        void IBindable.BindTo(IBindableTarget them)
         {
             if (!(them is Bindable<T> tThem))
                 throw new InvalidCastException($"Can't bind to a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -162,7 +162,7 @@ namespace osu.Framework.Bindables
             BindTo(tThem);
         }
 
-        void IBindable<T>.BindTo(IBindable<T> them)
+        void IBindable<T>.BindTo(IBindableTarget<T> them)
         {
             if (!(them is Bindable<T> tThem))
                 throw new InvalidCastException($"Can't bind to a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -368,7 +368,7 @@ namespace osu.Framework.Bindables
             UnbindBindings();
         }
 
-        public virtual void UnbindFrom(IUnbindable them)
+        public virtual void UnbindFrom(IBindableTarget them)
         {
             if (!(them is Bindable<T> tThem))
                 throw new InvalidCastException($"Can't unbind a bindable of type {them.GetType()} from a bindable of type {GetType()}.");
@@ -396,9 +396,9 @@ namespace osu.Framework.Bindables
         /// <inheritdoc cref="IBindable.CreateInstance"/>
         protected virtual Bindable<T> CreateInstance() => new Bindable<T>();
 
-        IBindable IBindable.GetBoundCopy() => GetBoundCopy();
+        IBindable IBindableTarget.GetBoundCopy() => GetBoundCopy();
 
-        IBindable<T> IBindable<T>.GetBoundCopy() => GetBoundCopy();
+        IBindable<T> IBindableTarget<T>.GetBoundCopy() => GetBoundCopy();
 
         /// <inheritdoc cref="IBindable{T}.GetBoundCopy"/>
         public Bindable<T> GetBoundCopy() => IBindable.GetBoundCopyImplementation(this);
