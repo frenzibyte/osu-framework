@@ -12,7 +12,7 @@ using StencilOperation = Veldrid.StencilOperation;
 
 namespace osu.Framework.Graphics.Veldrid
 {
-    public static class VeldridExtensions
+    internal static class VeldridExtensions
     {
         public static RgbaFloat ToRgbaFloat(this Color4 colour) => new RgbaFloat(colour.R, colour.G, colour.B, colour.A);
 
