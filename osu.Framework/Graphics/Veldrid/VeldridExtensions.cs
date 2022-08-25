@@ -2,9 +2,13 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Textures;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 using Veldrid;
+using PrimitiveTopology = Veldrid.PrimitiveTopology;
+using StencilOperation = Veldrid.StencilOperation;
 
 namespace osu.Framework.Graphics.Veldrid
 {
@@ -137,6 +141,39 @@ namespace osu.Framework.Graphics.Veldrid
             }
         }
 
+        public static StencilOperation ToStencilOperation(this Rendering.StencilOperation operation)
+        {
+            switch (operation)
+            {
+                case Rendering.StencilOperation.Zero:
+                    return StencilOperation.Zero;
+
+                case Rendering.StencilOperation.Invert:
+                    return StencilOperation.Invert;
+
+                case Rendering.StencilOperation.Keep:
+                    return StencilOperation.Keep;
+
+                case Rendering.StencilOperation.Replace:
+                    return StencilOperation.Replace;
+
+                case Rendering.StencilOperation.Increase:
+                    return StencilOperation.IncrementAndClamp;
+
+                case Rendering.StencilOperation.Decrease:
+                    return StencilOperation.DecrementAndClamp;
+
+                case Rendering.StencilOperation.IncreaseWrap:
+                    return StencilOperation.IncrementAndWrap;
+
+                case Rendering.StencilOperation.DecreaseWrap:
+                    return StencilOperation.DecrementAndWrap;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(operation));
+            }
+        }
+
         public static VertexElementFormat ToVertexElementFormat(this VertexAttribPointerType type, int count)
         {
             switch (type)
@@ -215,23 +252,23 @@ namespace osu.Framework.Graphics.Veldrid
             }
         }
 
-        public static PrimitiveTopology ToPrimitiveTopology(this PrimitiveType type)
+        public static PrimitiveTopology ToPrimitiveTopology(this Rendering.PrimitiveTopology type)
         {
             switch (type)
             {
-                case PrimitiveType.Points:
+                case Rendering.PrimitiveTopology.Points:
                     return PrimitiveTopology.PointList;
 
-                case PrimitiveType.Lines:
+                case Rendering.PrimitiveTopology.Lines:
                     return PrimitiveTopology.LineList;
 
-                case PrimitiveType.LineStrip:
+                case Rendering.PrimitiveTopology.LineStrip:
                     return PrimitiveTopology.LineStrip;
 
-                case PrimitiveType.Triangles:
+                case Rendering.PrimitiveTopology.Triangles:
                     return PrimitiveTopology.TriangleList;
 
-                case PrimitiveType.TriangleStrip:
+                case Rendering.PrimitiveTopology.TriangleStrip:
                     return PrimitiveTopology.TriangleStrip;
 
                 default:

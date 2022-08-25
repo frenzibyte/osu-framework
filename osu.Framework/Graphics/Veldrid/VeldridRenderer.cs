@@ -7,17 +7,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Development;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osu.Framework.Graphics.OpenGL.Textures;
-using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Veldrid.Batches;
 using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Graphics.Veldrid.Textures;
+using osu.Framework.Lists;
 using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
@@ -26,12 +24,12 @@ using osuTK.Graphics;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using PixelFormat = Veldrid.PixelFormat;
-using Shader = osu.Framework.Graphics.Shaders.Shader;
+using PrimitiveTopology = Veldrid.PrimitiveTopology;
 using Texture = Veldrid.Texture;
 
 namespace osu.Framework.Graphics.Veldrid
 {
-    public class VeldridRenderer : IRenderer
+    internal class VeldridRenderer : IRenderer
     {
         /// <summary>
         /// The interval (in frames) before checking whether VBOs should be freed.
@@ -52,17 +50,18 @@ namespace osu.Framework.Graphics.Veldrid
         public Vector2I ScissorOffset { get; private set; }
         public Matrix4 ProjectionMatrix { get; private set; }
         public DepthInfo CurrentDepthInfo { get; private set; }
+        public StencilInfo CurrentStencilInfo { get; private set; }
         public WrapMode CurrentWrapModeS { get; private set; }
         public WrapMode CurrentWrapModeT { get; private set; }
         public bool IsMaskingActive => maskingStack.Count > 1;
         public float BackbufferDrawDepth { get; private set; }
         public bool UsingBackbuffer => frameBufferStack.Count > 0 && frameBufferStack.Peek() == BackbufferFramebuffer;
         public bool AtlasTextureIsBound { get; private set; }
+        public Graphics.Textures.Texture WhitePixel => whitePixel.Value;
 
         // in case no other textures are used in the project, create a new atlas as a fallback source for the white pixel area (used to draw boxes etc.)
         private readonly Lazy<TextureWhitePixel> whitePixel;
-
-        public Graphics.Textures.Texture WhitePixel => whitePixel.Value;
+        private readonly LockedWeakList<Graphics.Textures.Texture> allTextures = new LockedWeakList<Graphics.Textures.Texture>();
 
         protected Framebuffer BackbufferFramebuffer { get; private set; } = null!;
 
@@ -72,21 +71,22 @@ namespace osu.Framework.Graphics.Veldrid
         private readonly GlobalStatistic<int> statTextureUploadsPerformed = GlobalStatistics.Get<int>(nameof(VeldridRenderer), "Texture uploads performed");
 
         private readonly ConcurrentQueue<ScheduledDelegate> expensiveOperationQueue = new ConcurrentQueue<ScheduledDelegate>();
-        private readonly ConcurrentQueue<ITexture> textureUploadQueue = new ConcurrentQueue<ITexture>();
-        private readonly GLDisposalQueue disposalQueue = new GLDisposalQueue();
+        private readonly ConcurrentQueue<VeldridTexture> textureUploadQueue = new ConcurrentQueue<VeldridTexture>();
+        private readonly VeldridDisposalQueue disposalQueue = new VeldridDisposalQueue();
 
         private readonly Scheduler resetScheduler = new Scheduler(() => ThreadSafety.IsDrawThread, new StopwatchClock(true)); // force no thread set until we are actually on the draw thread.
 
         private readonly Stack<IVertexBatch<TexturedVertex2D>> quadBatches = new Stack<IVertexBatch<TexturedVertex2D>>();
-        private readonly List<IVertexBuffer> vertexBuffersInUse = new List<IVertexBuffer>();
+        private readonly List<IVeldridVertexBuffer> vertexBuffersInUse = new List<IVeldridVertexBuffer>();
         private readonly List<IVertexBatch> batchResetList = new List<IVertexBatch>();
         private readonly Stack<RectangleI> viewportStack = new Stack<RectangleI>();
-        private readonly Stack<RectangleF> orthoStack = new Stack<RectangleF>();
+        private readonly Stack<Matrix4> projectionMatrixStack = new Stack<Matrix4>();
         private readonly Stack<MaskingInfo> maskingStack = new Stack<MaskingInfo>();
         private readonly Stack<RectangleI> scissorRectStack = new Stack<RectangleI>();
         private readonly Stack<DepthInfo> depthStack = new Stack<DepthInfo>();
+        private readonly Stack<StencilInfo> stencilStack = new Stack<StencilInfo>();
         private readonly Stack<Vector2I> scissorOffsetStack = new Stack<Vector2I>();
-        private readonly Stack<Shader> shaderStack = new Stack<Shader>();
+        private readonly Stack<IShader> shaderStack = new Stack<IShader>();
         private readonly Stack<bool> scissorStateStack = new Stack<bool>();
         private readonly Stack<Framebuffer> frameBufferStack = new Stack<Framebuffer>();
         private readonly int[] lastBoundBuffers = new int[2];
@@ -94,7 +94,7 @@ namespace osu.Framework.Graphics.Veldrid
         private BlendingParameters lastBlendingParameters;
         private IVertexBatch? lastActiveBatch;
         private MaskingInfo currentMaskingInfo;
-        private Shader? currentShader;
+        private IShader? currentShader;
         private bool currentScissorState;
         private bool isInitialised;
         private IVertexBatch<TexturedVertex2D>? defaultQuadBatch;
@@ -220,11 +220,12 @@ namespace osu.Framework.Graphics.Veldrid
             shaderStack.Clear();
 
             viewportStack.Clear();
-            orthoStack.Clear();
+            projectionMatrixStack.Clear();
             maskingStack.Clear();
             scissorRectStack.Clear();
             frameBufferStack.Clear();
             depthStack.Clear();
+            stencilStack.Clear();
             scissorStateStack.Clear();
             scissorOffsetStack.Clear();
 
@@ -281,7 +282,7 @@ namespace osu.Framework.Graphics.Veldrid
             int uploadedPixels = 0;
 
             // continue attempting to upload textures until enough uploads have been performed.
-            while (textureUploadQueue.TryDequeue(out ITexture? texture))
+            while (textureUploadQueue.TryDequeue(out VeldridTexture? texture))
             {
                 statTextureUploadsDequeued.Value++;
 
@@ -377,16 +378,16 @@ namespace osu.Framework.Graphics.Veldrid
 
         public void BindIndexBuffer(DeviceBuffer index, IndexFormat format) => Commands.SetIndexBuffer(index, format);
 
-        public bool BindTexture(Graphics.Textures.Texture texture, TextureUnit unit = TextureUnit.Texture0, WrapMode? wrapModeS = null, WrapMode? wrapModeT = null)
+        public bool BindTexture(Graphics.Textures.Texture texture, int unit = 0, WrapMode? wrapModeS = null, WrapMode? wrapModeT = null)
         {
-            if (texture.TextureGL is TextureSubAtlasWhite && AtlasTextureIsBound)
+            if (texture is TextureWhitePixel && AtlasTextureIsBound)
             {
                 // We can use the special white space from any atlas texture.
                 return true;
             }
 
-            bool didBind = texture.TextureGL.Bind(unit, wrapModeS ?? texture.WrapModeS, wrapModeT ?? texture.WrapModeT);
-            AtlasTextureIsBound = texture.TextureGL is VeldridTextureAtlas;
+            bool didBind = texture.NativeTexture.Bind(unit, wrapModeS ?? texture.WrapModeS, wrapModeT ?? texture.WrapModeT);
+            AtlasTextureIsBound = texture.IsAtlasTexture;
 
             return didBind;
         }
@@ -511,7 +512,7 @@ namespace osu.Framework.Graphics.Veldrid
                 actualRect.Height = -viewport.Height;
             }
 
-            PushOrtho(viewport);
+            this.PushOrtho(viewport);
 
             viewportStack.Push(actualRect);
 
@@ -526,7 +527,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             Trace.Assert(viewportStack.Count > 1);
 
-            PopOrtho();
+            this.PopOrtho();
 
             viewportStack.Pop();
             RectangleI actualRect = viewportStack.Peek();
@@ -614,39 +615,36 @@ namespace osu.Framework.Graphics.Veldrid
             ScissorOffset = offset;
         }
 
-        public void PushOrtho(RectangleF ortho)
+        // this is fucked up, veldrid creates a depth-flipped orthographic projection matrix, but the opengl one is wrapped in a RendererExtensions method.
+        // // Inverse the near/far values to not affect with depth values during multiplication.
+        // // todo: replace this with a custom implementation or otherwise.
+        // // ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(ortho.Left, ortho.Right, ortho.Bottom, ortho.Top, 1, -1);
+        public void PushProjectionMatrix(Matrix4 matrix)
         {
             flushCurrentBatch();
 
-            orthoStack.Push(ortho);
-            if (Ortho == ortho)
+            projectionMatrixStack.Push(matrix);
+            if (ProjectionMatrix == matrix)
                 return;
 
-            Ortho = ortho;
-            setProjectionMatrix(ortho);
+            ProjectionMatrix = matrix;
+
+            GlobalPropertyManager.Set(GlobalProperty.ProjMatrix, ProjectionMatrix);
         }
 
-        public void PopOrtho()
+        public void PopProjectionMatrix()
         {
-            Trace.Assert(orthoStack.Count > 1);
+            Trace.Assert(projectionMatrixStack.Count > 1);
 
             flushCurrentBatch();
 
-            orthoStack.Pop();
-            RectangleF actualRect = orthoStack.Peek();
+            projectionMatrixStack.Pop();
+            Matrix4 matrix = projectionMatrixStack.Peek();
 
-            if (Ortho == actualRect)
+            if (ProjectionMatrix == matrix)
                 return;
 
-            Ortho = actualRect;
-            setProjectionMatrix(actualRect);
-        }
-
-        private void setProjectionMatrix(RectangleF ortho)
-        {
-            // Inverse the near/far values to not affect with depth values during multiplication.
-            // todo: replace this with a custom implementation or otherwise.
-            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(ortho.Left, ortho.Right, ortho.Bottom, ortho.Top, 1, -1);
+            ProjectionMatrix = matrix;
 
             GlobalPropertyManager.Set(GlobalProperty.ProjMatrix, ProjectionMatrix);
         }
@@ -780,6 +778,47 @@ namespace osu.Framework.Graphics.Veldrid
             pipeline.DepthStencilState.DepthComparison = depthInfo.Function.ToComparisonKind();
         }
 
+        public void PushStencilInfo(StencilInfo stencilInfo)
+        {
+            stencilStack.Push(stencilInfo);
+
+            if (CurrentStencilInfo.Equals(stencilInfo))
+                return;
+
+            CurrentStencilInfo = stencilInfo;
+            setStencilInfo(stencilInfo);
+        }
+
+        public void PopStencilInfo()
+        {
+            Trace.Assert(stencilStack.Count > 1);
+
+            stencilStack.Pop();
+            StencilInfo stencilInfo = stencilStack.Peek();
+
+            if (CurrentStencilInfo.Equals(stencilInfo))
+                return;
+
+            CurrentStencilInfo = stencilInfo;
+            setStencilInfo(CurrentStencilInfo);
+        }
+
+        private void setStencilInfo(StencilInfo stencilInfo)
+        {
+            flushCurrentBatch();
+
+            pipeline.DepthStencilState.StencilTestEnabled = stencilInfo.StencilTest;
+            pipeline.DepthStencilState.StencilReference = (uint)stencilInfo.TestValue;
+            pipeline.DepthStencilState.StencilReadMask = pipeline.DepthStencilState.StencilWriteMask = (byte)stencilInfo.Mask;
+            pipeline.DepthStencilState.StencilBack = pipeline.DepthStencilState.StencilFront = new StencilBehaviorDescription
+            {
+                Pass = stencilInfo.TestPassedOperation.ToStencilOperation(),
+                Fail = stencilInfo.StencilTestFailOperation.ToStencilOperation(),
+                DepthFail = stencilInfo.DepthTestFailOperation.ToStencilOperation(),
+                Comparison = stencilInfo.TestFunction.ToComparisonKind(),
+            };
+        }
+
         public void BindFrameBuffer(Framebuffer frameBuffer)
         {
             bool alreadyBound = frameBufferStack.Count > 0 && frameBufferStack.Peek() == frameBuffer;
@@ -815,7 +854,7 @@ namespace osu.Framework.Graphics.Veldrid
             GlobalPropertyManager.Set(GlobalProperty.GammaCorrection, UsingBackbuffer);
         }
 
-        public void UseProgram(Shader? shader)
+        public void UseProgram(IShader? shader)
         {
             ThreadSafety.EnsureDrawThread();
 
@@ -862,7 +901,7 @@ namespace osu.Framework.Graphics.Veldrid
                 disposalAction.Invoke(target);
         }
 
-        public void EnqueueTextureUpload(ITexture texture)
+        public void EnqueueTextureUpload(VeldridTexture texture)
         {
             if (texture.IsQueuedForUpload)
                 return;
@@ -874,17 +913,38 @@ namespace osu.Framework.Graphics.Veldrid
             }
         }
 
-        public IFrameBuffer CreateFrameBuffer(RenderbufferInternalFormat[]? renderBufferFormats = null, All filteringMode = All.Linear)
+        IShaderPart IRenderer.CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType)
             => throw new NotImplementedException();
 
-        public IVertexBatch<TVertex> CreateLinearBatch<TVertex>(int size, int maxBuffers, PrimitiveType primitiveType) where TVertex : struct, IEquatable<TVertex>, IVertex
+        IShader IRenderer.CreateShader(string name, params IShaderPart[] parts)
+            => throw new NotImplementedException();
+
+        public IFrameBuffer CreateFrameBuffer(RenderBufferFormat[]? renderBufferFormats = null, TextureFilteringMode filteringMode = TextureFilteringMode.Linear)
+            => throw new NotImplementedException();
+
+        public IVertexBatch<TVertex> CreateLinearBatch<TVertex>(int size, int maxBuffers, Rendering.PrimitiveTopology primitiveType) where TVertex : unmanaged, IEquatable<TVertex>, IVertex
             => new VeldridLinearBatch<TVertex>(this, size, maxBuffers, primitiveType.ToPrimitiveTopology());
 
-        public IVertexBatch<TVertex> CreateQuadBatch<TVertex>(int size, int maxBuffers) where TVertex : struct, IEquatable<TVertex>, IVertex
+        public IVertexBatch<TVertex> CreateQuadBatch<TVertex>(int size, int maxBuffers) where TVertex : unmanaged, IEquatable<TVertex>, IVertex
             => new VeldridQuadBatch<TVertex>(this, size, maxBuffers);
 
-        public ITexture CreateTexture(int width, int height, bool manualMipmaps = false, All filteringMode = All.Linear, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None, Rgba32 initialisationColour = default)
-            => new VeldridTexture(this, width, height, manualMipmaps, filteringMode, wrapModeS, wrapModeT, initialisationColour);
+        public Graphics.Textures.Texture CreateTexture(int width, int height, bool manualMipmaps = false, TextureFilteringMode filteringMode = TextureFilteringMode.Linear, WrapMode wrapModeS = WrapMode.None,
+                                                       WrapMode wrapModeT = WrapMode.None, Rgba32 initialisationColour = default)
+            => CreateTexture(new VeldridTexture(this, width, height, manualMipmaps, filteringMode.ToSamplerFilter(), initialisationColour), wrapModeS, wrapModeT);
+
+        public Graphics.Textures.Texture CreateVideoTexture(int width, int height)
+            // => CreateTexture(new VeldridVideoTexture(this, width, height), WrapMode.None, WrapMode.None);
+            => throw new NotImplementedException();
+
+        public Graphics.Textures.Texture CreateTexture(INativeTexture nativeTexture, WrapMode wrapModeS, WrapMode wrapModeT)
+        {
+            var tex = new Graphics.Textures.Texture(nativeTexture, wrapModeS, wrapModeT);
+
+            allTextures.Add(tex);
+            TextureCreated?.Invoke(tex);
+
+            return tex;
+        }
 
         void IRenderer.SetUniform<T>(IUniformWithValue<T> uniform)
         {
@@ -932,11 +992,9 @@ namespace osu.Framework.Graphics.Veldrid
             // }
         }
 
-        void IRenderer.RegisterVertexBufferUse(IVertexBuffer buffer) => RegisterVertexBufferUse(buffer);
+        public void RegisterVertexBufferUse(IVeldridVertexBuffer buffer) => vertexBuffersInUse.Add(buffer);
 
-        internal void RegisterVertexBufferUse(IVertexBuffer buffer) => vertexBuffersInUse.Add(buffer);
-
-        void IRenderer.SetActiveBatch(IVertexBatch batch)
+        public void SetActiveBatch(IVertexBatch batch)
         {
             if (lastActiveBatch == batch)
                 return;
@@ -960,5 +1018,15 @@ namespace osu.Framework.Graphics.Veldrid
         {
             lastActiveBatch?.Draw();
         }
+
+        public event Action<Graphics.Textures.Texture>? TextureCreated;
+
+        event Action<Graphics.Textures.Texture> IRenderer.TextureCreated
+        {
+            add => TextureCreated += value;
+            remove => TextureCreated -= value;
+        }
+
+        Graphics.Textures.Texture[] IRenderer.GetAllTextures() => allTextures.ToArray();
     }
 }
