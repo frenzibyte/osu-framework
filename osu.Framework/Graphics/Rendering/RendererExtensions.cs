@@ -8,6 +8,7 @@ using osu.Framework.Graphics.OpenGL.Buffers;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Graphics.Veldrid;
 using osu.Framework.Statistics;
 using osu.Framework.Utils;
 using osuTK;
@@ -246,7 +247,10 @@ namespace osu.Framework.Graphics.Rendering
         /// <param name="ortho">The rectangle to create the orthographic projection from.</param>
         public static void PushOrtho(this IRenderer renderer, RectangleF ortho)
         {
-            renderer.PushProjectionMatrix(Matrix4.CreateOrthographicOffCenter(ortho.Left, ortho.Right, ortho.Bottom, ortho.Top, -1, 1));
+            // todo: this shouldn't be done, the coordinate system need to be properly rethought to avoid this hack.
+            renderer.PushProjectionMatrix(renderer is VeldridRenderer
+                ? Matrix4.CreateOrthographicOffCenter(ortho.Left, ortho.Right, ortho.Bottom, ortho.Top, 1, -1)
+                : Matrix4.CreateOrthographicOffCenter(ortho.Left, ortho.Right, ortho.Bottom, ortho.Top, -1, 1));
         }
 
         /// <summary>
