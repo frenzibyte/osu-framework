@@ -16,11 +16,14 @@ using osu.Framework.Graphics.Veldrid.Batches;
 using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Lists;
+using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
 using osuTK;
 using osuTK.Graphics;
+using osuTK.Graphics.ES30;
+using SDL2;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using PixelFormat = Veldrid.PixelFormat;
@@ -145,9 +148,57 @@ namespace osu.Framework.Graphics.Veldrid
 
         void IRenderer.Initialise(IWindow window)
         {
-            // todo: port device creation logic (https://github.com/frenzibyte/osu-framework/blob/3e9458b007b1de1eaaa5f0483387c862f27bb331/osu.Framework/Graphics/Veldrid/Vd_Device.cs#L21-L240)
-            // that requires further thought as it includes acquiring the current window and display handle.
-            Device = null!;
+            var options = new GraphicsDeviceOptions
+            {
+                HasMainSwapchain = true,
+                SwapchainDepthFormat = PixelFormat.R16_UNorm,
+                // SwapchainSrgbFormat = true,
+                SyncToVerticalBlank = true,
+                PreferDepthRangeZeroToOne = true,
+                PreferStandardClipSpaceYDirection = true,
+                ResourceBindingModel = ResourceBindingModel.Improved,
+                // todo: debug adds overhead, disable this later on.
+                // Debug = true,
+            };
+
+            var swapchain = new SwapchainDescription
+            {
+                Width = (uint)window.ClientSize.Width,
+                Height = (uint)window.ClientSize.Height,
+                ColorSrgb = options.SwapchainSrgbFormat,
+                DepthFormat = options.SwapchainDepthFormat,
+                SyncToVerticalBlank = options.SyncToVerticalBlank,
+            };
+
+            int maxTextureSize = 0;
+
+            switch (RuntimeInfo.OS)
+            {
+                case RuntimeInfo.Platform.Windows:
+                    swapchain.Source = SwapchainSource.CreateWin32(window.WindowHandle, IntPtr.Zero);
+
+                    Device = GraphicsDevice.CreateD3D11(options, swapchain);
+                    Device.LogD3D11(out maxTextureSize);
+                    break;
+
+                case RuntimeInfo.Platform.macOS:
+                    swapchain.Source = SwapchainSource.CreateNSWindow(window.WindowHandle);
+
+                    Device = GraphicsDevice.CreateVulkan(options, swapchain);
+                    Device.LogVulkan(out maxTextureSize);
+                    break;
+
+                case RuntimeInfo.Platform.Linux:
+                    // todo: no idea if this works or that's how it should work.
+                    swapchain.Source = SwapchainSource.CreateXlib(window.DisplayHandle, window.WindowHandle);
+
+                    // todo: support OpenGL, maybe?
+                    Device = GraphicsDevice.CreateVulkan(options, swapchain);
+                    Device.LogVulkan(out maxTextureSize);
+                    break;
+            }
+
+            MaxTextureSize = maxTextureSize;
 
             Commands = Factory.CreateCommandList();
 

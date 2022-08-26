@@ -2,11 +2,20 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Logging;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
+using SharpGen.Runtime;
 using Veldrid;
+using Veldrid.MetalBindings;
+using Vortice.Direct3D11;
+using Vortice.DXGI;
+using Vulkan;
 using PrimitiveTopology = Veldrid.PrimitiveTopology;
 using StencilOperation = Veldrid.StencilOperation;
 
@@ -274,6 +283,94 @@ namespace osu.Framework.Graphics.Veldrid
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
             }
+        }
+
+        public static void LogD3D11(this GraphicsDevice device, out int maxTextureSize)
+        {
+            Debug.Assert(device.BackendType == GraphicsBackend.Direct3D11);
+
+            var info = device.GetD3D11Info();
+            var dxgiAdapter = MarshallingHelpers.FromPointer<IDXGIAdapter>(info.Adapter);
+            var d3d11Device = MarshallingHelpers.FromPointer<ID3D11Device>(info.Device);
+
+            maxTextureSize = ID3D11Resource.MaximumTexture2DSize;
+
+            Logger.Log($@"Direct3D 11 Initialized
+                        Direct3D 11 Feature Level:           {d3d11Device.FeatureLevel.ToString().Replace("Level_", string.Empty).Replace("_", ".")}
+                        Direct3D 11 Adapter:                 {dxgiAdapter.Description.Description}
+                        Direct3D 11 Dedicated Video Memory:  {dxgiAdapter.Description.DedicatedVideoMemory / 1024 / 1024} MB
+                        Direct3D 11 Dedicated System Memory: {dxgiAdapter.Description.DedicatedSystemMemory / 1024 / 1024} MB
+                        Direct3D 11 Shared System Memory:    {dxgiAdapter.Description.SharedSystemMemory / 1024 / 1024} MB");
+        }
+
+        public static unsafe void LogVulkan(this GraphicsDevice device, out int maxTextureSize)
+        {
+            Debug.Assert(device.BackendType == GraphicsBackend.Vulkan);
+
+            var info = device.GetVulkanInfo();
+            var physicalDevice = info.PhysicalDevice;
+
+            uint instanceExtensionsCount = 0;
+            var result = VulkanNative.vkEnumerateInstanceExtensionProperties((byte*)null, ref instanceExtensionsCount, IntPtr.Zero);
+
+            var instanceExtensions = new VkExtensionProperties[(int)instanceExtensionsCount];
+            if (result == VkResult.Success && instanceExtensionsCount > 0)
+                VulkanNative.vkEnumerateInstanceExtensionProperties((byte*)null, ref instanceExtensionsCount, ref instanceExtensions[0]);
+
+            uint deviceExetnsionsCount = 0;
+            result = VulkanNative.vkEnumerateDeviceExtensionProperties(physicalDevice, (byte*)null, ref deviceExetnsionsCount, IntPtr.Zero);
+
+            var deviceExtensions = new VkExtensionProperties[(int)deviceExetnsionsCount];
+            if (result == VkResult.Success && deviceExetnsionsCount > 0)
+                VulkanNative.vkEnumerateDeviceExtensionProperties(physicalDevice, (byte*)null, ref deviceExetnsionsCount, ref deviceExtensions[0]);
+
+            VkPhysicalDeviceProperties properties;
+            VulkanNative.vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+            maxTextureSize = (int)properties.limits.maxImageDimension2D;
+
+            string vulkanName = RuntimeInfo.IsApple ? "MoltenVK" : "Vulkan";
+            string extensions = string.Join(" ", instanceExtensions.Concat(deviceExtensions).Select(e => Marshal.PtrToStringUTF8((IntPtr)e.extensionName)));
+
+            string apiVersion = $"{properties.apiVersion >> 22}.{(properties.apiVersion >> 12) & 0x3FFU}.{properties.apiVersion & 0xFFFU}";
+            string driverVersion;
+
+            // https://github.com/SaschaWillems/vulkan.gpuinfo.org/blob/1e6ca6e3c0763daabd6a101b860ab4354a07f5d3/functions.php#L293-L325
+            if (properties.vendorID == 0x10DE) // NVIDIA's versioning convention
+                driverVersion = $"{properties.driverVersion >> 22}.{(properties.driverVersion >> 14) & 0x0FFU}.{(properties.driverVersion >> 6) & 0x0FFU}.{properties.driverVersion & 0x003U}";
+            else if (properties.vendorID == 0x8086 && RuntimeInfo.OS == RuntimeInfo.Platform.Windows) // Intel's versioning convention on Windows
+                driverVersion = $"{properties.driverVersion >> 22}.{properties.driverVersion & 0x3FFFU}";
+            else // Vulkan's convention
+                driverVersion = $"{properties.driverVersion >> 22}.{(properties.driverVersion >> 12) & 0x3FFU}.{properties.driverVersion & 0xFFFU}";
+
+            Logger.Log($@"{vulkanName} Initialized
+                                    {vulkanName} API Version:    {apiVersion}
+                                    {vulkanName} Driver Version: {driverVersion}
+                                    {vulkanName} Device:         {Marshal.PtrToStringUTF8((IntPtr)properties.deviceName)}
+                                    {vulkanName} Extensions:     {extensions}");
+        }
+
+        public static void LogMetal(this GraphicsDevice device, out int maxTextureSize)
+        {
+            Debug.Assert(device.BackendType == GraphicsBackend.Metal);
+
+            var info = device.GetMetalInfo();
+
+            string[] featureSetParts = info.MaxFeatureSet.ToString().Split('_');
+            string featureDevice = featureSetParts[0];
+            string featureFamily = featureSetParts[1].Replace("GPUFamily", string.Empty);
+            string featureVersion = featureSetParts[2];
+
+            // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+            if (info.MaxFeatureSet <= MTLFeatureSet.iOS_GPUFamily4_v1)
+                maxTextureSize = info.MaxFeatureSet <= MTLFeatureSet.iOS_GPUFamily1_v4 ? 8192 : 16384;
+            else if (info.MaxFeatureSet <= MTLFeatureSet.tvOS_GPUFamily2_v1)
+                maxTextureSize = info.MaxFeatureSet <= MTLFeatureSet.tvOS_GPUFamily1_v3 ? 8192 : 16384;
+            else
+                maxTextureSize = 16384;
+
+            Logger.Log($@"Metal Initialized
+                        Metal Feature Set: {featureDevice} GPU family {featureFamily} ({featureVersion})");
         }
     }
 }
