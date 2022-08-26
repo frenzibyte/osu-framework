@@ -8,6 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering.Vertices;
+using osu.Framework.Platform;
 using osu.Framework.Threading;
 
 namespace osu.Framework.Graphics.Rendering
@@ -126,7 +127,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <summary>
         /// Performs a once-off initialisation of this <see cref="IRenderer"/>.
         /// </summary>
-        internal void Initialise();
+        internal void Initialise(IWindow window);
 
         /// <summary>
         /// Resets any states to prepare for drawing a new frame.

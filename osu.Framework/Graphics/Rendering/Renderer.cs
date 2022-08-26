@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Lists;
+using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
@@ -127,9 +128,9 @@ namespace osu.Framework.Graphics.Rendering
                 new TextureAtlas(this, TextureAtlas.WHITE_PIXEL_SIZE + TextureAtlas.PADDING, TextureAtlas.WHITE_PIXEL_SIZE + TextureAtlas.PADDING, true).WhitePixel);
         }
 
-        void IRenderer.Initialise()
+        void IRenderer.Initialise(IWindow window)
         {
-            Initialise();
+            Initialise(window);
 
             defaultQuadBatch = CreateQuadBatch<TexturedVertex2D>(100, 1000);
             resetScheduler.AddDelayed(disposalQueue.CheckPendingDisposals, 0, true);
@@ -277,7 +278,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <summary>
         /// Performs a once-off initialisation of this <see cref="Renderer"/>.
         /// </summary>
-        protected abstract void Initialise();
+        protected abstract void Initialise(IWindow window);
 
         #region Clear
 

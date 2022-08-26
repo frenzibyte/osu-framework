@@ -6,6 +6,7 @@ using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Platform;
 using osu.Framework.Threading;
 using osuTK;
 using SixLabors.ImageSharp.PixelFormats;
@@ -44,7 +45,7 @@ namespace osu.Framework.Graphics.Rendering.Dummy
             WhitePixel = new Texture(new DummyNativeTexture(this), WrapMode.None, WrapMode.None);
         }
 
-        void IRenderer.Initialise()
+        void IRenderer.Initialise(IWindow window)
         {
         }
 

@@ -143,7 +143,7 @@ namespace osu.Framework.Graphics.Veldrid
             SharedQuadIndex = new VeldridIndexData(this);
         }
 
-        void IRenderer.Initialise()
+        void IRenderer.Initialise(IWindow window)
         {
             // todo: port device creation logic (https://github.com/frenzibyte/osu-framework/blob/3e9458b007b1de1eaaa5f0483387c862f27bb331/osu.Framework/Graphics/Veldrid/Vd_Device.cs#L21-L240)
             // that requires further thought as it includes acquiring the current window and display handle.

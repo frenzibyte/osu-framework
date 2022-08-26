@@ -30,7 +30,7 @@ namespace osu.Framework.Threading
             {
                 window.MakeCurrent();
 
-                host.Renderer.Initialise();
+                host.Renderer.Initialise(host.Window);
                 host.Renderer.BeginFrame(new Vector2(window.ClientSize.Width, window.ClientSize.Height));
             }
         }

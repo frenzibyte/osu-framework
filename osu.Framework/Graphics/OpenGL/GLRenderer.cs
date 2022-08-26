@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osuTK;
 using osuTK.Graphics.ES30;
@@ -37,7 +38,7 @@ namespace osu.Framework.Graphics.OpenGL
 
         private bool? lastBlendingEnabledState;
 
-        protected override void Initialise()
+        protected override void Initialise(IWindow window)
         {
             string version = GL.GetString(StringName.Version);
             IsEmbedded = version.Contains("OpenGL ES"); // As defined by https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glGetString.xml
