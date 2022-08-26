@@ -367,9 +367,6 @@ namespace osu.Framework.Platform
         /// </summary>
         public IBindable<DisplayMode> CurrentDisplayMode => currentDisplayMode;
 
-        /// <summary>
-        /// Gets the native window handle as provided by the operating system.
-        /// </summary>
         public IntPtr WindowHandle
         {
             get
@@ -403,6 +400,29 @@ namespace osu.Framework.Platform
 
                     case SDL.SDL_SYSWM_TYPE.SDL_SYSWM_ANDROID:
                         return wmInfo.info.android.window;
+
+                    default:
+                        return IntPtr.Zero;
+                }
+            }
+        }
+
+        public IntPtr DisplayHandle
+        {
+            get
+            {
+                if (SDLWindowHandle == IntPtr.Zero)
+                    return IntPtr.Zero;
+
+                var wmInfo = getWindowWMInfo();
+
+                switch (wmInfo.subsystem)
+                {
+                    case SDL.SDL_SYSWM_TYPE.SDL_SYSWM_X11:
+                        return wmInfo.info.x11.display;
+
+                    case SDL.SDL_SYSWM_TYPE.SDL_SYSWM_WAYLAND:
+                        return wmInfo.info.wl.display;
 
                     default:
                         return IntPtr.Zero;

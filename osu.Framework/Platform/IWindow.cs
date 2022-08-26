@@ -19,6 +19,17 @@ namespace osu.Framework.Platform
     public interface IWindow : IDisposable
     {
         /// <summary>
+        /// A pointer representing a handle to this window, provided by the operating system.
+        /// </summary>
+        IntPtr WindowHandle { get; }
+
+        /// <summary>
+        /// A pointer representing a handle to the display containing this window, provided by the operating system.
+        /// This is specific to X11/Wayland subsystems.
+        /// </summary>
+        IntPtr DisplayHandle { get; }
+
+        /// <summary>
         /// Cycles through the available <see cref="WindowMode"/>s as determined by <see cref="SupportedWindowModes"/>.
         /// </summary>
         void CycleMode();
