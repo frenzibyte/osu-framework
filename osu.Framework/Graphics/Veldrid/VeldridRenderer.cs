@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Veldrid.Batches;
 using osu.Framework.Graphics.Veldrid.Buffers;
+using osu.Framework.Graphics.Veldrid.Shaders;
 using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Lists;
 using osu.Framework.Platform;
@@ -23,7 +24,6 @@ using osu.Framework.Timing;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
-using SDL2;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using PixelFormat = Veldrid.PixelFormat;
@@ -39,6 +39,8 @@ namespace osu.Framework.Graphics.Veldrid
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
         private const int vbo_free_check_interval = 300;
+
+        public string ShaderFilenameSuffix => "-veldrid";
 
         public int MaxTextureSize { get; private set; } = 4096; // default value is to allow roughly normal flow in cases we don't have a graphics context, like headless CI.
         public int MaxRenderBufferSize { get; private set; } = 4096; // default value is to allow roughly normal flow in cases we don't have a graphics context, like headless CI.
@@ -89,7 +91,7 @@ namespace osu.Framework.Graphics.Veldrid
         private readonly Stack<DepthInfo> depthStack = new Stack<DepthInfo>();
         private readonly Stack<StencilInfo> stencilStack = new Stack<StencilInfo>();
         private readonly Stack<Vector2I> scissorOffsetStack = new Stack<Vector2I>();
-        private readonly Stack<IShader> shaderStack = new Stack<IShader>();
+        private readonly Stack<VeldridShader> shaderStack = new Stack<VeldridShader>();
         private readonly Stack<bool> scissorStateStack = new Stack<bool>();
         private readonly Stack<Framebuffer> frameBufferStack = new Stack<Framebuffer>();
         private readonly int[] lastBoundBuffers = new int[2];
@@ -97,7 +99,7 @@ namespace osu.Framework.Graphics.Veldrid
         private BlendingParameters lastBlendingParameters;
         private IVertexBatch? lastActiveBatch;
         private MaskingInfo currentMaskingInfo;
-        private IShader? currentShader;
+        private VeldridShader? currentShader;
         private bool currentScissorState;
         private bool isInitialised;
         private IVertexBatch<TexturedVertex2D>? defaultQuadBatch;
@@ -123,6 +125,8 @@ namespace osu.Framework.Graphics.Veldrid
         private DeviceBuffer? boundVertexBuffer;
         // private VertexLayoutDescription? boundVertexLayout;
 
+        private ResourceSet? boundUniformSet;
+
         internal static readonly ResourceLayoutDescription UNIFORM_LAYOUT = new ResourceLayoutDescription(
             new ResourceLayoutElementDescription("m_Uniforms", ResourceKind.UniformBuffer, ShaderStages.Fragment | ShaderStages.Vertex));
 
@@ -133,6 +137,7 @@ namespace osu.Framework.Graphics.Veldrid
         private GraphicsPipelineDescription pipeline = new GraphicsPipelineDescription
         {
             RasterizerState = RasterizerStateDescription.CullNone,
+            ShaderSet = { VertexLayouts = new VertexLayoutDescription[1] },
         };
 
         private static readonly GlobalStatistic<int> stat_graphics_pipeline_created = GlobalStatistics.Get<int>(nameof(VeldridRenderer), "Total pipelines created");
@@ -268,6 +273,7 @@ namespace osu.Framework.Graphics.Veldrid
 
             currentShader?.Unbind();
             currentShader = null;
+
             shaderStack.Clear();
 
             viewportStack.Clear();
@@ -417,6 +423,7 @@ namespace osu.Framework.Graphics.Veldrid
                 return;
 
             Commands.SetVertexBuffer(0, vertex);
+            pipeline.ShaderSet.VertexLayouts[0] = layout;
 
             // if (currentShader.VertexLayout.Elements == null || currentShader.VertexLayout.Elements.Length == 0)
             //     pipeline.ShaderSet.VertexLayouts = new[] { layout };
@@ -525,12 +532,54 @@ namespace osu.Framework.Graphics.Veldrid
             return texture_layouts[textureCount] = Factory.CreateResourceLayout(description);
         }
 
+        public void BindShader(VeldridShader shader)
+        {
+            if (shaderStack.TryPeek(out var lastShader) && lastShader == shader)
+            {
+                shaderStack.Push(shader);
+                return;
+            }
+
+            shaderStack.Push(shader);
+            useShader(shader);
+        }
+
+        public void UnbindShader(VeldridShader shader)
+        {
+            if (shaderStack.Peek() != shader)
+                throw new InvalidOperationException("Attempting to unbind shader while isn't the latest bound shader.");
+
+            shaderStack.Pop();
+
+            if (shaderStack.TryPeek(out var lastShader))
+            {
+                if (lastShader == shader)
+                    return;
+
+                useShader(lastShader);
+            }
+            else
+                currentShader = null;
+        }
+
+        private void useShader(VeldridShader shader)
+        {
+            flushCurrentBatch();
+
+            currentShader = shader;
+
+            pipeline.ShaderSet.Shaders = shader.Shaders;
+            boundUniformSet = shader.UniformResourceSet;
+        }
+
+        public ResourceSet CreateUniformResourceSet(DeviceBuffer buffer) => Factory.CreateResourceSet(new ResourceSetDescription(uniformLayout, buffer));
+
         public void DrawVertices(PrimitiveTopology type, int indexStart, int indicesCount)
         {
             pipeline.PrimitiveTopology = type;
 
             Commands.SetPipeline(getPipelineInstance());
-            // Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, currentShader.UniformResourceSet);
+            Commands.SetGraphicsResourceSet(UNIFORM_RESOURCE_SLOT, boundUniformSet);
             Commands.SetGraphicsResourceSet(TEXTURE_RESOURCE_SLOT, boundTextureSet);
 
             Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
@@ -905,39 +954,6 @@ namespace osu.Framework.Graphics.Veldrid
             GlobalPropertyManager.Set(GlobalProperty.GammaCorrection, UsingBackbuffer);
         }
 
-        public void UseProgram(IShader? shader)
-        {
-            ThreadSafety.EnsureDrawThread();
-
-            if (shader != null)
-                shaderStack.Push(shader);
-            else
-            {
-                shaderStack.Pop();
-
-                //check if the stack is empty, and if so don't restore the previous shader.
-                if (shaderStack.Count == 0)
-                    return;
-            }
-
-            shader ??= shaderStack.Peek();
-
-            if (currentShader == shader)
-                return;
-
-            FrameStatistics.Increment(StatisticsCounterType.ShaderBinds);
-
-            flushCurrentBatch();
-
-            // todo: support Veldrid shaders once IRenderer supports creating its own shaders
-            // pipelineDescription.ShaderSet.Shaders = shader.Shaders;
-
-            // if (shader.VertexLayout.Elements?.Length > 0)
-                // pipelineDescription.ShaderSet.VertexLayouts = new[] { shader.VertexLayout };
-
-            currentShader = shader;
-        }
-
         public void ScheduleExpensiveOperation(ScheduledDelegate operation)
         {
             if (isInitialised)
@@ -965,10 +981,10 @@ namespace osu.Framework.Graphics.Veldrid
         }
 
         IShaderPart IRenderer.CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType)
-            => throw new NotImplementedException();
+            => new VeldridShaderPart(manager, rawData, partType);
 
         IShader IRenderer.CreateShader(string name, params IShaderPart[] parts)
-            => throw new NotImplementedException();
+            => new VeldridShader(this, name, parts.Cast<VeldridShaderPart>().ToArray());
 
         public IFrameBuffer CreateFrameBuffer(RenderBufferFormat[]? renderBufferFormats = null, TextureFilteringMode filteringMode = TextureFilteringMode.Linear)
             => throw new NotImplementedException();
@@ -1002,45 +1018,33 @@ namespace osu.Framework.Graphics.Veldrid
             if (uniform.Owner == currentShader)
                 flushCurrentBatch();
 
-            // todo: pending veldrid shader support, reference code: https://github.com/frenzibyte/osu-framework/blob/3e9458b007b1de1eaaa5f0483387c862f27bb331/osu.Framework/Graphics/Veldrid/Vd_Resources.cs#L267-L298
-            // switch (uniform)
-            // {
-            //     case IUniformWithValue<bool> b:
-            //         GL.Uniform1(uniform.Location, b.GetValue() ? 1 : 0);
-            //         break;
-            //
-            //     case IUniformWithValue<int> i:
-            //         GL.Uniform1(uniform.Location, i.GetValue());
-            //         break;
-            //
-            //     case IUniformWithValue<float> f:
-            //         GL.Uniform1(uniform.Location, f.GetValue());
-            //         break;
-            //
-            //     case IUniformWithValue<Vector2> v2:
-            //         GL.Uniform2(uniform.Location, ref v2.GetValueByRef());
-            //         break;
-            //
-            //     case IUniformWithValue<Vector3> v3:
-            //         GL.Uniform3(uniform.Location, ref v3.GetValueByRef());
-            //         break;
-            //
-            //     case IUniformWithValue<Vector4> v4:
-            //         GL.Uniform4(uniform.Location, ref v4.GetValueByRef());
-            //         break;
-            //
-            //     case IUniformWithValue<Matrix2> m2:
-            //         GL.UniformMatrix2(uniform.Location, false, ref m2.GetValueByRef());
-            //         break;
-            //
-            //     case IUniformWithValue<Matrix3> m3:
-            //         GL.UniformMatrix3(uniform.Location, false, ref m3.GetValueByRef());
-            //         break;
-            //
-            //     case IUniformWithValue<Matrix4> m4:
-            //         GL.UniformMatrix4(uniform.Location, false, ref m4.GetValueByRef());
-            //         break;
-            // }
+            var uniformOwner = (VeldridShader)uniform.Owner;
+
+            switch (uniform)
+            {
+                case IUniformWithValue<Matrix3> matrix3:
+                {
+                    ref var value = ref matrix3.GetValueByRef();
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 0), ref value.Row0);
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 16), ref value.Row1);
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 32), ref value.Row2);
+                    break;
+                }
+
+                case IUniformWithValue<Matrix4> matrix4:
+                {
+                    ref var value = ref matrix4.GetValueByRef();
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 0), ref value.Row0);
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 16), ref value.Row1);
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 32), ref value.Row2);
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 48), ref value.Row3);
+                    break;
+                }
+
+                default:
+                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)uniform.Location, ref uniform.GetValueByRef());
+                    break;
+            }
         }
 
         public void RegisterVertexBufferUse(IVeldridVertexBuffer buffer) => vertexBuffersInUse.Add(buffer);
