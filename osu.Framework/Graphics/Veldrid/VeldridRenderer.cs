@@ -23,7 +23,6 @@ using osu.Framework.Threading;
 using osu.Framework.Timing;
 using osuTK;
 using osuTK.Graphics;
-using osuTK.Graphics.ES30;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using PixelFormat = Veldrid.PixelFormat;
@@ -60,15 +59,13 @@ namespace osu.Framework.Graphics.Veldrid
         public WrapMode CurrentWrapModeT { get; private set; }
         public bool IsMaskingActive => maskingStack.Count > 1;
         public float BackbufferDrawDepth { get; private set; }
-        public bool UsingBackbuffer => frameBufferStack.Count > 0 && frameBufferStack.Peek() == BackbufferFramebuffer;
+        public bool UsingBackbuffer => frameBufferStack.Count > 0 && frameBufferStack.Peek() == Device.SwapchainFramebuffer;
         public bool AtlasTextureIsBound { get; private set; }
         public Graphics.Textures.Texture WhitePixel => whitePixel.Value;
 
         // in case no other textures are used in the project, create a new atlas as a fallback source for the white pixel area (used to draw boxes etc.)
         private readonly Lazy<TextureWhitePixel> whitePixel;
         private readonly LockedWeakList<Graphics.Textures.Texture> allTextures = new LockedWeakList<Graphics.Textures.Texture>();
-
-        protected Framebuffer BackbufferFramebuffer { get; private set; } = null!;
 
         private readonly GlobalStatistic<int> statExpensiveOperationsQueued = GlobalStatistics.Get<int>(nameof(VeldridRenderer), "Expensive operation queue length");
         private readonly GlobalStatistic<int> statTextureUploadsQueued = GlobalStatistics.Get<int>(nameof(VeldridRenderer), "Texture upload queue length");
@@ -209,11 +206,9 @@ namespace osu.Framework.Graphics.Veldrid
 
             uniformLayout = Factory.CreateResourceLayout(UNIFORM_LAYOUT);
 
-            BackbufferFramebuffer = Device.SwapchainFramebuffer;
-
             pipeline.ResourceLayouts = new ResourceLayout[2];
             pipeline.ResourceLayouts[UNIFORM_RESOURCE_SLOT] = uniformLayout;
-            pipeline.Outputs = BackbufferFramebuffer.OutputDescription;
+            pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
 
             var defaultTexture = Factory.CreateTexture(TextureDescription.Texture2D(1, 1, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, TextureUsage.Sampled));
             Device.UpdateTexture(defaultTexture, new ReadOnlySpan<Rgba32>(new[] { new Rgba32(0, 0, 0) }), 0, 0, 0, 1, 1, 1, 0, 0);
@@ -293,17 +288,12 @@ namespace osu.Framework.Graphics.Veldrid
             {
                 // todo: look for better window resize handling
                 Device.MainSwapchain.Resize((uint)windowSize.X, (uint)windowSize.Y);
-
-                // resizing swapchain could cause it to recreate the framebuffer,
-                // update current backbuffer property to new instance.
-                BackbufferFramebuffer = Device.SwapchainFramebuffer;
-
                 currentSize = windowSize;
             }
 
             Commands.Begin();
 
-            BindFrameBuffer(BackbufferFramebuffer);
+            BindFrameBuffer(Device.SwapchainFramebuffer);
 
             Scissor = RectangleI.Empty;
             ScissorOffset = Vector2I.Zero;
