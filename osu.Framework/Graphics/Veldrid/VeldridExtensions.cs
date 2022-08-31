@@ -9,15 +9,19 @@ using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
 using osuTK.Graphics;
-using osuTK.Graphics.ES30;
 using SharpGen.Runtime;
 using Veldrid;
 using Veldrid.MetalBindings;
+using Veldrid.OpenGLBinding;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 using Vulkan;
+using GetPName = Veldrid.OpenGLBinding.GetPName;
+using GraphicsBackend = Veldrid.GraphicsBackend;
 using PrimitiveTopology = Veldrid.PrimitiveTopology;
 using StencilOperation = Veldrid.StencilOperation;
+using StringName = Veldrid.OpenGLBinding.StringName;
+using VertexAttribPointerType = osuTK.Graphics.ES30.VertexAttribPointerType;
 
 namespace osu.Framework.Graphics.Veldrid
 {
@@ -301,6 +305,41 @@ namespace osu.Framework.Graphics.Veldrid
                         Direct3D 11 Dedicated Video Memory:  {dxgiAdapter.Description.DedicatedVideoMemory / 1024 / 1024} MB
                         Direct3D 11 Dedicated System Memory: {dxgiAdapter.Description.DedicatedSystemMemory / 1024 / 1024} MB
                         Direct3D 11 Shared System Memory:    {dxgiAdapter.Description.SharedSystemMemory / 1024 / 1024} MB");
+        }
+
+        public static unsafe void LogOpenGL(this GraphicsDevice device, out int maxTextureSize)
+        {
+            var info = device.GetOpenGLInfo();
+
+            string version = string.Empty;
+            string renderer = string.Empty;
+            string glslVersion = string.Empty;
+            string vendor = string.Empty;
+            string extensions = string.Empty;
+
+            int glMaxTextureSize = 0;
+
+            info.ExecuteOnGLThread(() =>
+            {
+                version = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Version)) ?? string.Empty;
+                renderer = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Renderer)) ?? string.Empty;
+                vendor = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Vendor)) ?? string.Empty;
+                glslVersion = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.ShadingLanguageVersion)) ?? string.Empty;
+                extensions = string.Join(' ', info.Extensions);
+
+                int size;
+                OpenGLNative.glGetIntegerv(GetPName.MaxTextureSize, &size);
+                glMaxTextureSize = size;
+            });
+
+            maxTextureSize = glMaxTextureSize;
+
+            Logger.Log($@"GL Initialized
+                                    GL Version:                 {version}
+                                    GL Renderer:                {renderer}
+                                    GL Shader Language version: {glslVersion}
+                                    GL Vendor:                  {vendor}
+                                    GL Extensions:              {extensions}");
         }
 
         public static unsafe void LogVulkan(this GraphicsDevice device, out int maxTextureSize)

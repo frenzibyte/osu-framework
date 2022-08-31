@@ -228,6 +228,22 @@ namespace osu.Framework.Graphics.Veldrid
 
             switch (BackendType)
             {
+                case GraphicsBackend.OpenGL:
+                    var openGLGraphics = graphics as IOpenGLWindowGraphics ?? throw new InvalidOperationException($"Window graphics API must implement {nameof(IOpenGLWindowGraphics)}");
+
+                    Device = GraphicsDevice.CreateOpenGL(options, new OpenGLPlatformInfo(
+                        openGLContextHandle: openGLGraphics.WindowContext,
+                        getProcAddress: openGLGraphics.GetProcAddress,
+                        makeCurrent: openGLGraphics.MakeCurrent,
+                        getCurrentContext: () => openGLGraphics.CurrentContext,
+                        clearCurrentContext: openGLGraphics.ClearCurrent,
+                        deleteContext: openGLGraphics.DeleteContext,
+                        swapBuffers: openGLGraphics.SwapBuffers,
+                        setSyncToVerticalBlank: v => openGLGraphics.VerticalSync = v), swapchain.Width, swapchain.Height);
+
+                    Device.LogOpenGL(out maxTextureSize);
+                    break;
+
                 case GraphicsBackend.Vulkan:
                     Device = GraphicsDevice.CreateVulkan(options, swapchain);
                     Device.LogVulkan(out maxTextureSize);
@@ -409,10 +425,20 @@ namespace osu.Framework.Graphics.Veldrid
 
         void IRenderer.MakeCurrent()
         {
+            if (BackendType == GraphicsBackend.OpenGL)
+            {
+                var openGLGraphics = (IOpenGLWindowGraphics)graphics;
+                openGLGraphics.MakeCurrent(openGLGraphics.WindowContext);
+            }
         }
 
         void IRenderer.ClearCurrent()
         {
+            if (BackendType == GraphicsBackend.OpenGL)
+            {
+                var openGLGraphics = (IOpenGLWindowGraphics)graphics;
+                openGLGraphics.ClearCurrent();
+            }
         }
 
         private void freeUnusedVertexBuffers()
