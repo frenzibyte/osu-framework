@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using osu.Framework.Development;
 using osu.Framework.Platform;
-using osuTK;
 
 namespace osu.Framework.Threading
 {
@@ -24,15 +23,6 @@ namespace osu.Framework.Threading
 
         protected sealed override void OnInitialize()
         {
-            var window = host.Window;
-
-            if (window != null)
-            {
-                window.MakeCurrent();
-
-                host.Renderer.Initialise(host.Window);
-                host.Renderer.BeginFrame(new Vector2(window.ClientSize.Width, window.ClientSize.Height));
-            }
         }
 
         internal sealed override void MakeCurrent()

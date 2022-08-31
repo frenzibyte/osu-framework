@@ -44,7 +44,9 @@ namespace osu.Framework.Platform
     {
         internal IntPtr SDLWindowHandle { get; private set; } = IntPtr.Zero;
 
-        private readonly IGraphicsBackend graphicsBackend;
+        private readonly SDL2WindowGraphics graphics;
+
+        IWindowGraphics IWindow.Graphics => graphics;
 
         private bool focused;
 
@@ -467,7 +469,7 @@ namespace osu.Framework.Platform
         [UsedImplicitly]
         private SDL.SDL_EventFilter eventFilterDelegate;
 
-        public SDL2DesktopWindow()
+        public SDL2DesktopWindow(GraphicsBackend backend)
         {
             if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_GAMECONTROLLER) < 0)
             {
@@ -483,7 +485,7 @@ namespace osu.Framework.Platform
                 Logger.Log($@"SDL {category.ReadableName()} log [{priority.ReadableName()}]: {message}");
             }, IntPtr.Zero);
 
-            graphicsBackend = CreateGraphicsBackend();
+            graphics = CreateGraphics(backend);
 
             SupportedWindowModes = new BindableList<WindowMode>(DefaultSupportedWindowModes);
 
@@ -496,16 +498,14 @@ namespace osu.Framework.Platform
             populateJoysticks();
         }
 
-        /// <summary>
-        /// Creates the window and initialises the graphics backend.
-        /// </summary>
         public virtual void Create()
         {
-            SDL.SDL_WindowFlags flags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL |
-                                        SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE |
+            SDL.SDL_WindowFlags flags = SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE |
                                         SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI |
-                                        SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | // shown after first swap to avoid white flash on startup (windows)
-                                        WindowState.ToFlags();
+                                        SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN; // shown after first swap to avoid white flash on startup (windows)
+
+            flags |= WindowState.ToFlags();
+            flags |= graphics.BackendType.ToFlags();
 
             SDL.SDL_SetHint(SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
             SDL.SDL_SetHint(SDL.SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "1");
@@ -518,12 +518,11 @@ namespace osu.Framework.Platform
             // so we deactivate it on startup.
             SDL.SDL_StopTextInput();
 
-            graphicsBackend.InitialiseBeforeWindowCreation();
             SDLWindowHandle = SDL.SDL_CreateWindow(title, Position.X, Position.Y, Size.Width, Size.Height, flags);
 
             Exists = true;
 
-            graphicsBackend.Initialise(this);
+            graphics.Initialise();
 
             updateWindowSpecifics();
             updateWindowSize();
@@ -611,16 +610,17 @@ namespace osu.Framework.Platform
         /// <returns>Whether the window size has been changed after updating.</returns>
         private void updateWindowSize()
         {
-            SDL.SDL_GL_GetDrawableSize(SDLWindowHandle, out int w, out int h);
+            Size drawableSize = graphics.GetDrawableSize();
+
             SDL.SDL_GetWindowSize(SDLWindowHandle, out int actualW, out int _);
 
             // When minimised on windows, values may be zero.
             // If we receive zeroes for either of these, it seems safe to completely ignore them.
-            if (actualW <= 0 || w <= 0)
+            if (actualW <= 0 || drawableSize.Width <= 0)
                 return;
 
-            Scale = (float)w / actualW;
-            Size = new Size(w, h);
+            Scale = (float)drawableSize.Width / actualW;
+            Size = drawableSize;
 
             // This function may be invoked before the SDL internal states are all changed. (as documented here: https://wiki.libsdl.org/SDL_SetEventFilter)
             // Scheduling the store to config until after the event poll has run will ensure the window is in the correct state.
@@ -1265,8 +1265,7 @@ namespace osu.Framework.Platform
                     SDL.SDL_RestoreWindow(SDLWindowHandle);
                     SDL.SDL_MaximizeWindow(SDLWindowHandle);
 
-                    SDL.SDL_GL_GetDrawableSize(SDLWindowHandle, out int w, out int h);
-                    Size = new Size(w, h);
+                    Size = graphics.GetDrawableSize();
                     break;
 
                 case WindowState.Minimised:
@@ -1416,7 +1415,7 @@ namespace osu.Framework.Platform
 
         #endregion
 
-        protected virtual IGraphicsBackend CreateGraphicsBackend() => new SDL2GraphicsBackend();
+        protected virtual SDL2WindowGraphics CreateGraphics(GraphicsBackend backend) => new SDL2WindowGraphics(this, backend);
 
         public void SetupWindow(FrameworkConfigManager config)
         {
