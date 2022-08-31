@@ -255,7 +255,7 @@ namespace osu.Framework.Platform
             }
         }
 
-        private bool visible = true;
+        private bool visible;
 
         /// <summary>
         /// Enables or disables the window visibility.
@@ -444,8 +444,6 @@ namespace osu.Framework.Platform
 
         public bool CapsLockPressed => SDL.SDL_GetModState().HasFlagFast(SDL.SDL_Keymod.KMOD_CAPS);
 
-        private bool firstDraw = true;
-
         private readonly BindableSize sizeFullscreen = new BindableSize();
         private readonly BindableSize sizeWindowed = new BindableSize();
         private readonly BindableDouble windowPositionX = new BindableDouble();
@@ -593,6 +591,17 @@ namespace osu.Framework.Platform
                 SDL.SDL_DestroyWindow(SDLWindowHandle);
 
             SDL.SDL_Quit();
+        }
+
+        private bool firstDraw = true;
+
+        public void OnDraw()
+        {
+            if (!firstDraw)
+                return;
+
+            Visible = true;
+            firstDraw = false;
         }
 
         /// <summary>

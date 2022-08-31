@@ -147,6 +147,11 @@ namespace osu.Framework.Platform
         void Run();
 
         /// <summary>
+        /// Invoked once a draw session has finished.
+        /// </summary>
+        void OnDraw();
+
+        /// <summary>
         /// Whether the window currently has focus.
         /// </summary>
         bool Focused { get; }
