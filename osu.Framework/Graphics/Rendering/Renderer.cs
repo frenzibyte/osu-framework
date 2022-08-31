@@ -33,6 +33,8 @@ namespace osu.Framework.Graphics.Rendering
         /// </summary>
         private const int vbo_free_check_interval = 300;
 
+        public virtual GraphicsBackend BackendType => GraphicsBackend.OpenGL;
+
         public int MaxTextureSize { get; protected set; } = 4096; // default value is to allow roughly normal flow in cases we don't have graphics context, like headless CI.
 
         public int MaxTexturesUploadedPerFrame { get; set; } = 32;

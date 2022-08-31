@@ -25,6 +25,7 @@ using osuTK;
 using osuTK.Graphics;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
+using GraphicsBackend = osu.Framework.Graphics.Rendering.GraphicsBackend;
 using PixelFormat = Veldrid.PixelFormat;
 using PrimitiveTopology = Veldrid.PrimitiveTopology;
 using Texture = Veldrid.Texture;
@@ -38,6 +39,27 @@ namespace osu.Framework.Graphics.Veldrid
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
         private const int vbo_free_check_interval = 300;
+
+        public GraphicsBackend BackendType
+        {
+            get
+            {
+                switch (RuntimeInfo.OS)
+                {
+                    case RuntimeInfo.Platform.Windows:
+                        return GraphicsBackend.Direct3D11;
+
+                    case RuntimeInfo.Platform.macOS:
+                    case RuntimeInfo.Platform.iOS:
+                        return GraphicsBackend.Metal;
+
+                    default:
+                    case RuntimeInfo.Platform.Linux:
+                    case RuntimeInfo.Platform.Android:
+                        return GraphicsBackend.Vulkan;
+                }
+            }
+        }
 
         public string ShaderFilenameSuffix => "-veldrid";
 
@@ -178,25 +200,33 @@ namespace osu.Framework.Graphics.Veldrid
             {
                 case RuntimeInfo.Platform.Windows:
                     swapchain.Source = SwapchainSource.CreateWin32(window.WindowHandle, IntPtr.Zero);
-
-                    Device = GraphicsDevice.CreateD3D11(options, swapchain);
-                    Device.LogD3D11(out maxTextureSize);
                     break;
 
                 case RuntimeInfo.Platform.macOS:
                     swapchain.Source = SwapchainSource.CreateNSWindow(window.WindowHandle);
-
-                    Device = GraphicsDevice.CreateVulkan(options, swapchain);
-                    Device.LogVulkan(out maxTextureSize);
                     break;
 
                 case RuntimeInfo.Platform.Linux:
                     // todo: no idea if this works or that's how it should work.
                     swapchain.Source = SwapchainSource.CreateXlib(window.DisplayHandle, window.WindowHandle);
+                    break;
+            }
 
-                    // todo: support OpenGL, maybe?
+            switch (BackendType)
+            {
+                case GraphicsBackend.Vulkan:
                     Device = GraphicsDevice.CreateVulkan(options, swapchain);
                     Device.LogVulkan(out maxTextureSize);
+                    break;
+
+                case GraphicsBackend.Direct3D11:
+                    Device = GraphicsDevice.CreateD3D11(options, swapchain);
+                    Device.LogD3D11(out maxTextureSize);
+                    break;
+
+                case GraphicsBackend.Metal:
+                    Device = GraphicsDevice.CreateMetal(options, swapchain);
+                    Device.LogMetal(out maxTextureSize);
                     break;
             }
 

@@ -26,6 +26,7 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         public ref readonly MaskingInfo CurrentMaskingInfo => ref maskingInfo;
         private readonly MaskingInfo maskingInfo;
 
+        public GraphicsBackend BackendType => default;
         public RectangleI Viewport => RectangleI.Empty;
         public RectangleF Ortho => RectangleF.Empty;
         public RectangleI Scissor => RectangleI.Empty;

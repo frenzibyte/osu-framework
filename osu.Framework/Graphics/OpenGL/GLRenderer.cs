@@ -22,6 +22,8 @@ namespace osu.Framework.Graphics.OpenGL
 {
     internal class GLRenderer : Renderer
     {
+        public override GraphicsBackend BackendType => GraphicsBackend.OpenGL;
+
         /// <summary>
         /// The maximum allowed render buffer size.
         /// </summary>

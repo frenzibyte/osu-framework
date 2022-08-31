@@ -43,6 +43,11 @@ namespace osu.Framework.Graphics.Rendering
         public const int MAX_QUADS = ushort.MaxValue / INDICES_PER_QUAD;
 
         /// <summary>
+        /// The type of the graphics backend represented by this renderer.
+        /// </summary>
+        GraphicsBackend BackendType { get; }
+
+        /// <summary>
         /// The maximum allowed texture size.
         /// </summary>
         int MaxTextureSize { get; }
