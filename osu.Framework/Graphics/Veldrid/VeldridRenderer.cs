@@ -25,7 +25,8 @@ using osuTK;
 using osuTK.Graphics;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
-using GraphicsBackend = osu.Framework.Graphics.Rendering.GraphicsBackend;
+using Veldrid.OpenGL;
+using GraphicsBackend = osu.Framework.Platform.GraphicsBackend;
 using PixelFormat = Veldrid.PixelFormat;
 using PrimitiveTopology = Veldrid.PrimitiveTopology;
 using Texture = Veldrid.Texture;
@@ -39,6 +40,8 @@ namespace osu.Framework.Graphics.Veldrid
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
         private const int vbo_free_check_interval = 300;
+
+        private IWindowGraphics graphics = null!;
 
         public GraphicsBackend BackendType
         {
@@ -59,6 +62,12 @@ namespace osu.Framework.Graphics.Veldrid
                         return GraphicsBackend.Vulkan;
                 }
             }
+        }
+
+        public bool VerticalSync
+        {
+            get => Device.SyncToVerticalBlank;
+            set => Device.SyncToVerticalBlank = value;
         }
 
         public string ShaderFilenameSuffix => "-veldrid";
@@ -170,8 +179,12 @@ namespace osu.Framework.Graphics.Veldrid
             SharedQuadIndex = new VeldridIndexData(this);
         }
 
-        void IRenderer.Initialise(IWindow window)
+        void IRenderer.Initialise(IWindowGraphics graphics)
         {
+            this.graphics = graphics;
+
+            var size = graphics.GetDrawableSize();
+
             var options = new GraphicsDeviceOptions
             {
                 HasMainSwapchain = true,
@@ -187,8 +200,8 @@ namespace osu.Framework.Graphics.Veldrid
 
             var swapchain = new SwapchainDescription
             {
-                Width = (uint)window.ClientSize.Width,
-                Height = (uint)window.ClientSize.Height,
+                Width = (uint)size.Width,
+                Height = (uint)size.Height,
                 ColorSrgb = options.SwapchainSrgbFormat,
                 DepthFormat = options.SwapchainDepthFormat,
                 SyncToVerticalBlank = options.SyncToVerticalBlank,
@@ -199,16 +212,17 @@ namespace osu.Framework.Graphics.Veldrid
             switch (RuntimeInfo.OS)
             {
                 case RuntimeInfo.Platform.Windows:
-                    swapchain.Source = SwapchainSource.CreateWin32(window.WindowHandle, IntPtr.Zero);
+                    swapchain.Source = SwapchainSource.CreateWin32(graphics.WindowHandle, IntPtr.Zero);
                     break;
 
                 case RuntimeInfo.Platform.macOS:
-                    swapchain.Source = SwapchainSource.CreateNSWindow(window.WindowHandle);
+                    var metalGraphics = graphics as IMetalWindowGraphics ?? throw new InvalidOperationException($"Window graphics API must implement {nameof(IMetalWindowGraphics)}.");
+                    swapchain.Source = SwapchainSource.CreateNSView(metalGraphics.CreateMetalView());
                     break;
 
                 case RuntimeInfo.Platform.Linux:
                     // todo: no idea if this works or that's how it should work.
-                    swapchain.Source = SwapchainSource.CreateXlib(window.DisplayHandle, window.WindowHandle);
+                    swapchain.Source = SwapchainSource.CreateXlib(graphics.DisplayHandle, graphics.WindowHandle);
                     break;
             }
 
@@ -388,6 +402,17 @@ namespace osu.Framework.Graphics.Veldrid
 
             Commands.End();
             Device.SubmitCommands(Commands);
+        }
+
+        void IRenderer.SwapBuffers() => Device.SwapBuffers();
+        void IRenderer.WaitUntilIdle() => Device.WaitForIdle();
+
+        void IRenderer.MakeCurrent()
+        {
+        }
+
+        void IRenderer.ClearCurrent()
+        {
         }
 
         private void freeUnusedVertexBuffers()

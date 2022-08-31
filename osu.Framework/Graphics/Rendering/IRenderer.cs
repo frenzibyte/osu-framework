@@ -48,6 +48,11 @@ namespace osu.Framework.Graphics.Rendering
         GraphicsBackend BackendType { get; }
 
         /// <summary>
+        /// Enables or disables vertical sync.
+        /// </summary>
+        bool VerticalSync { get; set; }
+
+        /// <summary>
         /// The maximum allowed texture size.
         /// </summary>
         int MaxTextureSize { get; }
@@ -138,18 +143,43 @@ namespace osu.Framework.Graphics.Rendering
         /// <summary>
         /// Performs a once-off initialisation of this <see cref="IRenderer"/>.
         /// </summary>
-        internal void Initialise(IWindow window);
+        protected internal void Initialise(IWindowGraphics graphics);
 
         /// <summary>
         /// Resets any states to prepare for drawing a new frame.
         /// </summary>
         /// <param name="windowSize">The full window size.</param>
-        internal void BeginFrame(Vector2 windowSize);
+        protected internal void BeginFrame(Vector2 windowSize);
 
         /// <summary>
         /// Performs any last actions before a frame ends.
         /// </summary>
-        internal void FinishFrame();
+        protected internal void FinishFrame();
+
+        /// <summary>
+        /// Performs a buffer swap.
+        /// </summary>
+        protected internal void SwapBuffers();
+
+        /// <summary>
+        /// Waits until all renderer commands have been fully executed GPU-side, as signaled by the graphics backend.
+        /// </summary>
+        /// <remarks>
+        /// This is equivalent to a <c>glFinish</c> call.
+        /// </remarks>
+        protected internal void WaitUntilIdle();
+
+        /// <summary>
+        /// Invoked when the rendering thread is active and commands will be enqueued.
+        /// This is mainly required for OpenGL renderers to mark context as current before performing GL calls.
+        /// </summary>
+        protected internal void MakeCurrent();
+
+        /// <summary>
+        /// Invoked when the rendering thread is suspended and no more commands will be enqueued.
+        /// This is mainly required for OpenGL renderers to mark context as current before performing GL calls.
+        /// </summary>
+        protected internal void ClearCurrent();
 
         /// <summary>
         /// Binds a texture.
@@ -337,20 +367,20 @@ namespace osu.Framework.Graphics.Rendering
         /// Sets the value of a uniform.
         /// </summary>
         /// <param name="uniform">The uniform to set.</param>
-        internal void SetUniform<T>(IUniformWithValue<T> uniform) where T : unmanaged, IEquatable<T>;
+        protected internal void SetUniform<T>(IUniformWithValue<T> uniform) where T : unmanaged, IEquatable<T>;
 
         /// <summary>
         /// Sets the current draw depth.
         /// The draw depth is written to every vertex added to <see cref="IVertexBuffer"/>s.
         /// </summary>
         /// <param name="drawDepth">The draw depth.</param>
-        internal void SetDrawDepth(float drawDepth);
+        protected internal void SetDrawDepth(float drawDepth);
 
-        internal IVertexBatch<TexturedVertex2D> DefaultQuadBatch { get; }
+        protected internal IVertexBatch<TexturedVertex2D> DefaultQuadBatch { get; }
 
-        internal void PushQuadBatch(IVertexBatch<TexturedVertex2D> quadBatch);
+        protected internal void PushQuadBatch(IVertexBatch<TexturedVertex2D> quadBatch);
 
-        internal void PopQuadBatch();
+        protected internal void PopQuadBatch();
 
         #region TextureVisualiser Support
 

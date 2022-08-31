@@ -88,11 +88,6 @@ namespace osu.Framework.Platform
         WindowState WindowState { get; set; }
 
         /// <summary>
-        /// Controls the vertical sync mode of the screen.
-        /// </summary>
-        bool VerticalSync { get; set; }
-
-        /// <summary>
         /// Returns the default <see cref="WindowMode"/> for the implementation.
         /// </summary>
         WindowMode DefaultWindowMode { get; }
@@ -141,16 +136,6 @@ namespace osu.Framework.Platform
         IBindable<DisplayMode> CurrentDisplayMode { get; }
 
         /// <summary>
-        /// Makes this window the current graphics context, if appropriate for the driver.
-        /// </summary>
-        void MakeCurrent();
-
-        /// <summary>
-        /// Clears the current graphics context, if appropriate for the driver.
-        /// </summary>
-        void ClearCurrent();
-
-        /// <summary>
         /// Forcefully closes the window.
         /// </summary>
         void Close();
@@ -160,11 +145,6 @@ namespace osu.Framework.Platform
         /// Is a blocking call on desktop platforms, and a non-blocking call on mobile platforms.
         /// </summary>
         void Run();
-
-        /// <summary>
-        /// Requests that the graphics backend perform a buffer swap.
-        /// </summary>
-        void SwapBuffers();
 
         /// <summary>
         /// Whether the window currently has focus.
@@ -199,6 +179,11 @@ namespace osu.Framework.Platform
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when setting a negative or zero size, or a size less than <see cref="MinSize"/>.</exception>
         Size MaxSize { get; set; }
+
+        /// <summary>
+        /// Whether the window is currently visible.
+        /// </summary>
+        bool Visible { get; set; }
 
         /// <summary>
         /// The window title.

@@ -23,6 +23,8 @@ namespace osu.Framework.Threading
 
         protected sealed override void OnInitialize()
         {
+            base.OnInitialize();
+            host.Renderer.MakeCurrent();
         }
 
         internal sealed override void MakeCurrent()
@@ -32,13 +34,13 @@ namespace osu.Framework.Threading
             ThreadSafety.IsDrawThread = true;
 
             // Seems to be required on some drivers as the context is lost from the draw thread.
-            host.Window?.MakeCurrent();
+            host.Renderer.MakeCurrent();
         }
 
         protected sealed override void OnSuspended()
         {
             base.OnSuspended();
-            host.Window?.ClearCurrent();
+            host.Renderer.ClearCurrent();
         }
 
         internal override IEnumerable<StatisticsCounterType> StatisticsCounters => new[]

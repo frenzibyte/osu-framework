@@ -66,15 +66,6 @@ namespace osu.Framework.Platform
         }
 
         /// <summary>
-        /// Enables or disables vertical sync.
-        /// </summary>
-        public bool VerticalSync
-        {
-            get => graphicsBackend.VerticalSync;
-            set => graphicsBackend.VerticalSync = value;
-        }
-
-        /// <summary>
         /// Returns true if window has been created.
         /// Returns false if the window has not yet been created, or has been closed.
         /// </summary>
@@ -264,7 +255,7 @@ namespace osu.Framework.Platform
             }
         }
 
-        private bool visible;
+        private bool visible = true;
 
         /// <summary>
         /// Enables or disables the window visibility.
@@ -631,28 +622,6 @@ namespace osu.Framework.Platform
         /// Forcefully closes the window.
         /// </summary>
         public void Close() => ScheduleCommand(() => Exists = false);
-
-        public void SwapBuffers()
-        {
-            graphicsBackend.SwapBuffers();
-
-            if (firstDraw)
-            {
-                Visible = true;
-                firstDraw = false;
-            }
-        }
-
-        /// <summary>
-        /// Requests that the graphics backend become the current context.
-        /// May not be required for some backends.
-        /// </summary>
-        public void MakeCurrent() => graphicsBackend.MakeCurrent();
-
-        /// <summary>
-        /// Requests that the current context be cleared.
-        /// </summary>
-        public void ClearCurrent() => graphicsBackend.ClearCurrent();
 
         private void enqueueJoystickAxisInput(JoystickAxisSource axisSource, short axisValue)
         {
