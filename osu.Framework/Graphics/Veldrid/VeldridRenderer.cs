@@ -181,6 +181,10 @@ namespace osu.Framework.Graphics.Veldrid
 
         void IRenderer.Initialise(IWindowGraphics graphics)
         {
+            // Veldrid must either be initialised on the main/"input" thread, or in a separate thread away from the draw thread at least.
+            // Otherwise the window may not render anything on some platforms (macOS at least).
+            Debug.Assert(!ThreadSafety.IsDrawThread, "Veldrid cannot be initialised on the draw thread.");
+
             this.graphics = graphics;
 
             var size = graphics.GetDrawableSize();
