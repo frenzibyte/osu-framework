@@ -6,16 +6,18 @@
 using System;
 using System.Buffers;
 using osu.Framework.Development;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Statistics;
 using SixLabors.ImageSharp.Memory;
 using Veldrid;
 using BufferUsage = Veldrid.BufferUsage;
+using PrimitiveTopology = Veldrid.PrimitiveTopology;
 
 namespace osu.Framework.Graphics.Veldrid.Buffers
 {
-    internal abstract class VeldridVertexBuffer<T> : IVeldridVertexBuffer
+    internal abstract class VeldridVertexBuffer<T> : IVertexBuffer
         where T : unmanaged, IEquatable<T>, IVertex
     {
         protected static readonly int STRIDE = VeldridVertexUtils<DepthWrappingVertex<T>>.STRIDE;
@@ -88,7 +90,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             if (IsDisposed)
                 return;
 
-            ((IVeldridVertexBuffer)this).Free();
+            ((IVertexBuffer)this).Free();
 
             IsDisposed = true;
         }

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using osu.Framework.Development;
 using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Primitives;
@@ -197,15 +198,13 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         private VeldridTextureSamplerSet resource;
 
+        [CanBeNull]
         public VeldridTextureSamplerSet Resource
         {
             get
             {
                 if (!Available)
                     throw new ObjectDisposedException(ToString(), "Can not obtain resource set of a disposed texture.");
-
-                if (resource == null)
-                    throw new InvalidOperationException("Can not obtain resource set of a texture before uploading it.");
 
                 return resource;
             }
@@ -239,7 +238,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             if (resource == null)
                 return false;
 
-            if (renderer.BindTexture(resource, wrapModeS, wrapModeT))
+            if (renderer.BindTexture(this, wrapModeS: wrapModeS, wrapModeT: wrapModeT))
                 BindCount++;
 
             return true;

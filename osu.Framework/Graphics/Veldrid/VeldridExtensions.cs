@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
@@ -28,20 +29,6 @@ namespace osu.Framework.Graphics.Veldrid
     internal static class VeldridExtensions
     {
         public static RgbaFloat ToRgbaFloat(this Color4 colour) => new RgbaFloat(colour.R, colour.G, colour.B, colour.A);
-
-        // todo: ColorWriteMask is necessary for front-to-back render support.
-        // public static BlendAttachmentDescription ToBlendAttachment(this BlendingParameters parameters, ColorWriteMask writeMask = ColorWriteMask.All) => new BlendAttachmentDescription
-        public static BlendAttachmentDescription ToBlendAttachment(this BlendingParameters parameters) => new BlendAttachmentDescription
-        {
-            BlendEnabled = !parameters.IsDisabled,
-            SourceColorFactor = parameters.Source.ToBlendFactor(),
-            SourceAlphaFactor = parameters.SourceAlpha.ToBlendFactor(),
-            DestinationColorFactor = parameters.Destination.ToBlendFactor(),
-            DestinationAlphaFactor = parameters.DestinationAlpha.ToBlendFactor(),
-            ColorFunction = parameters.RGBEquation.ToBlendFunction(),
-            AlphaFunction = parameters.AlphaEquation.ToBlendFunction(),
-            // ColorWriteMask = writeMask,
-        };
 
         public static BlendFactor ToBlendFactor(this BlendingType type)
         {
@@ -104,6 +91,18 @@ namespace osu.Framework.Graphics.Veldrid
                 default:
                     throw new ArgumentOutOfRangeException(nameof(equation));
             }
+        }
+
+        public static ColorWriteMask ToColorWriteMask(this BlendingMask mask)
+        {
+            ColorWriteMask writeMask = ColorWriteMask.None;
+
+            if (mask.HasFlagFast(BlendingMask.Red)) writeMask |= ColorWriteMask.Red;
+            if (mask.HasFlagFast(BlendingMask.Green)) writeMask |= ColorWriteMask.Green;
+            if (mask.HasFlagFast(BlendingMask.Blue)) writeMask |= ColorWriteMask.Blue;
+            if (mask.HasFlagFast(BlendingMask.Alpha)) writeMask |= ColorWriteMask.Alpha;
+
+            return writeMask;
         }
 
         public static SamplerFilter ToSamplerFilter(this TextureFilteringMode mode)
