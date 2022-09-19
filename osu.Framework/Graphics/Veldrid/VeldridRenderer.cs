@@ -60,6 +60,8 @@ namespace osu.Framework.Graphics.Veldrid
 
         public override string ShaderFilenameSuffix => "-veldrid";
 
+        public override bool DepthStartsFromNegativeOne => !Device.IsDepthRangeZeroToOne;
+
         internal const uint UNIFORM_RESOURCE_SLOT = 0;
         internal const uint TEXTURE_RESOURCE_SLOT = 1;
 
