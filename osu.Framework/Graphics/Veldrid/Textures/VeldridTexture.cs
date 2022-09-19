@@ -5,14 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using JetBrains.Annotations;
 using osu.Framework.Development;
 using osu.Framework.Extensions.ImageExtensions;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Lists;
 using osu.Framework.Platform;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -24,14 +22,9 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 {
     internal class VeldridTexture : INativeTexture
     {
-        /// <summary>
-        /// Contains all currently-active <see cref="VeldridTexture"/>s.
-        /// </summary>
-        private static readonly LockedWeakList<VeldridTexture> all_textures = new LockedWeakList<VeldridTexture>();
-
         private readonly Queue<ITextureUpload> uploadQueue = new Queue<ITextureUpload>();
 
-        IRenderer INativeTexture.Renderer => renderer;
+        IRenderer INativeTexture.Renderer => Renderer;
 
         public string Identifier
         {
@@ -44,7 +37,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             }
         }
 
-        public int MaxSize => renderer.MaxTextureSize;
+        public int MaxSize => Renderer.MaxTextureSize;
 
         public virtual int Width { get; set; }
         public virtual int Height { get; set; }
@@ -58,14 +51,6 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         private readonly Rgba32 initialisationColour;
 
         public ulong BindCount { get; protected set; }
-
-        /// <summary>
-        /// Invoked when a new <see cref="VeldridTexture"/> is created.
-        /// </summary>
-        /// <remarks>
-        /// Invocation from the draw or update thread cannot be assumed.
-        /// </remarks>
-        public static event Action<VeldridTexture> TextureCreated;
 
         public RectangleI Bounds => new RectangleI(0, 0, Width, Height);
 
@@ -82,7 +67,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             }
         }
 
-        private readonly VeldridRenderer renderer;
+        protected readonly VeldridRenderer Renderer;
 
         /// <summary>
         /// Creates a new <see cref="VeldridTexture"/>.
@@ -95,23 +80,14 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         /// <param name="initialisationColour">The colour to initialise texture levels with (in the case of sub region initial uploads).</param>
         public VeldridTexture(VeldridRenderer renderer, int width, int height, bool manualMipmaps = false, SamplerFilter filteringMode = SamplerFilter.MinLinear_MagLinear_MipLinear, Rgba32 initialisationColour = default)
         {
-            this.renderer = renderer;
             this.manualMipmaps = manualMipmaps;
             this.filteringMode = filteringMode;
             this.initialisationColour = initialisationColour;
 
+            Renderer = renderer;
             Width = width;
             Height = height;
-
-            all_textures.Add(this);
-
-            TextureCreated?.Invoke(this);
         }
-
-        /// <summary>
-        /// Retrieves all currently-active <see cref="VeldridTexture"/>s.
-        /// </summary>
-        public static VeldridTexture[] GetAllTextures() => all_textures.ToArray();
 
         #region Disposal
 
@@ -135,12 +111,10 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         protected void Dispose(bool isDisposing)
         {
-            all_textures.Remove(this);
-
             while (tryGetNextUpload(out var upload))
                 upload.Dispose();
 
-            renderer.ScheduleDisposal(t =>
+            Renderer.ScheduleDisposal(t =>
             {
                 t.Available = false;
 
@@ -224,7 +198,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 uploadQueue.Enqueue(upload);
 
                 if (requireUpload && !BypassTextureUploadQueueing)
-                    renderer.EnqueueTextureUpload(this);
+                    Renderer.EnqueueTextureUpload(this);
             }
         }
 
@@ -238,7 +212,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             if (resource == null)
                 return false;
 
-            if (renderer.BindTexture(this, wrapModeS: wrapModeS, wrapModeT: wrapModeT))
+            if (Renderer.BindTexture(this, wrapModeS: wrapModeS, wrapModeT: wrapModeT))
                 BindCount++;
 
             return true;
@@ -264,7 +238,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             }
 
             if (didUpload && !(manualMipmaps || maximumUploadedLod > 0))
-                renderer.Commands.GenerateMipmaps(texture);
+                Renderer.Commands.GenerateMipmaps(texture);
 
             return didUpload;
         }
@@ -319,7 +293,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 texture?.Dispose();
 
                 var textureDescription = TextureDescription.Texture2D((uint)Width, (uint)Height, (uint)calculateMipmapLevels(Width, Height), 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, Usages);
-                texture = renderer.Factory.CreateTexture(textureDescription);
+                texture = Renderer.Factory.CreateTexture(ref textureDescription);
 
                 // todo: we may want to look into not having to allocate chunks of zero byte region for initialising textures
                 // similar to how OpenGL allows calling glTexImage2D with null data pointer.
@@ -341,7 +315,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                     maximumUploadedLod = upload.Level;
                 }
 
-                renderer.UpdateTexture(texture, upload.Bounds.X >> upload.Level, upload.Bounds.Y >> upload.Level, upload.Bounds.Width >> upload.Level, upload.Bounds.Height >> upload.Level, upload.Level, upload.Data);
+                Renderer.UpdateTexture(texture, upload.Bounds.X >> upload.Level, upload.Bounds.Y >> upload.Level, upload.Bounds.Width >> upload.Level, upload.Bounds.Height >> upload.Level, upload.Level, upload.Data);
             }
 
             if (sampler == null || maximumUploadedLod > lastMaximumUploadedLod)
@@ -364,10 +338,10 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                     MaximumAnisotropy = 0,
                 };
 
-                sampler = renderer.Factory.CreateSampler(samplerDescription);
+                sampler = Renderer.Factory.CreateSampler(ref samplerDescription);
             }
 
-            resource ??= new VeldridTextureSamplerSet(renderer, texture, sampler);
+            resource ??= new VeldridTextureSamplerSet(Renderer, texture, sampler);
         }
 
         private unsafe void initialiseLevel(int level, int width, int height)
@@ -376,7 +350,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             using (var pixels = image.CreateReadOnlyPixelSpan())
             {
                 updateMemoryUsage(level, (long)width * height * sizeof(Rgba32));
-                renderer.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
+                Renderer.UpdateTexture(texture, 0, 0, width, height, level, pixels.Span);
             }
         }
 

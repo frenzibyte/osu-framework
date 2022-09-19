@@ -9,6 +9,8 @@ using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Textures;
 using osuTK;
 using osuTK.Graphics.ES30;
+using FramebufferAttachment = osuTK.Graphics.ES30.FramebufferAttachment;
+using Texture = osu.Framework.Graphics.Textures.Texture;
 
 namespace osu.Framework.Graphics.OpenGL.Buffers
 {
@@ -114,7 +116,11 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                 return;
 
             glTexture.Dispose();
-            renderer.DeleteFrameBuffer(this);
+
+            while (renderer.FrameBuffer == this)
+                renderer.UnbindFrameBuffer(this);
+
+            GL.DeleteFramebuffer(FrameBuffer);
 
             foreach (var buffer in attachedRenderBuffers)
                 buffer.Dispose();

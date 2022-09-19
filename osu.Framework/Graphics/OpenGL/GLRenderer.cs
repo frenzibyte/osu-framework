@@ -182,18 +182,6 @@ namespace osu.Framework.Graphics.OpenGL
 
         protected override void SetFrameBufferImplementation(IFrameBuffer? frameBuffer) => GL.BindFramebuffer(FramebufferTarget.Framebuffer, ((GLFrameBuffer?)frameBuffer)?.FrameBuffer ?? BackbufferFramebuffer);
 
-        /// <summary>
-        /// Deletes a frame buffer.
-        /// </summary>
-        /// <param name="frameBuffer">The frame buffer to delete.</param>
-        public void DeleteFrameBuffer(IFrameBuffer frameBuffer)
-        {
-            while (FrameBuffer == frameBuffer)
-                UnbindFrameBuffer(frameBuffer);
-
-            ScheduleDisposal(GL.DeleteFramebuffer, ((GLFrameBuffer)frameBuffer).FrameBuffer);
-        }
-
         protected override void ClearImplementation(ClearInfo clearInfo)
         {
             if (clearInfo.Colour != CurrentClearInfo.Colour)

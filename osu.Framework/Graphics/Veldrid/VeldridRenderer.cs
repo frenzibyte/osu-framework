@@ -270,9 +270,9 @@ namespace osu.Framework.Graphics.Veldrid
         {
             Commands.ClearColorTarget(0, clearInfo.Colour.ToRgbaFloat());
 
-            // todo: add depth conditional
-            // if (FrameBuffer.DepthTarget != null)
-            Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
+            var framebuffer = ((VeldridFrameBuffer?)FrameBuffer)?.Framebuffer ?? Device.SwapchainFramebuffer;
+            if (framebuffer.DepthTarget != null)
+                Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
         }
 
         protected override void SetScissorStateImplementation(bool enabled) => pipeline.RasterizerState.ScissorTestEnabled = enabled;
@@ -429,9 +429,11 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected override void SetFrameBufferImplementation(IFrameBuffer? frameBuffer)
         {
-            // todo: missing veldrid framebuffer support
-            Commands.SetFramebuffer(null ?? Device.SwapchainFramebuffer);
-            pipeline.Outputs = (null ?? Device.SwapchainFramebuffer).OutputDescription;
+            VeldridFrameBuffer? veldridFrameBuffer = (VeldridFrameBuffer?)frameBuffer;
+            Framebuffer framebuffer = veldridFrameBuffer?.Framebuffer ?? Device.SwapchainFramebuffer;
+
+            Commands.SetFramebuffer(framebuffer);
+            pipeline.Outputs = framebuffer.OutputDescription;
         }
 
         protected override IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType)
@@ -441,7 +443,7 @@ namespace osu.Framework.Graphics.Veldrid
             => new VeldridShader(this, name, parts.Cast<VeldridShaderPart>().ToArray());
 
         public override IFrameBuffer CreateFrameBuffer(RenderBufferFormat[]? renderBufferFormats = null, TextureFilteringMode filteringMode = TextureFilteringMode.Linear)
-            => throw new NotImplementedException();
+            => new VeldridFrameBuffer(this, renderBufferFormats?.ToPixelFormats(), filteringMode.ToSamplerFilter());
 
         protected override IVertexBatch<TVertex> CreateLinearBatch<TVertex>(int size, int maxBuffers, Rendering.PrimitiveTopology primitiveType)
             => new VeldridLinearBatch<TVertex>(this, size, maxBuffers, primitiveType.ToPrimitiveTopology());
