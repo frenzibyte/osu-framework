@@ -211,7 +211,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             if (!pipelineCache.TryGetValue(pipeline, out var instance))
             {
-                pipelineCache[pipeline] = instance = Factory.CreateGraphicsPipeline(pipeline);
+                pipelineCache[pipeline] = instance = Factory.CreateGraphicsPipeline(ref pipeline);
                 stat_graphics_pipeline_created.Value++;
             }
 
@@ -360,7 +360,7 @@ namespace osu.Framework.Graphics.Veldrid
                 description.Elements[i] = new ResourceLayoutElementDescription($"{textureElement.Name}{i}", textureElement.Kind, textureElement.Stages);
 
             description.Elements[^1] = TEXTURE_LAYOUT.Elements.Single(e => e.Kind == ResourceKind.Sampler);
-            return texture_layouts[textureCount] = Factory.CreateResourceLayout(description);
+            return texture_layouts[textureCount] = Factory.CreateResourceLayout(ref description);
         }
 
         protected override void SetShaderImplementation(IShader shader)
