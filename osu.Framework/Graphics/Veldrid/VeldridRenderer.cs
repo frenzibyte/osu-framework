@@ -62,6 +62,8 @@ namespace osu.Framework.Graphics.Veldrid
 
         public override bool DepthStartsFromNegativeOne => !Device.IsDepthRangeZeroToOne;
 
+        public override bool TextureOriginAtBottomLeft => Device.IsClipSpaceYInverted;
+
         internal const uint UNIFORM_RESOURCE_SLOT = 0;
         internal const uint TEXTURE_RESOURCE_SLOT = 1;
 
