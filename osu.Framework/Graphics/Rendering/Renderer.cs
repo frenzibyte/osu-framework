@@ -871,12 +871,8 @@ namespace osu.Framework.Graphics.Rendering
 
         public void BindFrameBuffer(IFrameBuffer frameBuffer)
         {
-            bool alreadyBound = FrameBuffer == frameBuffer;
-
             frameBufferStack.Push(frameBuffer);
-
-            if (!alreadyBound)
-                setFrameBuffer(frameBuffer);
+            setFrameBuffer(frameBuffer);
         }
 
         public void UnbindFrameBuffer(IFrameBuffer frameBuffer)
@@ -890,9 +886,12 @@ namespace osu.Framework.Graphics.Rendering
 
         private void setFrameBuffer(IFrameBuffer? frameBuffer)
         {
-            FlushCurrentBatch();
+            if (frameBuffer == FrameBuffer)
+                return;
 
+            FlushCurrentBatch();
             SetFrameBufferImplementation(frameBuffer);
+
             FrameBuffer = frameBuffer;
 
             GlobalPropertyManager.Set(GlobalProperty.BackbufferDraw, UsingBackbuffer);
