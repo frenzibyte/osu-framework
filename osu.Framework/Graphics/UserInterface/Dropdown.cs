@@ -225,7 +225,7 @@ namespace osu.Framework.Graphics.UserInterface
                     Menu.State = MenuState.Closed;
             };
 
-            ItemSource.CollectionChanged += (_, _) => setItems(ItemSource);
+            ItemSource.CollectionChanged += (_, _) => Scheduler.AddOnce(setItems, ItemSource);
         }
 
         private void preselectionConfirmed(int selectedIndex)
@@ -281,7 +281,7 @@ namespace osu.Framework.Graphics.UserInterface
             }
             else if (SelectedItem == null || !EqualityComparer<T>.Default.Equals(SelectedItem.Value, args.NewValue))
             {
-                if (!itemMap.TryGetValue(args.NewValue, out selectedItem))
+                if (args.NewValue == null || !itemMap.TryGetValue(args.NewValue, out selectedItem))
                 {
                     selectedItem = new DropdownMenuItem<T>(GenerateItemText(args.NewValue), args.NewValue);
                 }
