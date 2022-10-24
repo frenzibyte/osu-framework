@@ -64,8 +64,18 @@ namespace osu.Framework.Graphics.Veldrid
                 case BlendingType.Zero:
                     return BlendFactor.Zero;
 
+                case BlendingType.ConstantColor:
+                    return BlendFactor.BlendFactor;
+
+                case BlendingType.OneMinusConstantColor:
+                    return BlendFactor.InverseBlendFactor;
+
+                // todo: veldrid has no support for those, we may want to consider removing them from BlendingType enum (we don't even provide a blend factor in the parameters).
+                case BlendingType.ConstantAlpha:
+                case BlendingType.OneMinusConstantAlpha:
+                case BlendingType.SrcAlphaSaturate:
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(type));
+                    return default;
             }
         }
 
