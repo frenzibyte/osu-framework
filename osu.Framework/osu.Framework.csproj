@@ -33,7 +33,6 @@
     <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
     <PackageReference Include="ppy.osuTK.NS20" Version="1.0.192" />
     <PackageReference Include="StbiSharp" Version="1.1.0" />
-    <PackageReference Include="ppy.SDL2-CS" Version="1.0.596-alpha" />
     <PackageReference Include="Veldrid" Version="4.9.0-beta2" />
     <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
     <PackageReference Include="ppy.SDL2-CS" Version="1.0.611-alpha" />
