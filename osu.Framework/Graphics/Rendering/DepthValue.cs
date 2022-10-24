@@ -16,8 +16,8 @@ namespace osu.Framework.Graphics.Rendering
         /// </summary>
         private const float increment = 0.001f;
 
-        private int minimum;
-        private int maxCount;
+        private readonly int minimum;
+        private readonly int maxCount;
 
         private float depth;
         private int count;
