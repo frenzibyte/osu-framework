@@ -1,6 +1,12 @@
 ﻿layout(location = 0) in highp vec2 v_MaskingPosition;
 layout(location = 1) in lowp vec4 v_Colour;
-layout(location = 3) in mediump vec4 v_TexRect;
+
+#ifdef HIGH_PRECISION_VERTEX
+    layout(location = 3) in highp vec4 v_TexRect;
+#else
+    layout(location = 3) in mediump vec4 v_TexRect;
+#endif
+
 layout(location = 4) in mediump vec2 v_BlendRange;
 
 uniform highp float g_CornerRadius;
