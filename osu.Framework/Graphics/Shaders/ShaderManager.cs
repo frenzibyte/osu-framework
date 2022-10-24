@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.IO.Stores;
 using Path = System.IO.Path;
@@ -73,6 +74,9 @@ namespace osu.Framework.Graphics.Shaders
                 return part;
 
             byte[]? rawData = LoadRaw(name);
+
+            if (rawData == null)
+                throw new FileNotFoundException($"Cannot find shader '{name}' in shaders directory.");
 
             part = renderer.CreateShaderPart(this, name, rawData, partType);
 

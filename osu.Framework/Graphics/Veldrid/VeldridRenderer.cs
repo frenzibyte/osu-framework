@@ -440,7 +440,7 @@ namespace osu.Framework.Graphics.Veldrid
             pipeline.Outputs = framebuffer.OutputDescription;
         }
 
-        protected override IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType)
+        protected override IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[] rawData, ShaderPartType partType)
             => new VeldridShaderPart(manager, rawData, partType);
 
         protected override IShader CreateShader(string name, params IShaderPart[] parts)

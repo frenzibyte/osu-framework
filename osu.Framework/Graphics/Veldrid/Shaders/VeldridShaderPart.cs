@@ -30,7 +30,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
         private static readonly Regex shader_uniform_regex = new Regex(@"^\s*(?>uniform)\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(\w+);", RegexOptions.Multiline);
         private static readonly Regex shader_attribute_location_regex = new Regex(@"(layout\(location\s=\s)(-?\d+)(\)\s(?>attribute|in).*)", RegexOptions.Multiline);
 
-        public VeldridShaderPart(ShaderManager shaders, byte[]? rawData, ShaderPartType type)
+        public VeldridShaderPart(ShaderManager shaders, byte[] rawData, ShaderPartType type)
         {
             Type = type;
             data = loadShader(rawData, type, shaders, uniforms);

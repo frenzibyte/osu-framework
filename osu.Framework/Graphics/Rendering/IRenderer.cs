@@ -329,7 +329,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <param name="rawData">The content of the shader part.</param>
         /// <param name="partType">The type of the shader part.</param>
         /// <returns>The <see cref="IShaderPart"/>.</returns>
-        protected internal IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType);
+        protected internal IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[] rawData, ShaderPartType partType);
 
         /// <summary>
         /// Creates a new <see cref="IShader"/>.
