@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           if [ $(git describe --exact-match --tags HEAD &> /dev/null; echo $?) == 0 ]; then
-            echo "::set-output name=VERSION::$(git describe --exact-match --tags HEAD)"
+            echo "VERSION=$(git describe --exact-match --tags HEAD)" >> $GITHUB_OUTPUT
           else
             echo "fatal: no tag detected for HEAD. Workflow will now stop."
             exit 128;
@@ -47,7 +47,7 @@ jobs:
 
       - name: Set Artifacts Directory
         id: artifactsPath
-        run: echo "::set-output name=NUGET_ARTIFACTS::${{github.workspace}}\artifacts"
+        run: echo "NUGET_ARTIFACTS=${{github.workspace}}\artifacts" >> $GITHUB_OUTPUT
 
       # FIXME: 3.1 LTS is required here because iOS builds refuse to build without it.
       # https://itnext.io/how-to-support-multiple-net-sdks-in-github-actions-workflows-b988daa884e
@@ -83,7 +83,7 @@ jobs:
 
       - name: Set Artifacts Directory
         id: artifactsPath
-        run: echo "::set-output name=NUGET_ARTIFACTS::${{github.workspace}}\artifacts"
+        run: echo "NUGET_ARTIFACTS=${{github.workspace}}\artifacts" >> $GITHUB_OUTPUT
 
       - name: Install .NET 6.0.x
         uses: actions/setup-dotnet@v1
@@ -132,7 +132,7 @@ jobs:
 
       - name: Set Artifacts Directory
         id: artifactsPath
-        run: echo "::set-output name=NUGET_ARTIFACTS::${{github.workspace}}\artifacts"
+        run: echo "NUGET_ARTIFACTS=${{github.workspace}}\artifacts" >> $GITHUB_OUTPUT
 
       - name: Install .NET 6.0.x
         uses: actions/setup-dotnet@v1
@@ -164,7 +164,7 @@ jobs:
 
       - name: Set Artifacts Directory
         id: artifactsPath
-        run: echo "::set-output name=NUGET_ARTIFACTS::${{github.workspace}}/artifacts"
+        run: echo "NUGET_ARTIFACTS=${{github.workspace}}/artifacts" >> $GITHUB_OUTPUT
 
       - name: Install .NET 6.0.x
         uses: actions/setup-dotnet@v1
