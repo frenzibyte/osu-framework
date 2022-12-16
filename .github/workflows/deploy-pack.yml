@@ -169,7 +169,9 @@ jobs:
 
   pack-ios:
     name: Pack (iOS)
-    runs-on: macos-latest
+    # Until GitHub fully migrates `macos-latest` on all repositories from `macos-11` to `macos-12`,
+    # pin workflows to macOS 11 for now to avoid Xcode version conflicts.
+    runs-on: macos-11
     needs: [check-if-tag]
     defaults:
       run:
