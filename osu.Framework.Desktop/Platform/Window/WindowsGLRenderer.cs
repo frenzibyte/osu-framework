@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Bindables;
+using osu.Framework.Desktop.Platform.Window;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Logging;
 using osuTK.Graphics.ES30;

@@ -15,9 +15,11 @@ using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Input.Handlers.Mouse;
+using osu.Framework.Platform;
+using osu.Framework.Platform.Windows;
 using osu.Framework.Platform.Windows.Native;
 
-namespace osu.Framework.Platform.Windows
+namespace osu.Framework.Desktop.Platform.Window
 {
     public class WindowsGameHost : DesktopGameHost
     {

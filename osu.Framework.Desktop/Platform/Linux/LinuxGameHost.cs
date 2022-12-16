@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using osu.Framework.Desktop.Platform;
 using SDL2;
 using osu.Framework.Input;
 using osu.Framework.Platform.Linux.SDL2;
