@@ -107,7 +107,8 @@ jobs:
           dotnet add osu.Framework.Templates\templates\template-flappy\FlappyDon.Game\FlappyDon.Game.csproj package ppy.osu.Framework -v ${{needs.check-if-tag.outputs.version}} --no-restore
           dotnet add osu.Framework.Templates\templates\template-flappy\FlappyDon.iOS\FlappyDon.iOS.csproj package ppy.osu.Framework -v ${{needs.check-if-tag.outputs.version}} --no-restore
           dotnet add osu.Framework.Templates\templates\template-flappy\FlappyDon.iOS\FlappyDon.iOS.csproj package ppy.osu.Framework.iOS -v ${{needs.check-if-tag.outputs.version}} --no-restore
-          sed -i '/osu.Framework.iOS.props/d' osu.Framework.Templates/templates/**/*.iOS.csproj
+          sed -i '/osu.Framework.iOS.props/d' ./osu.Framework.Templates/templates/template-empty/TemplateGame.iOS/TemplateGame.iOS.csproj
+          sed -i '/osu.Framework.iOS.props/d' ./osu.Framework.Templates/templates/template-flappy/FlappyDon.iOS/FlappyDon.iOS.csproj
 
       - name: Pack (Template)
         run: dotnet pack -c Release osu.Framework.Templates /p:Configuration=Release /p:Version=${{needs.check-if-tag.outputs.version}} /p:GenerateDocumentationFile=true /p:NoDefaultExcludes=true -o ${{steps.artifactsPath.outputs.nuget_artifacts}}
