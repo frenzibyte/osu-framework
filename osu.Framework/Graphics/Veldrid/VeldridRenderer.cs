@@ -31,6 +31,7 @@ namespace osu.Framework.Graphics.Veldrid
     {
         public const int GLOBAL_UNIFORMS_SLOT = 0;
         public const int SHADER_UNIFORMS_SLOT = 1;
+        public const int TEXTURE_RESOURCES_SLOT = 2;
 
         protected internal override bool VerticalSync
         {
@@ -39,6 +40,7 @@ namespace osu.Framework.Graphics.Veldrid
         }
 
         public override string ShaderFilenameSuffix => @"-veldrid";
+        private IGraphicsSurface graphicsSurface = null!;
 
         private IGraphicsSurface graphicsSurface = null!;
 
@@ -52,6 +54,8 @@ namespace osu.Framework.Graphics.Veldrid
 
         public VeldridIndexData SharedLinearIndex { get; }
         public VeldridIndexData SharedQuadIndex { get; }
+
+        private IGraphicsSurface graphicsSurface = null!;
 
         private ResourceLayout shaderUniformsLayout = null!;
 
@@ -177,6 +181,10 @@ namespace osu.Framework.Graphics.Veldrid
             pipeline.ResourceLayouts[GLOBAL_UNIFORMS_SLOT] = GlobalUniformManager.ResourceLayout;
             pipeline.ResourceLayouts[SHADER_UNIFORMS_SLOT] = shaderUniformsLayout;
             pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
+
+            var defaultTexture = Factory.CreateTexture(TextureDescription.Texture2D(1, 1, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm_SRgb, TextureUsage.Sampled));
+            Device.UpdateTexture(defaultTexture, new ReadOnlySpan<Rgba32>(new[] { new Rgba32(0, 0, 0) }), 0, 0, 0, 1, 1, 1, 0, 0);
+            boundTextureSet = defaultTextureSet = new VeldridTextureSamplerSet(this, defaultTexture, Device.LinearSampler);
         }
 
         private Vector2 currentSize;
@@ -192,6 +200,8 @@ namespace osu.Framework.Graphics.Veldrid
             Commands.Begin();
 
             base.BeginFrame(windowSize);
+
+            boundTextureSet = defaultTextureSet;
 
             Clear(new ClearInfo(Color4.FromHsv(new Vector4(ResetId % 360 / 360f, 0.5f, 0.5f, 1f))));
         }
@@ -235,7 +245,18 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected override void SetScissorStateImplementation(bool enabled) => pipeline.RasterizerState.ScissorTestEnabled = enabled;
 
-        protected override bool SetTextureImplementation(INativeTexture? texture, int unit) => true;
+        protected override bool SetTextureImplementation(INativeTexture? texture, int unit)
+        {
+            var veldridTexture = texture as VeldridTexture; // texture may be DummyNativeTexture coming from a DummyFramebuffer, since framebuffers are not supported yet.
+            if (veldridTexture != null && veldridTexture.Resource == null)
+                return false;
+
+            var textureSet = veldridTexture?.Resource ?? defaultTextureSet;
+            pipeline.ResourceLayouts[TEXTURE_RESOURCES_SLOT] = textureSet.Layout;
+            boundTextureSet = textureSet;
+            return true;
+        }
+
         /// <summary>
         /// Updates a <see cref="Texture"/> with a <paramref name="data"/> at the specified coordinates.
         /// </summary>
@@ -369,11 +390,11 @@ namespace osu.Framework.Graphics.Veldrid
         {
             pipeline.PrimitiveTopology = type;
 
-            // we still can't draw yet as we're missing texture support.
-            // Commands.SetPipeline(getPipelineInstance());
-            // Commands.SetGraphicsResourceSet(GLOBAL_UNIFORMS_SLOT, GlobalUniformManager.ResourceSet);
-            // Commands.SetGraphicsResourceSet(SHADER_UNIFORMS_SLOT, boundShaderUniforms);
-            // Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
+            Commands.SetPipeline(getPipelineInstance());
+            Commands.SetGraphicsResourceSet(GLOBAL_UNIFORMS_SLOT, GlobalUniformManager.ResourceSet);
+            Commands.SetGraphicsResourceSet(SHADER_UNIFORMS_SLOT, boundShaderUniforms);
+            Commands.SetGraphicsResourceSet(TEXTURE_RESOURCES_SLOT, boundTextureSet);
+            Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
         }
 
         private readonly Dictionary<GraphicsPipelineDescription, Pipeline> pipelineCache = new Dictionary<GraphicsPipelineDescription, Pipeline>();
