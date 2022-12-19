@@ -68,6 +68,10 @@ namespace osu.Framework.Graphics.Rendering
         /// A suffix to apply to shader filenames during lookup,
         /// for interacting with compatible shader formats.
         /// </summary>
+        /// <remarks>
+        /// If a shader with a suffix could not be found,
+        /// the non-suffixed version will be used instead.
+        /// </remarks>
         string ShaderFilenameSuffix { get; }
 
         /// <summary>

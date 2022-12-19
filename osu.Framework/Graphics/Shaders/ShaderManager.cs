@@ -35,12 +35,12 @@ namespace osu.Framework.Graphics.Shaders
         /// <param name="name">The shader name.</param>
         public virtual byte[]? LoadRaw(string name)
         {
-            name = Path.Combine(Path.GetDirectoryName(name) ?? string.Empty, string.Concat(
-                Path.GetFileNameWithoutExtension(name),
-                renderer.ShaderFilenameSuffix,
-                Path.GetExtension(name)));
+            string directory = Path.GetDirectoryName(name) ?? string.Empty;
+            string filename = Path.GetFileNameWithoutExtension(name);
+            string extension = Path.GetExtension(name);
+            string rendererSuffix = renderer.ShaderFilenameSuffix;
 
-            return store.Get(name);
+            return store.Get(Path.Combine(directory, $"{filename}{rendererSuffix}{extension}")) ?? store.Get(name);
         }
 
         /// <summary>
