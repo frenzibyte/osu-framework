@@ -1,9 +1,4 @@
-#ifdef GL_ES
-    precision mediump float;
-#endif
-
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
+#include "sh_Texture2D_VertexAttributes.h"
 
 uniform sampler2D m_Sampler;
 

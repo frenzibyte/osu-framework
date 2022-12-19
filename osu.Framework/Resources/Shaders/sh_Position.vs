@@ -1,6 +1,4 @@
-attribute highp vec2 m_Position;
-
-varying highp vec2 v_Position;
+#include "sh_Position_VertexAttributes.h"
 
 uniform highp mat4 g_ProjMatrix;
 

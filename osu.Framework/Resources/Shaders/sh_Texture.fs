@@ -1,8 +1,8 @@
+#include "sh_Texture2D_VertexAttributes.h"
+
 #include "sh_Utils.h"
 #include "sh_Masking.h"
 #include "sh_TextureWrapping.h"
-
-varying mediump vec2 v_TexCoord;
 
 uniform lowp sampler2D m_Sampler;
 

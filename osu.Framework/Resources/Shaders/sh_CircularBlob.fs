@@ -1,11 +1,11 @@
 ﻿#define HIGH_PRECISION_VERTEX
 
+#include "sh_Texture2D_VertexAttributes.h"
+
 #include "sh_Utils.h"
 #include "sh_Masking.h"
 #include "sh_TextureWrapping.h"
 #include "sh_CircularBlobUtils.h"
-
-varying highp vec2 v_TexCoord;
 
 uniform lowp sampler2D m_Sampler;
 uniform mediump float innerRadius;

@@ -1,7 +1,9 @@
+#define HIGH_PRECISION_VERTEX
+
+#include "sh_Texture2D_VertexAttributes.h"
+
 #include "sh_Utils.h"
 #include "sh_Masking.h"
-
-layout(location = 2) in mediump vec2 v_TexCoord;
 
 uniform mediump float hue;
 

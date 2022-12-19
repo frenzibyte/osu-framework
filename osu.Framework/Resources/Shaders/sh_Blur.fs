@@ -1,8 +1,8 @@
+#include "sh_Texture2D_VertexAttributes.h"
+
 #include "sh_Utils.h"
 
 #define INV_SQRT_2PI 0.39894
-
-varying mediump vec2 v_TexCoord;
 
 uniform lowp sampler2D m_Sampler;
 

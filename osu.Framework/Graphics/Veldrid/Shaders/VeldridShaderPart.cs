@@ -89,6 +89,9 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                 if (!mainFile)
                     return data;
 
+                if (type == ShaderPartType.Vertex)
+                    data = $"#define OSU_VERTEX_SHADER\n{data}";
+
                 data = loadShader(shaders.LoadRaw("sh_Precision_Internal.h"), type, shaders, uniforms, false) + "\n" + data;
 
                 if (type == ShaderPartType.Vertex)

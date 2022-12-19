@@ -1,11 +1,11 @@
 ﻿#define HIGH_PRECISION_VERTEX
 
+#include "sh_Texture2D_VertexAttributes.h"
+
 #include "sh_Utils.h"
 #include "sh_Masking.h"
 #include "sh_TextureWrapping.h"
 #include "sh_CircularProgressUtils.h"
-
-layout(location = 2) in highp vec2 v_TexCoord;
 
 layout(set = 1, binding = 0) uniform lowp texture2D m_Texture;
 layout(set = 1, binding = 1) uniform lowp sampler m_Sampler;

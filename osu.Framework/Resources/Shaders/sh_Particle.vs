@@ -1,10 +1,4 @@
-attribute vec2 m_Position;
-attribute vec2 m_TexCoord;
-attribute float m_Time;
-attribute vec2 m_Direction;
-
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
+#include "sh_Particle_VertexAttributes.h"
 
 uniform mat4 g_ProjMatrix;
 uniform float g_FadeClock;

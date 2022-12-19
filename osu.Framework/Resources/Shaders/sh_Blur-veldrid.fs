@@ -1,12 +1,8 @@
+#include "sh_Texture2D_VertexAttributes.h"
+
 #include "sh_Utils.h"
 
 #define INV_SQRT_2PI 0.39894
-
-layout(location = 0) in highp vec2 v_MaskingPosition;
-layout(location = 1) in lowp vec4 v_Colour;
-layout(location = 2) in mediump vec2 v_TexCoord;
-layout(location = 3) in mediump vec4 v_TexRect;
-layout(location = 4) in mediump vec2 v_BlendRange;
 
 layout(set = 1, binding = 0) uniform texture2D m_Texture;
 layout(set = 1, binding = 1) uniform sampler m_Sampler;
