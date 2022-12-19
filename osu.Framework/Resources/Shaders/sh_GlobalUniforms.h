@@ -1,0 +1,17 @@
+uniform mat4 g_ProjMatrix;
+uniform bool g_IsMasking;
+uniform vec4 g_MaskingRect;
+uniform mat3 g_ToMaskingSpace;
+uniform float g_CornerRadius;
+uniform float g_CornerExponent;
+uniform float g_BorderThickness;
+uniform mat4 g_BorderColour;
+uniform float g_MaskingBlendRange;
+uniform float g_AlphaExponent;
+uniform vec2 g_EdgeOffset;
+uniform bool g_DiscardInner;
+uniform float g_InnerCornerRadius;
+uniform bool g_GammaCorrection;
+uniform int g_WrapModeS;
+uniform int g_WrapModeT;
+uniform bool g_BackbufferDraw;

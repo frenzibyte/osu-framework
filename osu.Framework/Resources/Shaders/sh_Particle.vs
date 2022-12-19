@@ -1,9 +1,5 @@
 #include "sh_Particle_VertexAttributes.h"
 
-uniform mat4 g_ProjMatrix;
-uniform float g_FadeClock;
-uniform float g_Gravity;
-
 void main(void)
 {
 	vec2 targetPosition =

@@ -2,10 +2,6 @@
 
 #include "sh_Utils.h"
 
-
-uniform mat4 g_ProjMatrix;
-uniform mat3 g_ToMaskingSpace;
-
 void main(void)
 {
 	// Transform to position to masking space.

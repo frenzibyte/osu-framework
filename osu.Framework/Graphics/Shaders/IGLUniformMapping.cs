@@ -3,7 +3,7 @@
 
 namespace osu.Framework.Graphics.Shaders
 {
-    internal interface IUniformMapping
+    internal interface IGLUniformMapping
     {
         string Name { get; }
 

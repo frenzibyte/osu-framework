@@ -9,17 +9,17 @@ namespace osu.Framework.Graphics.Shaders
     public interface IUniform
     {
         /// <summary>
-        /// The shader which this uniform was declared in.
+        /// The shader which this uniform was declared in, or null for global uniforms.
         /// </summary>
-        IShader Owner { get; }
+        IShader? Owner { get; }
 
         /// <summary>
-        /// The name of this uniform as declared by the shader, or <see cref="GlobalPropertyManager"/> for global uniforms.
+        /// The name of this uniform.
         /// </summary>
         string Name { get; }
 
         /// <summary>
-        /// The location of this uniform in relation to all other uniforms in the shader.
+        /// The location of this uniform in relation to all other uniforms.
         /// </summary>
         /// <remarks>
         /// Depending on the renderer used, this could either be zero-based index number or location in bytes.

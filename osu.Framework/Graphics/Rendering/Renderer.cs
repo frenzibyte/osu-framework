@@ -83,6 +83,10 @@ namespace osu.Framework.Graphics.Rendering
         /// </summary>
         protected IShader? Shader { get; private set; }
 
+        private IGlobalUniformManager? globalUniformManager;
+
+        protected IGlobalUniformManager GlobalUniformManager => globalUniformManager ??= CreateGlobalUniformManager();
+
         private readonly GlobalStatistic<int> statExpensiveOperationsQueued;
         private readonly GlobalStatistic<int> statTextureUploadsQueued;
         private readonly GlobalStatistic<int> statTextureUploadsDequeued;
@@ -564,7 +568,7 @@ namespace osu.Framework.Graphics.Rendering
 
             FlushCurrentBatch(FlushBatchSource.SetProjection);
 
-            GlobalPropertyManager.Set(GlobalProperty.ProjMatrix, matrix);
+            GlobalUniformManager.Set(GlobalProperty.ProjMatrix, matrix);
             ProjectionMatrix = matrix;
         }
 
@@ -593,24 +597,24 @@ namespace osu.Framework.Graphics.Rendering
 
             FlushCurrentBatch(FlushBatchSource.SetMasking);
 
-            GlobalPropertyManager.Set(GlobalProperty.IsMasking, IsMaskingActive);
+            GlobalUniformManager.Set(GlobalProperty.IsMasking, IsMaskingActive);
 
-            GlobalPropertyManager.Set(GlobalProperty.MaskingRect, new Vector4(
+            GlobalUniformManager.Set(GlobalProperty.MaskingRect, new Vector4(
                 maskingInfo.MaskingRect.Left,
                 maskingInfo.MaskingRect.Top,
                 maskingInfo.MaskingRect.Right,
                 maskingInfo.MaskingRect.Bottom));
 
-            GlobalPropertyManager.Set(GlobalProperty.ToMaskingSpace, maskingInfo.ToMaskingSpace);
+            GlobalUniformManager.Set(GlobalProperty.ToMaskingSpace, maskingInfo.ToMaskingSpace);
 
-            GlobalPropertyManager.Set(GlobalProperty.CornerRadius, maskingInfo.CornerRadius);
-            GlobalPropertyManager.Set(GlobalProperty.CornerExponent, maskingInfo.CornerExponent);
+            GlobalUniformManager.Set(GlobalProperty.CornerRadius, maskingInfo.CornerRadius);
+            GlobalUniformManager.Set(GlobalProperty.CornerExponent, maskingInfo.CornerExponent);
 
-            GlobalPropertyManager.Set(GlobalProperty.BorderThickness, maskingInfo.BorderThickness / maskingInfo.BlendRange);
+            GlobalUniformManager.Set(GlobalProperty.BorderThickness, maskingInfo.BorderThickness / maskingInfo.BlendRange);
 
             if (maskingInfo.BorderThickness > 0)
             {
-                GlobalPropertyManager.Set(GlobalProperty.BorderColour, new Matrix4(
+                GlobalUniformManager.Set(GlobalProperty.BorderColour, new Matrix4(
                     // TopLeft
                     maskingInfo.BorderColour.TopLeft.Linear.R,
                     maskingInfo.BorderColour.TopLeft.Linear.G,
@@ -633,14 +637,14 @@ namespace osu.Framework.Graphics.Rendering
                     maskingInfo.BorderColour.BottomRight.Linear.A));
             }
 
-            GlobalPropertyManager.Set(GlobalProperty.MaskingBlendRange, maskingInfo.BlendRange);
-            GlobalPropertyManager.Set(GlobalProperty.AlphaExponent, maskingInfo.AlphaExponent);
+            GlobalUniformManager.Set(GlobalProperty.MaskingBlendRange, maskingInfo.BlendRange);
+            GlobalUniformManager.Set(GlobalProperty.AlphaExponent, maskingInfo.AlphaExponent);
 
-            GlobalPropertyManager.Set(GlobalProperty.EdgeOffset, maskingInfo.EdgeOffset);
+            GlobalUniformManager.Set(GlobalProperty.EdgeOffset, maskingInfo.EdgeOffset);
 
-            GlobalPropertyManager.Set(GlobalProperty.DiscardInner, maskingInfo.Hollow);
+            GlobalUniformManager.Set(GlobalProperty.DiscardInner, maskingInfo.Hollow);
             if (maskingInfo.Hollow)
-                GlobalPropertyManager.Set(GlobalProperty.InnerCornerRadius, maskingInfo.HollowCornerRadius);
+                GlobalUniformManager.Set(GlobalProperty.InnerCornerRadius, maskingInfo.HollowCornerRadius);
 
             if (isPushing)
             {
@@ -835,14 +839,14 @@ namespace osu.Framework.Graphics.Rendering
             if (wrapModeS != CurrentWrapModeS)
             {
                 // Will flush the current batch internally.
-                GlobalPropertyManager.Set(GlobalProperty.WrapModeS, (int)wrapModeS);
+                GlobalUniformManager.Set(GlobalProperty.WrapModeS, (int)wrapModeS);
                 CurrentWrapModeS = wrapModeS;
             }
 
             if (wrapModeT != CurrentWrapModeT)
             {
                 // Will flush the current batch internally.
-                GlobalPropertyManager.Set(GlobalProperty.WrapModeT, (int)wrapModeT);
+                GlobalUniformManager.Set(GlobalProperty.WrapModeT, (int)wrapModeT);
                 CurrentWrapModeT = wrapModeT;
             }
 
@@ -919,8 +923,8 @@ namespace osu.Framework.Graphics.Rendering
             FlushCurrentBatch(FlushBatchSource.SetFrameBuffer);
 
             SetFrameBufferImplementation(frameBuffer);
-            GlobalPropertyManager.Set(GlobalProperty.BackbufferDraw, UsingBackbuffer);
-            GlobalPropertyManager.Set(GlobalProperty.GammaCorrection, UsingBackbuffer);
+            GlobalUniformManager.Set(GlobalProperty.BackbufferDraw, UsingBackbuffer);
+            GlobalUniformManager.Set(GlobalProperty.GammaCorrection, UsingBackbuffer);
 
             FrameBuffer = frameBuffer;
         }
@@ -977,7 +981,7 @@ namespace osu.Framework.Graphics.Rendering
         internal void SetUniform<T>(IUniformWithValue<T> uniform)
             where T : unmanaged, IEquatable<T>
         {
-            if (uniform.Owner == Shader)
+            if (uniform.Owner == Shader || uniform.Owner == null)
                 FlushCurrentBatch(FlushBatchSource.SetUniform);
 
             SetUniformImplementation(uniform);
@@ -1054,6 +1058,12 @@ namespace osu.Framework.Graphics.Rendering
 
             return tex;
         }
+
+        /// <summary>
+        /// Creates a new <see cref="IGlobalUniformManager"/>.
+        /// </summary>
+        /// <returns>The <see cref="IGlobalUniformManager"/>.</returns>
+        protected abstract IGlobalUniformManager CreateGlobalUniformManager();
 
         #endregion
 

@@ -2,10 +2,6 @@
 
 #include "sh_Utils.h"
 
-
-uniform highp mat4 g_ProjMatrix;
-uniform highp mat3 g_ToMaskingSpace;
-
 void main(void)
 {
 	// Transform from screen space to masking space.

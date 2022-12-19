@@ -1,14 +1,13 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-#nullable disable
-
 using System;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics.Rendering;
 
 namespace osu.Framework.Graphics.Shaders
 {
-    internal class GlobalUniform<T> : IUniformWithValue<T>
+    internal class GLGlobalUniform<T> : IUniformWithValue<T>
         where T : unmanaged, IEquatable<T>
     {
         public IShader Owner { get; }
@@ -18,11 +17,11 @@ namespace osu.Framework.Graphics.Shaders
         /// <summary>
         /// Non-null denotes a pending global change. Must be a field to allow for reference access.
         /// </summary>
-        public UniformMapping<T> PendingChange;
+        public GLUniformMapping<T>? PendingChange;
 
         private readonly IRenderer renderer;
 
-        public GlobalUniform(IRenderer renderer, IShader owner, string name, int uniformLocation)
+        public GLGlobalUniform(IRenderer renderer, IShader owner, string name, int uniformLocation)
         {
             this.renderer = renderer;
             Owner = owner;
@@ -30,9 +29,10 @@ namespace osu.Framework.Graphics.Shaders
             Location = uniformLocation;
         }
 
-        internal void UpdateValue(UniformMapping<T> global)
+        internal void UpdateValue(GLUniformMapping<T> global)
         {
             PendingChange = global;
+
             if (Owner.IsBound)
                 Update();
         }
@@ -46,7 +46,7 @@ namespace osu.Framework.Graphics.Shaders
             PendingChange = null;
         }
 
-        ref T IUniformWithValue<T>.GetValueByRef() => ref PendingChange.GetValueByRef();
-        T IUniformWithValue<T>.GetValue() => PendingChange.Value;
+        ref T IUniformWithValue<T>.GetValueByRef() => ref PendingChange.AsNonNull().GetValueByRef();
+        T IUniformWithValue<T>.GetValue() => PendingChange.AsNonNull().Value;
     }
 }

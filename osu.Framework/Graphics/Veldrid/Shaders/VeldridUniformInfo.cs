@@ -18,6 +18,6 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
         /// <summary>
         /// The precision applied to this uniform.
         /// </summary>
-        public string Precision { get; set; }
+        public string? Precision { get; set; }
     }
 }

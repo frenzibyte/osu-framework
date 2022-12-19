@@ -3,9 +3,6 @@
 // 2 -> ClampToBorder
 // 3 -> Repeat
 
-uniform int g_WrapModeS;
-uniform int g_WrapModeT;
-
 float wrap(float coord, int mode, float rangeMin, float rangeMax)
 {
     if (mode == 1)

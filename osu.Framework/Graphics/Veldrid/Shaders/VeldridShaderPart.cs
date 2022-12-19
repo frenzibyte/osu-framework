@@ -92,6 +92,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                 if (type == ShaderPartType.Vertex)
                     data = $"#define OSU_VERTEX_SHADER\n{data}";
 
+                data = loadShader(shaders.LoadRaw("sh_GlobalUniforms.h"), type, shaders, uniforms, false) + "\n" + data;
                 data = loadShader(shaders.LoadRaw("sh_Precision_Internal.h"), type, shaders, uniforms, false) + "\n" + data;
 
                 if (type == ShaderPartType.Vertex)
@@ -169,10 +170,10 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
             if (allUniforms.Uniforms.Count == 0)
                 return data;
 
-            string uniformBufferName = VeldridRenderer.UNIFORM_LAYOUT.Elements.Single().Name;
+            string uniformBufferName = VeldridRenderer.SHADER_UNIFORMS_LAYOUT.Elements.Single().Name;
 
             var uniformBuilder = new StringBuilder();
-            uniformBuilder.AppendLine($"layout(std140, set = {VeldridRenderer.UNIFORM_RESOURCES_SLOT}, binding = 0) uniform {uniformBufferName}");
+            uniformBuilder.AppendLine($"layout(std140, set = {VeldridRenderer.SHADER_UNIFORMS_SLOT}, binding = 0) uniform {uniformBufferName}");
             uniformBuilder.AppendLine("{");
 
             foreach (var uniform in allUniforms.Uniforms)

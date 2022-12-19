@@ -115,6 +115,7 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
                     if (isVertexShader)
                         code = $"#define OSU_VERTEX_SHADER\n{code}";
 
+                    code = loadFile(manager.LoadRaw("sh_GlobalUniforms.h"), false) + "\n" + code;
                     code = loadFile(manager.LoadRaw("sh_Precision_Internal.h"), false) + "\n" + code;
 
                     if (isVertexShader)

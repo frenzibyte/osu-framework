@@ -66,7 +66,7 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
 
             SetupUniforms();
 
-            GlobalPropertyManager.Register(this);
+            renderer.GlobalUniformManager.Register(this);
         }
 
         internal void EnsureShaderCompiled()
@@ -200,7 +200,8 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
             {
                 int location = GL.GetUniformLocation(this, name);
 
-                if (GlobalPropertyManager.CheckGlobalExists(name)) return new GlobalUniform<T>(renderer, this, name, location);
+                if (renderer.GlobalUniformManager.Exists(name))
+                    return new GLGlobalUniform<T>(renderer, this, name, location);
 
                 return new Uniform<T>(renderer, this, name, location);
             }
@@ -239,7 +240,7 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
 
                 shaderCompileDelegate?.Cancel();
 
-                GlobalPropertyManager.Unregister(this);
+                renderer.GlobalUniformManager.Unregister(this);
 
                 if (programID != -1)
                     DeleteProgram(this);

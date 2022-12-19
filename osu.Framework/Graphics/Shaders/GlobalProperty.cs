@@ -6,7 +6,7 @@ namespace osu.Framework.Graphics.Shaders
     /// <summary>
     /// Represents all global shader properties.
     /// </summary>
-    internal enum GlobalProperty
+    public enum GlobalProperty
     {
         ProjMatrix,
         IsMasking,

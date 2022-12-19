@@ -9,15 +9,15 @@ namespace osu.Framework.Graphics.Shaders
     public class Uniform<T> : IUniformWithValue<T>
         where T : unmanaged, IEquatable<T>
     {
-        public IShader Owner { get; }
+        public IShader? Owner { get; }
         public string Name { get; }
         public int Location { get; }
 
-        public bool HasChanged { get; private set; } = true;
+        public bool HasChanged { get; protected set; } = true;
 
         private T val;
 
-        public T Value
+        public virtual T Value
         {
             get => val;
             set
@@ -28,14 +28,14 @@ namespace osu.Framework.Graphics.Shaders
                 val = value;
                 HasChanged = true;
 
-                if (Owner.IsBound)
+                if (Owner == null || Owner.IsBound)
                     Update();
             }
         }
 
         private readonly IRenderer renderer;
 
-        public Uniform(IRenderer renderer, IShader owner, string name, int uniformLocation)
+        public Uniform(IRenderer renderer, IShader? owner, string name, int uniformLocation)
         {
             this.renderer = renderer;
             Owner = owner;
@@ -51,13 +51,14 @@ namespace osu.Framework.Graphics.Shaders
             val = newValue;
             HasChanged = true;
 
-            if (Owner.IsBound)
+            if (Owner == null || Owner.IsBound)
                 Update();
         }
 
-        public void Update()
+        public virtual void Update()
         {
-            if (!HasChanged) return;
+            if (!HasChanged)
+                return;
 
             renderer.SetUniform(this);
             HasChanged = false;

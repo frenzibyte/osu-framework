@@ -167,8 +167,6 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                     FixClipSpaceZ = !renderer.Device.IsDepthRangeZeroToOne,
                     InvertVertexOutputY = renderer.Device.IsClipSpaceYInverted,
                 });
-
-                GlobalPropertyManager.Register(this);
             }
             catch (SpirvCompilationException e)
             {
@@ -195,8 +193,6 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                 return;
 
             isDisposed = true;
-
-            GlobalPropertyManager.Unregister(this);
 
             if (shaders != null)
             {

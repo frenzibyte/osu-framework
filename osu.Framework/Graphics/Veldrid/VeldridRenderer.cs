@@ -17,7 +17,6 @@ using osu.Framework.Graphics.Veldrid.Shaders;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osuTK;
-using osuTK.Graphics;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 using Veldrid.OpenGL;
@@ -28,7 +27,8 @@ namespace osu.Framework.Graphics.Veldrid
 {
     internal class VeldridRenderer : Renderer
     {
-        public const int UNIFORM_RESOURCES_SLOT = 0;
+        public const int GLOBAL_UNIFORMS_SLOT = 0;
+        public const int SHADER_UNIFORMS_SLOT = 1;
 
         protected internal override bool VerticalSync
         {
@@ -44,17 +44,19 @@ namespace osu.Framework.Graphics.Veldrid
 
         public CommandList Commands { get; private set; } = null!;
 
+        public new VeldridGlobalUniformManager GlobalUniformManager => (VeldridGlobalUniformManager)base.GlobalUniformManager;
+
         public VeldridIndexData SharedLinearIndex { get; }
         public VeldridIndexData SharedQuadIndex { get; }
 
         private IGraphicsSurface graphicsSurface = null!;
 
-        private ResourceLayout uniformLayout = null!;
+        private ResourceLayout shaderUniformsLayout = null!;
 
         private DeviceBuffer? boundVertexBuffer;
-        private ResourceSet? boundUniformSet;
+        private ResourceSet? boundShaderUniforms;
 
-        internal static readonly ResourceLayoutDescription UNIFORM_LAYOUT = new ResourceLayoutDescription(
+        internal static readonly ResourceLayoutDescription SHADER_UNIFORMS_LAYOUT = new ResourceLayoutDescription(
             new ResourceLayoutElementDescription("m_Uniforms", ResourceKind.UniformBuffer, ShaderStages.Fragment | ShaderStages.Vertex));
 
         private GraphicsPipelineDescription pipeline = new GraphicsPipelineDescription
@@ -162,10 +164,11 @@ namespace osu.Framework.Graphics.Veldrid
 
             Commands = Factory.CreateCommandList();
 
-            uniformLayout = Factory.CreateResourceLayout(UNIFORM_LAYOUT);
+            shaderUniformsLayout = Factory.CreateResourceLayout(SHADER_UNIFORMS_LAYOUT);
 
-            pipeline.ResourceLayouts = new ResourceLayout[2];
-            pipeline.ResourceLayouts[UNIFORM_RESOURCES_SLOT] = uniformLayout;
+            pipeline.ResourceLayouts = new ResourceLayout[3];
+            pipeline.ResourceLayouts[GLOBAL_UNIFORMS_SLOT] = GlobalUniformManager.ResourceLayout;
+            pipeline.ResourceLayouts[SHADER_UNIFORMS_SLOT] = shaderUniformsLayout;
             pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
         }
 
@@ -231,7 +234,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             var veldridShader = (VeldridShader)shader;
             pipeline.ShaderSet.Shaders = veldridShader.Shaders;
-            boundUniformSet = veldridShader.UniformResourceSet;
+            boundShaderUniforms = veldridShader.UniformResourceSet;
         }
 
         protected override void SetBlendImplementation(BlendingParameters blendingParameters)
@@ -299,7 +302,7 @@ namespace osu.Framework.Graphics.Veldrid
 
         public void BindIndexBuffer(DeviceBuffer buffer, IndexFormat format) => Commands.SetIndexBuffer(buffer, format);
 
-        public ResourceSet CreateUniformResourceSet(DeviceBuffer buffer) => Factory.CreateResourceSet(new ResourceSetDescription(uniformLayout, buffer));
+        public ResourceSet CreateUniformResourceSet(DeviceBuffer buffer) => Factory.CreateResourceSet(new ResourceSetDescription(shaderUniformsLayout, buffer));
 
         public void DrawVertices(PrimitiveTopology type, int indexStart, int indicesCount)
         {
@@ -307,6 +310,8 @@ namespace osu.Framework.Graphics.Veldrid
 
             // we still can't draw yet as we're missing texture support.
             // Commands.SetPipeline(getPipelineInstance());
+            // Commands.SetGraphicsResourceSet(GLOBAL_UNIFORMS_SLOT, GlobalUniformManager.ResourceSet);
+            // Commands.SetGraphicsResourceSet(SHADER_UNIFORMS_SLOT, boundShaderUniforms);
             // Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
         }
 
@@ -346,33 +351,36 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected override void SetUniformImplementation<T>(IUniformWithValue<T> uniform)
         {
-            var uniformOwner = (VeldridShader)uniform.Owner;
+            var owner = (VeldridShader?)uniform.Owner;
+            var buffer = owner?.UniformBuffer ?? GlobalUniformManager.Buffer;
 
             switch (uniform)
             {
                 case IUniformWithValue<Matrix3> matrix3:
                 {
-                    ref var value = ref matrix3.GetValueByRef();
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 0), ref value.Row0);
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 16), ref value.Row1);
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 32), ref value.Row2);
+                    ref var matrix = ref matrix3.GetValueByRef();
+                    Commands.UpdateBuffer(buffer, (uint)(uniform.Location + 0), ref matrix.Row0);
+                    Commands.UpdateBuffer(buffer, (uint)(uniform.Location + 16), ref matrix.Row1);
+                    Commands.UpdateBuffer(buffer, (uint)(uniform.Location + 32), ref matrix.Row2);
                     break;
                 }
 
                 case IUniformWithValue<Matrix4> matrix4:
                 {
-                    ref var value = ref matrix4.GetValueByRef();
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 0), ref value.Row0);
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 16), ref value.Row1);
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 32), ref value.Row2);
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)(uniform.Location + 48), ref value.Row3);
+                    ref var matrix = ref matrix4.GetValueByRef();
+                    Commands.UpdateBuffer(buffer, (uint)(uniform.Location + 0), ref matrix.Row0);
+                    Commands.UpdateBuffer(buffer, (uint)(uniform.Location + 16), ref matrix.Row1);
+                    Commands.UpdateBuffer(buffer, (uint)(uniform.Location + 32), ref matrix.Row2);
+                    Commands.UpdateBuffer(buffer, (uint)(uniform.Location + 48), ref matrix.Row3);
                     break;
                 }
 
                 default:
-                    Commands.UpdateBuffer(uniformOwner.UniformBuffer, (uint)uniform.Location, ref uniform.GetValueByRef());
+                    Commands.UpdateBuffer(buffer, (uint)uniform.Location, ref uniform.GetValueByRef());
                     break;
             }
         }
+
+        protected override IGlobalUniformManager CreateGlobalUniformManager() => new VeldridGlobalUniformManager(this);
     }
 }

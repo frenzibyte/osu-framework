@@ -41,6 +41,8 @@ namespace osu.Framework.Graphics.OpenGL
         /// </summary>
         public bool IsEmbedded { get; private set; }
 
+        public new GLGlobalUniformManager GlobalUniformManager => (GLGlobalUniformManager)base.GlobalUniformManager;
+
         protected virtual int BackbufferFramebuffer => 0;
 
         private readonly int[] lastBoundBuffers = new int[2];
@@ -396,5 +398,7 @@ namespace osu.Framework.Graphics.OpenGL
             => new GLLinearBatch<TVertex>(this, size, maxBuffers, GLUtils.ToPrimitiveType(topology));
 
         protected override IVertexBatch<TVertex> CreateQuadBatch<TVertex>(int size, int maxBuffers) => new GLQuadBatch<TVertex>(this, size, maxBuffers);
+
+        protected override IGlobalUniformManager CreateGlobalUniformManager() => new GLGlobalUniformManager();
     }
 }

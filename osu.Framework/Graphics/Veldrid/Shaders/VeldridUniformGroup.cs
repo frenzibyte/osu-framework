@@ -29,7 +29,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
             }
         }
 
-        public void AddUniform(string name, string type, string precision) => addUniform(new VeldridUniformInfo
+        public void AddUniform(string name, string type, string? precision = null) => addUniform(new VeldridUniformInfo
         {
             Name = name,
             Type = type,
@@ -49,9 +49,9 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
         /// Creates a uniform buffer object for all uniforms in this group.
         /// </summary>
         /// <param name="renderer">The renderer to create the uniform buffer.</param>
-        /// <param name="owner">The owner of the uniforms.</param>
+        /// <param name="owner">The owner of the uniforms, or null for global uniforms.</param>
         /// <param name="uniforms">A list of <see cref="IUniform"/>s instantiated for the buffer structure.</param>
-        public DeviceBuffer CreateBuffer(VeldridRenderer renderer, VeldridShader owner, out Dictionary<string, IUniform> uniforms)
+        public DeviceBuffer CreateBuffer(VeldridRenderer renderer, VeldridShader? owner, out Dictionary<string, IUniform> uniforms)
         {
             uniforms = new Dictionary<string, IUniform>(Uniforms.Count);
 
@@ -114,7 +114,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
             return renderer.Factory.CreateBuffer(new BufferDescription((uint)bufferSize, BufferUsage.UniformBuffer));
         }
 
-        private static IUniform createUniform<T>(VeldridRenderer renderer, VeldridShader shader, string name, ref int bufferSize)
+        private static IUniform createUniform<T>(VeldridRenderer renderer, VeldridShader? shader, string name, ref int bufferSize)
             where T : unmanaged, IEquatable<T>
         {
             int uniformSize = Marshal.SizeOf<T>();
@@ -144,9 +144,6 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
             int location = bufferSize;
 
             bufferSize += uniformSize;
-
-            if (GlobalPropertyManager.CheckGlobalExists(name))
-                return new GlobalUniform<T>(renderer, shader, name, location);
 
             return new Uniform<T>(renderer, shader, name, location);
         }

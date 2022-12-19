@@ -9,7 +9,7 @@ namespace osu.Framework.Graphics.Shaders
     /// <summary>
     /// A mapping of a global uniform to many shaders which need to receive updates on a change.
     /// </summary>
-    internal class UniformMapping<T> : IUniformMapping
+    internal class GLUniformMapping<T> : IGLUniformMapping
         where T : unmanaged, IEquatable<T>
     {
         private T val;
@@ -29,18 +29,18 @@ namespace osu.Framework.Graphics.Shaders
             }
         }
 
-        public List<GlobalUniform<T>> LinkedUniforms = new List<GlobalUniform<T>>();
+        public List<GLGlobalUniform<T>> LinkedUniforms = new List<GLGlobalUniform<T>>();
 
         public string Name { get; }
 
-        public UniformMapping(string name)
+        public GLUniformMapping(string name)
         {
             Name = name;
         }
 
         public void LinkShaderUniform(IUniform uniform)
         {
-            var typedUniform = (GlobalUniform<T>)uniform;
+            var typedUniform = (GLGlobalUniform<T>)uniform;
 
             typedUniform.UpdateValue(this);
             LinkedUniforms.Add(typedUniform);
@@ -48,7 +48,7 @@ namespace osu.Framework.Graphics.Shaders
 
         public void UnlinkShaderUniform(IUniform uniform)
         {
-            var typedUniform = (GlobalUniform<T>)uniform;
+            var typedUniform = (GLGlobalUniform<T>)uniform;
             LinkedUniforms.Remove(typedUniform);
         }
 
