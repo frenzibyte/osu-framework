@@ -101,15 +101,15 @@ namespace osu.Framework.Graphics.Containers
 
                 using (BindFrameBuffer(target))
                 {
-                    blurShader.GetUniform<int>(@"g_Radius").UpdateValue(ref kernelRadius);
-                    blurShader.GetUniform<float>(@"g_Sigma").UpdateValue(ref sigma);
+                    blurShader.GetUniform<int>(@"radius").UpdateValue(ref kernelRadius);
+                    blurShader.GetUniform<float>(@"sigma").UpdateValue(ref sigma);
 
                     Vector2 size = current.Size;
-                    blurShader.GetUniform<Vector2>(@"g_TexSize").UpdateValue(ref size);
+                    blurShader.GetUniform<Vector2>(@"texSize").UpdateValue(ref size);
 
                     float radians = -MathUtils.DegreesToRadians(blurRotation);
                     Vector2 blur = new Vector2(MathF.Cos(radians), MathF.Sin(radians));
-                    blurShader.GetUniform<Vector2>(@"g_BlurDirection").UpdateValue(ref blur);
+                    blurShader.GetUniform<Vector2>(@"blurDirection").UpdateValue(ref blur);
 
                     blurShader.Bind();
                     renderer.DrawFrameBuffer(current, new RectangleF(0, 0, current.Texture.Width, current.Texture.Height), ColourInfo.SingleColour(Color4.White));

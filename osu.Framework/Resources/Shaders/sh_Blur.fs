@@ -6,10 +6,10 @@
 
 uniform lowp sampler2D m_Sampler;
 
-uniform mediump vec2 g_TexSize;
-uniform int g_Radius;
-uniform mediump float g_Sigma;
-uniform highp vec2 g_BlurDirection;
+uniform mediump vec2 texSize;
+uniform int radius;
+uniform mediump float sigma;
+uniform highp vec2 blurDirection;
 
 mediump float computeGauss(in mediump float x, in mediump float sigma)
 {
@@ -39,5 +39,5 @@ lowp vec4 blur(sampler2D tex, int radius, highp vec2 direction, mediump vec2 tex
 
 void main(void)
 {
-	gl_FragColor = blur(m_Sampler, g_Radius, g_BlurDirection, v_TexCoord, g_TexSize, g_Sigma);
+	gl_FragColor = blur(m_Sampler, radius, blurDirection, v_TexCoord, texSize, sigma);
 }

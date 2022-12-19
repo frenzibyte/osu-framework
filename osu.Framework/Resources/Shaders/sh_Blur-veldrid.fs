@@ -7,10 +7,10 @@
 layout(set = 1, binding = 0) uniform texture2D m_Texture;
 layout(set = 1, binding = 1) uniform sampler m_Sampler;
 
-uniform mediump vec2 g_TexSize;
-uniform int g_Radius;
-uniform mediump float g_Sigma;
-uniform highp vec2 g_BlurDirection;
+uniform mediump vec2 texSize;
+uniform int radius;
+uniform mediump float sigma;
+uniform highp vec2 blurDirection;
 
 layout(location = 0) out vec4 o_Colour;
 
@@ -42,5 +42,5 @@ lowp vec4 blur(texture2D tex, sampler samp, int radius, highp vec2 direction, me
 
 void main(void)
 {
-	o_Colour = blur(m_Texture, m_Sampler, g_Radius, g_BlurDirection, v_TexCoord, g_TexSize, g_Sigma);
+	o_Colour = blur(m_Texture, m_Sampler, radius, blurDirection, v_TexCoord, texSize, sigma);
 }
