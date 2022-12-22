@@ -1,9 +1,9 @@
 #include "sh_TextureWrapping.h"
 
-layout(set = 1, binding = 0) uniform texture2D m_TextureY;
-layout(set = 1, binding = 1) uniform texture2D m_TextureU;
-layout(set = 1, binding = 2) uniform texture2D m_TextureV;
-layout(set = 1, binding = 3) uniform sampler m_Sampler;
+layout(set = 2, binding = 0) uniform texture2D m_TextureY;
+layout(set = 2, binding = 1) uniform texture2D m_TextureU;
+layout(set = 2, binding = 2) uniform texture2D m_TextureV;
+layout(set = 2, binding = 3) uniform sampler m_Sampler;
 
 uniform mediump mat3 yuvCoeff;
 

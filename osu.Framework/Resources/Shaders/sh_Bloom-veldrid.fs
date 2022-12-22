@@ -1,7 +1,7 @@
 #include "sh_Texture2D_VertexAttributes.h"
 
-layout(set = 1, binding = 0) uniform texture2D m_Texture;
-layout(set = 1, binding = 1) uniform sampler m_Sampler;
+layout(set = 2, binding = 0) uniform texture2D m_Texture;
+layout(set = 2, binding = 1) uniform sampler m_Sampler;
 
 layout(location = 0) out vec4 o_Colour;
 

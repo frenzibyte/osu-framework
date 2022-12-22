@@ -4,8 +4,8 @@
 
 #define INV_SQRT_2PI 0.39894
 
-layout(set = 1, binding = 0) uniform texture2D m_Texture;
-layout(set = 1, binding = 1) uniform sampler m_Sampler;
+layout(set = 2, binding = 0) uniform texture2D m_Texture;
+layout(set = 2, binding = 1) uniform sampler m_Sampler;
 
 uniform mediump vec2 texSize;
 uniform int radius;
