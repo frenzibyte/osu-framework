@@ -5,7 +5,10 @@
 #include "sh_Utils.h"
 #include "sh_Masking.h"
 
-uniform mediump float hue;
+layout(set = 1, binding = 1) uniform m_FragmentUniforms
+{
+    mediump float hue;
+};
 
 layout(location = 0) out vec4 o_Colour;
 

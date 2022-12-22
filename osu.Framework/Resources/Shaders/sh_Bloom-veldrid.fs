@@ -1,20 +1,17 @@
 #include "sh_Texture2D_VertexAttributes.h"
 
+layout(set = 1, binding = 1) uniform m_FragmentUniforms
+{
+    float mag;
+    float alpha;
+    float redtint;
+    bool hirange;
+};
+
 layout(set = 2, binding = 0) uniform texture2D m_Texture;
 layout(set = 2, binding = 1) uniform sampler m_Sampler;
 
 layout(location = 0) out vec4 o_Colour;
-
-//Width to sample from
-uniform float mag;
-
-//Alpha value
-uniform float alpha;
-
-uniform float redtint;
-
-//Operate on a high range (0.5 - 1.0) or the full range (0.0 - 1.0)
-uniform bool hirange;
 
 void main(void)
 {

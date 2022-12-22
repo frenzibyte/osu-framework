@@ -4,8 +4,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shaders;
@@ -16,7 +14,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
     {
         private const string backbuffer_draw_depth_name = "m_BackbufferDrawDepth";
 
-        private readonly string data;
+        public readonly string Data;
 
         private readonly VeldridUniformGroup uniforms = new VeldridUniformGroup();
 
@@ -26,27 +24,14 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
 
         private static readonly Regex include_regex = new Regex("^\\s*#\\s*include\\s+[\"<](.*)[\">]");
 
-        private static readonly Regex shader_uniform_regex = new Regex(@"^\s*(?>uniform)\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(\w+);", RegexOptions.Multiline);
+        private static readonly Regex shader_vertex_uniforms_regex = new Regex(@"m_VertexUniforms\n{\n((?:\s*(?:lowp|mediump|highp)?\s\w+\s+\w+;\n)*)", RegexOptions.Multiline);
+        private static readonly Regex shader_fragment_uniforms_regex = new Regex(@"m_FragmentUniforms\n{\n((?:\s*(?:lowp|mediump|highp)?\s\w+\s+\w+;\n)*)", RegexOptions.Multiline);
         private static readonly Regex shader_attribute_location_regex = new Regex(@"(layout\(location\s=\s)(-?\d+)(\)\s(?>attribute|in).*)", RegexOptions.Multiline);
 
         public VeldridShaderPart(ShaderManager shaders, byte[]? rawData, ShaderPartType type)
         {
             Type = type;
-            data = loadShader(rawData, type, shaders, uniforms);
-        }
-
-        /// <summary>
-        /// Returns compilable shader data.
-        /// </summary>
-        /// <param name="allUniforms">Uniforms declared on all shader parts of the grouping shader.</param>
-        public byte[] GetData(IVeldridUniformGroup allUniforms)
-        {
-            string result = includeUniformStructure(data, allUniforms);
-
-            if (!result.StartsWith("#version", StringComparison.Ordinal))
-                result = $"#version 450\n{result}";
-
-            return Encoding.UTF8.GetBytes(result);
+            Data = loadShader(rawData, type, shaders, uniforms);
         }
 
         /// <summary>
@@ -89,16 +74,19 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                 if (!mainFile)
                     return data;
 
-                if (type == ShaderPartType.Vertex)
-                    data = $"#define OSU_VERTEX_SHADER\n{data}";
+                parseUniforms(data, type, uniforms);
 
-                data = loadShader(shaders.LoadRaw("sh_GlobalUniforms.h"), type, shaders, uniforms, false) + "\n" + data;
                 data = loadShader(shaders.LoadRaw("sh_Precision_Internal.h"), type, shaders, uniforms, false) + "\n" + data;
+                data = loadShader(shaders.LoadRaw("sh_GlobalUniforms.h"), type, shaders, uniforms, false) + "\n" + data;
 
                 if (type == ShaderPartType.Vertex)
                     data = appendBackbuffer(data, shaders, uniforms);
 
-                data = omitUniforms(data, uniforms);
+                if (type == ShaderPartType.Vertex)
+                    data = $"#define OSU_VERTEX_SHADER\n\n{data}";
+
+                if (!data.StartsWith("#version", StringComparison.Ordinal))
+                    data = $"#version 450\n\n{data}";
 
                 return data;
             }
@@ -140,49 +128,27 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
         }
 
         /// <summary>
-        /// Omits all uniform declarations inside the given data, and fills them up in the given uniform group.
+        /// Parses all uniform declarations inside the given data, and fills them up in the given uniform group.
         /// </summary>
-        /// <param name="data">The data to omit uniform declarations from.</param>
+        /// <param name="data">The data to parse uniform declarations from.</param>
+        /// <param name="type">The type of the shader to read uniforms from.</param>
         /// <param name="uniforms">The uniform group to fill the uniforms in.</param>
-        private static string omitUniforms(string data, VeldridUniformGroup uniforms)
+        private static void parseUniforms(string data, ShaderPartType type, VeldridUniformGroup uniforms)
         {
-            Match uniformMatch = shader_uniform_regex.Match(data);
+            Match uniformMatch = type == ShaderPartType.Fragment
+                ? shader_fragment_uniforms_regex.Match(data)
+                : shader_vertex_uniforms_regex.Match(data);
 
             if (!uniformMatch.Success)
-                return data;
+                return;
 
-            do
+            string[] uniformLines = uniformMatch.Groups[1].Value.Split(Environment.NewLine, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string line in uniformLines)
             {
-                uniforms.AddUniform(uniformMatch.Groups[3].Value.Trim(), uniformMatch.Groups[2].Value.Trim(), uniformMatch.Groups[1].Value.Trim());
-                data = data.Replace(uniformMatch.Value, string.Empty);
-            } while ((uniformMatch = uniformMatch.NextMatch()).Success);
-
-            return data;
-        }
-
-        /// <summary>
-        /// Includes a structure of the uniform buffer from the given uniform group.
-        /// </summary>
-        /// <param name="data">The data to include the structure in.</param>
-        /// <param name="allUniforms">A list of all uniforms defined by any shader part in the grouping shader.</param>
-        private string includeUniformStructure(string data, IVeldridUniformGroup allUniforms)
-        {
-            if (allUniforms.Uniforms.Count == 0)
-                return data;
-
-            string uniformBufferName = VeldridRenderer.SHADER_UNIFORMS_LAYOUT.Elements.Single().Name;
-
-            var uniformBuilder = new StringBuilder();
-            uniformBuilder.AppendLine($"layout(std140, set = {VeldridRenderer.SHADER_UNIFORMS_SLOT}, binding = 0) uniform {uniformBufferName}");
-            uniformBuilder.AppendLine("{");
-
-            foreach (var uniform in allUniforms.Uniforms)
-                uniformBuilder.AppendLine($"{uniform.Precision} {uniform.Type} {uniform.Name};".Trim());
-
-            uniformBuilder.AppendLine("};");
-            uniformBuilder.AppendLine();
-
-            return $"{uniformBuilder}{data}";
+                string[] parts = line.Trim().Replace(";", string.Empty).Split();
+                uniforms.AddUniform(parts[^1], parts[^2], parts.Length > 2 ? parts[^3] : null);
+            }
         }
 
         public void Dispose()

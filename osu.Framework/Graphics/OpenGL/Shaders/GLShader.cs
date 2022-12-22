@@ -24,8 +24,6 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
 
         internal readonly Dictionary<string, IUniform> Uniforms = new Dictionary<string, IUniform>();
 
-        IReadOnlyDictionary<string, IUniform> IShader.Uniforms => Uniforms;
-
         /// <summary>
         /// Holds all the <see cref="Uniforms"/> values for faster access than iterating on <see cref="Dictionary{TKey,TValue}.Values"/>.
         /// </summary>

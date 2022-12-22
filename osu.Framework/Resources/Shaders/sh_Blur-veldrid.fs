@@ -4,13 +4,16 @@
 
 #define INV_SQRT_2PI 0.39894
 
+layout(set = 1, binding = 1) uniform m_FragmentUniforms
+{
+	mediump vec2 texSize;
+	int radius;
+	mediump float sigma;
+	highp vec2 blurDirection;
+};
+
 layout(set = 2, binding = 0) uniform texture2D m_Texture;
 layout(set = 2, binding = 1) uniform sampler m_Sampler;
-
-uniform mediump vec2 texSize;
-uniform int radius;
-uniform mediump float sigma;
-uniform highp vec2 blurDirection;
 
 layout(location = 0) out vec4 o_Colour;
 

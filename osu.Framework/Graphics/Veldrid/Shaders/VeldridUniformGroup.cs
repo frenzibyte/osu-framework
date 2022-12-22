@@ -15,9 +15,6 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
     {
         private readonly List<VeldridUniformInfo> uniforms = new List<VeldridUniformInfo>();
 
-        /// <summary>
-        /// All uniforms declared by any shader part in the <see cref="VeldridShader"/>.
-        /// </summary>
         public IReadOnlyList<VeldridUniformInfo> Uniforms => uniforms;
 
         public VeldridUniformGroup(params IVeldridUniformGroup[] groups)
@@ -45,12 +42,6 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
             uniforms.Add(uniform);
         }
 
-        /// <summary>
-        /// Creates a uniform buffer object for all uniforms in this group.
-        /// </summary>
-        /// <param name="renderer">The renderer to create the uniform buffer.</param>
-        /// <param name="owner">The owner of the uniforms, or null for global uniforms.</param>
-        /// <param name="uniforms">A list of <see cref="IUniform"/>s instantiated for the buffer structure.</param>
         public DeviceBuffer CreateBuffer(VeldridRenderer renderer, VeldridShader? owner, out Dictionary<string, IUniform> uniforms)
         {
             uniforms = new Dictionary<string, IUniform>(Uniforms.Count);

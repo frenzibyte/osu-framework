@@ -38,6 +38,8 @@ namespace osu.Framework.Graphics.Veldrid
 
         public override string ShaderFilenameSuffix => @"-veldrid";
 
+        private IGraphicsSurface graphicsSurface = null!;
+
         public GraphicsDevice Device { get; private set; } = null!;
 
         public ResourceFactory Factory => Device.ResourceFactory;
@@ -49,15 +51,14 @@ namespace osu.Framework.Graphics.Veldrid
         public VeldridIndexData SharedLinearIndex { get; }
         public VeldridIndexData SharedQuadIndex { get; }
 
-        private IGraphicsSurface graphicsSurface = null!;
-
         private ResourceLayout shaderUniformsLayout = null!;
 
         private DeviceBuffer? boundVertexBuffer;
         private ResourceSet? boundShaderUniforms;
 
         internal static readonly ResourceLayoutDescription SHADER_UNIFORMS_LAYOUT = new ResourceLayoutDescription(
-            new ResourceLayoutElementDescription("m_Uniforms", ResourceKind.UniformBuffer, ShaderStages.Fragment | ShaderStages.Vertex));
+            new ResourceLayoutElementDescription("m_VertexUniforms", ResourceKind.UniformBuffer, ShaderStages.Vertex),
+            new ResourceLayoutElementDescription("m_FragmentUniforms", ResourceKind.UniformBuffer, ShaderStages.Fragment));
 
         private GraphicsPipelineDescription pipeline = new GraphicsPipelineDescription
         {
@@ -302,7 +303,8 @@ namespace osu.Framework.Graphics.Veldrid
 
         public void BindIndexBuffer(DeviceBuffer buffer, IndexFormat format) => Commands.SetIndexBuffer(buffer, format);
 
-        public ResourceSet CreateUniformResourceSet(DeviceBuffer buffer) => Factory.CreateResourceSet(new ResourceSetDescription(shaderUniformsLayout, buffer));
+        public ResourceSet CreateUniformResourceSet(DeviceBuffer vertexUniforms, DeviceBuffer fragmentUniforms) =>
+            Factory.CreateResourceSet(new ResourceSetDescription(shaderUniformsLayout, vertexUniforms, fragmentUniforms));
 
         public void DrawVertices(PrimitiveTopology type, int indexStart, int indicesCount)
         {
@@ -351,8 +353,7 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected override void SetUniformImplementation<T>(IUniformWithValue<T> uniform)
         {
-            var owner = (VeldridShader?)uniform.Owner;
-            var buffer = owner?.UniformBuffer ?? GlobalUniformManager.Buffer;
+            var buffer = ((VeldridShader?)uniform.Owner)?.GetUniformBuffer(uniform) ?? GlobalUniformManager.Buffer;
 
             switch (uniform)
             {

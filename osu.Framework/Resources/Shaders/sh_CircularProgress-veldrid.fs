@@ -7,15 +7,18 @@
 #include "sh_TextureWrapping.h"
 #include "sh_CircularProgressUtils.h"
 
+layout(set = 1, binding = 1) uniform m_FragmentUniforms
+{
+    mediump float progress;
+    mediump float innerRadius;
+    highp float texelSize;
+    bool roundedCaps;
+};
+
 layout(set = 2, binding = 0) uniform lowp texture2D m_Texture;
 layout(set = 2, binding = 1) uniform lowp sampler m_Sampler;
 
 layout(location = 0) out vec4 o_Colour;
-
-uniform mediump float progress;
-uniform mediump float innerRadius;
-uniform highp float texelSize;
-uniform bool roundedCaps;
 
 void main(void)
 {
