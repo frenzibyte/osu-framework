@@ -4,10 +4,10 @@ uniform sampler2D m_SamplerY;
 uniform sampler2D m_SamplerU;
 uniform sampler2D m_SamplerV;
 
-uniform mediump mat3 yuvCoeff;
+uniform highp mat3 yuvCoeff;
 
 // Y - 16, Cb - 128, Cr - 128
-const mediump vec3 offsets = vec3(-0.0625, -0.5, -0.5);
+const highp vec3 offsets = vec3(-0.0625, -0.5, -0.5);
 
 lowp vec4 wrappedSamplerRgb(vec2 wrappedCoord, vec4 texRect, float lodBias) 
 {

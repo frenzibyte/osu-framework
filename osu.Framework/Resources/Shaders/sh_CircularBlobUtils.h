@@ -23,29 +23,29 @@ highp float noise(highp vec2 st)
     return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
 }
 
-lowp float blobAlphaAt(highp vec2 pixelPos, mediump float innerRadius, highp float texelSize, mediump float frequency, mediump float amplitude, highp vec2 noisePosition)
+highp float blobAlphaAt(highp vec2 pixelPos, highp float innerRadius, highp float texelSize, highp float frequency, highp float amplitude, highp vec2 noisePosition)
 {
     // Compute angle of the current pixel in the (0, 2*PI) range
-    mediump float pixelAngle = atan(0.5 - pixelPos.y, 0.5 - pixelPos.x) - HALF_PI;
+    highp float pixelAngle = atan(0.5 - pixelPos.y, 0.5 - pixelPos.x) - HALF_PI;
     if (pixelAngle < 0.0)
         pixelAngle += TWO_PI;
 
-    mediump float complexity = (frequency + amplitude) * 0.5 + 1.0;
+    highp float complexity = (frequency + amplitude) * 0.5 + 1.0;
 
     int pointCount = int(ceil(5.0 * complexity));
-    mediump float searchRange = 0.1 * complexity; // in radians
+    highp float searchRange = 0.1 * complexity; // in radians
 
-    mediump float pathRadius = innerRadius * 0.25;
+    highp float pathRadius = innerRadius * 0.25;
 
     highp float shortestDistance = 1.0;
 
-    mediump float startAngle = pixelAngle - searchRange * 0.5;
+    highp float startAngle = pixelAngle - searchRange * 0.5;
 
     // Path approximation
     // Plot points within a search range and check which one is closest
     for (int i = 0; i < pointCount; i++)
     {
-        mediump float angle = startAngle + searchRange * float(i) / float(pointCount);
+        highp float angle = startAngle + searchRange * float(i) / float(pointCount);
         highp vec2 cs = vec2(cos(angle - HALF_PI), sin(angle - HALF_PI));
 
         highp float noiseValue = noise(noisePosition + cs * vec2(frequency));

@@ -4,10 +4,10 @@ varying lowp vec4 v_Colour;
 #ifdef HIGH_PRECISION_VERTEX
 	varying highp vec4 v_TexRect;
 #else
-	varying mediump vec4 v_TexRect;
+	varying highp vec4 v_TexRect;
 #endif
 
-varying mediump vec2 v_BlendRange;
+varying highp vec2 v_BlendRange;
 
 uniform highp float g_CornerRadius;
 uniform highp float g_CornerExponent;
@@ -16,7 +16,7 @@ uniform highp vec4 g_MaskingRect;
 uniform highp float g_BorderThickness;
 uniform lowp mat4 g_BorderColour;
 
-uniform mediump float g_MaskingBlendRange;
+uniform highp float g_MaskingBlendRange;
 
 uniform lowp float g_AlphaExponent;
 
@@ -50,7 +50,7 @@ highp float distanceFromRoundedRect(highp vec2 offset, highp float radius)
 	}
 }
 
-highp float distanceFromDrawingRect(mediump vec2 texCoord)
+highp float distanceFromDrawingRect(highp vec2 texCoord)
 {
 	highp vec2 topLeftOffset = v_TexRect.xy - texCoord;
 	topLeftOffset = vec2(
@@ -74,7 +74,7 @@ lowp vec4 getBorderColour()
     return mix(top, bottom, relativeTexCoord.y);
 }
 
-lowp vec4 getRoundedColor(lowp vec4 texel, mediump vec2 texCoord)
+lowp vec4 getRoundedColor(lowp vec4 texel, highp vec2 texCoord)
 {
 	if (!g_IsMasking && v_BlendRange == vec2(0.0))
 	{

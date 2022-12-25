@@ -5,7 +5,7 @@
 
 varying highp vec2 v_TexCoord;
 
-uniform mediump float hue;
+uniform highp float hue;
 
 void main(void)
 {

@@ -15,15 +15,15 @@ highp float dstToLine(highp vec2 start, highp vec2 end, highp vec2 pixelPos)
 }
 
 // Returns distance to the progress shape (to closest pixel on it's border)
-highp float distanceToProgress(highp vec2 pixelPos, mediump float progress, mediump float innerRadius, bool roundedCaps, highp float texelSize)
+highp float distanceToProgress(highp vec2 pixelPos, highp float progress, highp float innerRadius, bool roundedCaps, highp float texelSize)
 {
     // Compute angle of the current pixel in the (0, 2*PI) range
-    mediump float pixelAngle = atan(0.5 - pixelPos.y, 0.5 - pixelPos.x) - HALF_PI;
+    highp float pixelAngle = atan(0.5 - pixelPos.y, 0.5 - pixelPos.x) - HALF_PI;
     if (pixelAngle < 0.0)
         pixelAngle += TWO_PI;
 
-    mediump float progressAngle = TWO_PI * progress;
-    mediump float pathRadius = 0.25 * innerRadius;
+    highp float progressAngle = TWO_PI * progress;
+    highp float pathRadius = 0.25 * innerRadius;
     highp float halfTexel = texelSize * 0.5;
 
     if (progress >= 1.0 || pixelAngle < progressAngle) // Pixel inside the sector
@@ -48,10 +48,10 @@ highp float distanceToProgress(highp vec2 pixelPos, mediump float progress, medi
     return min(dstToIdleEdge, dstToRotatingEdge);
 }
 
-lowp float progressAlphaAt(highp vec2 pixelPos, mediump float progress, mediump float innerRadius, bool roundedCaps, highp float texelSize)
+highp float progressAlphaAt(highp vec2 pixelPos, highp float progress, highp float innerRadius, bool roundedCaps, highp float texelSize)
 {
     // This is a bit of a hack to make progress appear smooth if it's radius < texelSize by making it more transparent while leaving thickness the same
-    lowp float subAAMultiplier = 1.0;
+    highp float subAAMultiplier = 1.0;
     subAAMultiplier = clamp(innerRadius / (texelSize * 2.0), 0.1, 1.0);
     innerRadius = max(innerRadius, texelSize * 2.0);
     
