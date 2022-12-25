@@ -32,8 +32,8 @@ namespace osu.Framework.Graphics.UserInterface
         /// </summary>
         protected FillFlowContainer Content { get; }
 
-        private readonly SaturationValueSelector saturationValueSelector;
-        private readonly HueSelector hueSelector;
+        protected readonly SaturationValueSelector saturationValueSelector;
+        protected readonly HueSelector hueSelector;
 
         protected HSVColourPicker()
         {

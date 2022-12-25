@@ -29,6 +29,7 @@ namespace osu.Framework.Graphics.UserInterface
             protected readonly Container SliderBar;
 
             private readonly Drawable nub;
+            public readonly HueSelectorBackground background;
 
             protected HueSelector()
             {
@@ -41,7 +42,7 @@ namespace osu.Framework.Graphics.UserInterface
                     {
                         Height = 30,
                         RelativeSizeAxes = Axes.X,
-                        Child = new HueSelectorBackground
+                        Child = background = new HueSelectorBackground
                         {
                             RelativeSizeAxes = Axes.Both
                         }
@@ -94,7 +95,7 @@ namespace osu.Framework.Graphics.UserInterface
                 Hue.Value = localSpacePosition.X / DrawWidth;
             }
 
-            private partial class HueSelectorBackground : Box, ITexturedShaderDrawable
+            public partial class HueSelectorBackground : Box, ITexturedShaderDrawable
             {
                 public new IShader TextureShader { get; private set; }
 

@@ -1,7 +1,6 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Sprites;
@@ -25,13 +24,13 @@ namespace osu.Framework.Graphics.Shapes
         [BackgroundDependencyLoader]
         private void load(IRenderer renderer)
         {
-            base.Texture = renderer.WhitePixel;
+            base.Texture ??= renderer.WhitePixel;
         }
 
         public override Texture Texture
         {
             get => base.Texture;
-            set => throw new InvalidOperationException($"The texture of a {nameof(Box)} cannot be set.");
+            set => base.Texture = value;
         }
     }
 }

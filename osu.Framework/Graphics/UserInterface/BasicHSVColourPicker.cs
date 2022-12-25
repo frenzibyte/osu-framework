@@ -5,12 +5,26 @@
 
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Textures;
 using osuTK;
 
 namespace osu.Framework.Graphics.UserInterface
 {
     public partial class BasicHSVColourPicker : HSVColourPicker
     {
+        private Texture texture;
+
+        public Texture Texture
+        {
+            get => texture;
+            set
+            {
+                texture = value;
+                hueSelector.background.Texture = value;
+                saturationValueSelector.box.Texture = value;
+            }
+        }
+
         public BasicHSVColourPicker()
         {
             Background.Colour = FrameworkColour.GreenDark;

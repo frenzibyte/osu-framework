@@ -47,7 +47,7 @@ namespace osu.Framework.Graphics.UserInterface
             protected Container SelectionArea { get; }
 
             private readonly Drawable marker;
-            private readonly SaturationBox box;
+            public readonly SaturationBox box;
 
             protected SaturationValueSelector()
             {
@@ -207,7 +207,7 @@ namespace osu.Framework.Graphics.UserInterface
                 public IBindable<Colour4> Current { get; } = new Bindable<Colour4>();
             }
 
-            private partial class SaturationBox : Box, ITexturedShaderDrawable
+            public partial class SaturationBox : Box, ITexturedShaderDrawable
             {
                 public new IShader TextureShader { get; private set; }
 

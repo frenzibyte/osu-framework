@@ -11,7 +11,7 @@ namespace osu.Framework.Graphics.Textures
     /// </summary>
     public class TextureRegion : Texture
     {
-        private readonly Texture parent;
+        public readonly Texture Parent;
         private readonly RectangleI bounds;
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace osu.Framework.Graphics.Textures
         public TextureRegion(Texture parent, RectangleI bounds, WrapMode wrapModeS, WrapMode wrapModeT)
             : base(parent, wrapModeS, wrapModeT)
         {
-            this.parent = parent;
+            this.Parent = parent;
             this.bounds = bounds;
         }
 
@@ -54,7 +54,7 @@ namespace osu.Framework.Graphics.Textures
             }
 
             UpdateOpacity(upload, ref opacity);
-            parent.SetData(upload, wrapModeS, wrapModeT, opacity);
+            Parent.SetData(upload, wrapModeS, wrapModeT, opacity);
         }
 
         private RectangleF boundsInParent(RectangleF? area)
@@ -74,9 +74,9 @@ namespace osu.Framework.Graphics.Textures
             }
 
             // Convert the texture space area into the parent's display space.
-            return actualBounds / parent.ScaleAdjust;
+            return actualBounds / Parent.ScaleAdjust;
         }
 
-        public override RectangleF GetTextureRect(RectangleF? area = null) => parent.GetTextureRect(boundsInParent(area));
+        public override RectangleF GetTextureRect(RectangleF? area = null) => Parent.GetTextureRect(boundsInParent(area));
     }
 }
