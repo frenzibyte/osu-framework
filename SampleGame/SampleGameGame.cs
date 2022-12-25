@@ -3,33 +3,62 @@
 
 using osu.Framework;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Sprites;
 using osuTK;
-using osuTK.Graphics;
-using osu.Framework.Graphics.Shapes;
-using osu.Framework.Allocation;
+using osuTK.Graphics.ES30;
 
 namespace SampleGame
 {
     public partial class SampleGameGame : Game
     {
-        private Box box = null!;
-
-        [BackgroundDependencyLoader]
-        private void load()
+        protected override void LoadComplete()
         {
-            Add(box = new Box
+            base.LoadComplete();
+
+            Host.DrawThread.Scheduler.Add(() =>
             {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                Size = new Vector2(150, 150),
-                Colour = Color4.Tomato
-            });
-        }
+                int maxTextureSize = GL.GetInteger(GetPName.MaxTextureSize);
 
-        protected override void Update()
-        {
-            base.Update();
-            box.Rotation += (float)Time.Elapsed / 10;
+                FillFlowContainer fillFlowContainer = new FillFlowContainer
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Direction = FillDirection.Vertical,
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Scale = new Vector2(2f),
+                    Children = new[]
+                    {
+                        new SpriteText
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Text = $"Maximum texture size: {maxTextureSize} / {Host.Renderer.WhitePixel.GetTextureRect().Width}"
+                        },
+                    }
+                };
+
+                Schedule(() => Add(fillFlowContainer));
+
+                foreach (var type in new[] { ShaderType.VertexShader, ShaderType.FragmentShader })
+                {
+                    foreach (var precision in new[]
+                                 { ShaderPrecision.HighFloat, ShaderPrecision.HighInt, ShaderPrecision.MediumFloat, ShaderPrecision.MediumInt, ShaderPrecision.LowFloat, ShaderPrecision.LowInt })
+                    {
+                        int[] range = new int[2];
+                        int precisionValue;
+
+                        GL.GetShaderPrecisionFormat(type, precision, range, out precisionValue);
+
+                        Schedule(() => fillFlowContainer.Add(new SpriteText
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Text = $"{type}: {precision} shader precision: {precisionValue} ({range[0]}, {range[1]})"
+                        }));
+                    }
+                }
+            });
         }
     }
 }
