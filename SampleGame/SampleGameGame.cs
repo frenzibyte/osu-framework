@@ -5,8 +5,10 @@ using osu.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.UserInterface;
 using osuTK;
 using osuTK.Graphics.ES30;
+using Color4 = osuTK.Graphics.Color4;
 
 namespace SampleGame
 {
@@ -58,6 +60,39 @@ namespace SampleGame
                         }));
                     }
                 }
+
+                Schedule(() =>
+                {
+                    AddInternal(new FillFlowContainer
+                    {
+                        Depth = int.MaxValue,
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Direction = FillDirection.Horizontal,
+                        Children = new Drawable[]
+                        {
+                            new CircularBlob
+                            {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
+                                Amplitude = 0.5f, InnerRadius = 0.25f, Size = new Vector2(200), Colour = Color4.Gray
+                            },
+                            new CircularProgress
+                            {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
+                                Current = { Value = 1 }, InnerRadius = 0.25f, Size = new Vector2(200), Colour = Color4.Gray
+                            },
+                            new BasicHSVColourPicker
+                            {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
+                                Width = 200
+                            },
+                        }
+                    });
+                });
             });
         }
     }
