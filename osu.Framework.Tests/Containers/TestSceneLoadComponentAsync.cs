@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
@@ -189,6 +190,28 @@ namespace osu.Framework.Tests.Containers
             });
         }
 
+        [Test]
+        public void TestResolvedBindableSafety()
+        {
+            AsyncChildLoadingComposite composite = null;
+
+            AddStep("add new composite", () => { Child = composite = new AsyncChildLoadingComposite(); });
+
+            AddStep("change dependency in time", () =>
+            {
+                composite.AllowChildLoad();
+
+                // allow time for async child to perform dependency injection...
+                Thread.Sleep(1);
+
+                // ...but change the source bindable afterwards before child bindable binds to source
+                composite.Dependency.Add(1);
+            });
+
+            AddUntilStep("wait for child load", () => composite.AsyncChild.LoadState == LoadState.Ready);
+            AddAssert("child bindable matches source", () => composite.AsyncChild.Dependency[0] == 1);
+        }
+
         private partial class AsyncChildrenLoadingComposite : CompositeDrawable
         {
             public IEnumerable<TestLoadBlockingDrawable> LoadedChildren;
@@ -204,6 +227,9 @@ namespace osu.Framework.Tests.Containers
             public void AllowChild2Load() => AsyncChild2.AllowLoad.Set();
 
             public new bool IsDisposed => base.IsDisposed;
+
+            [Cached]
+            public readonly BindableInt Dependency = new BindableInt(10);
 
             protected override void LoadComplete()
             {
@@ -228,6 +254,9 @@ namespace osu.Framework.Tests.Containers
 
             public new bool IsDisposed => base.IsDisposed;
 
+            [Cached]
+            public readonly BindableList<int> Dependency = new BindableList<int>();
+
             protected override void LoadComplete()
             {
                 AsyncChild.OnDispose += () => AsyncChildDisposed = true;
@@ -243,11 +272,15 @@ namespace osu.Framework.Tests.Containers
         {
             public readonly ManualResetEventSlim AllowLoad = new ManualResetEventSlim();
 
-            [BackgroundDependencyLoader]
-            private void load()
+            [Resolved(canBeNull: true)]
+            public BindableList<int> Dependency { get; private set; }
+
+            protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
             {
                 if (!AllowLoad.Wait(TimeSpan.FromSeconds(10)))
                     throw new TimeoutException();
+
+                return base.CreateChildDependencies(parent);
             }
         }
     }
