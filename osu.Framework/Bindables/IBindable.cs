@@ -39,6 +39,13 @@ namespace osu.Framework.Bindables
         IBindable GetBoundCopy();
 
         /// <summary>
+        /// Retrieve a new bindable instance copied from the configuration backing.
+        /// </summary>
+        /// <returns>An unbound copy of the specified bindable.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to instantiate a copy bindable that's not matching the original's type.</exception>
+        IBindable GetUnboundCopy();
+
+        /// <summary>
         /// Creates a new instance of this <see cref="IBindable"/> for use in <see cref="GetBoundCopy"/>.
         /// The returned instance must have match the most derived type of the bindable class this method is implemented on.
         /// </summary>
@@ -111,5 +118,8 @@ namespace osu.Framework.Bindables
 
         /// <inheritdoc cref="IBindable.GetBoundCopy"/>
         IBindable<T> GetBoundCopy();
+
+        /// <inheritdoc cref="IBindable.GetUnboundCopy"/>
+        IBindable<T> GetUnboundCopy();
     }
 }

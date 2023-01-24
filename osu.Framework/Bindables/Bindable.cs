@@ -393,16 +393,6 @@ namespace osu.Framework.Bindables
 
         public virtual string ToString(string format, IFormatProvider formatProvider) => string.Format(formatProvider, $"{{0:{format}}}", Value);
 
-        /// <summary>
-        /// Create an unbound clone of this bindable.
-        /// </summary>
-        public Bindable<T> GetUnboundCopy()
-        {
-            var newBindable = CreateInstance();
-            CopyTo(newBindable);
-            return newBindable;
-        }
-
         IBindable IBindable.CreateInstance() => CreateInstance();
 
         /// <inheritdoc cref="IBindable.CreateInstance"/>
@@ -414,6 +404,18 @@ namespace osu.Framework.Bindables
 
         /// <inheritdoc cref="IBindable{T}.GetBoundCopy"/>
         public Bindable<T> GetBoundCopy() => IBindable.GetBoundCopyImplementation(this);
+
+        IBindable IBindable.GetUnboundCopy() => GetUnboundCopy();
+
+        IBindable<T> IBindable<T>.GetUnboundCopy() => GetUnboundCopy();
+
+        /// <inheritdoc cref="IBindable{T}.GetUnboundCopy"/>
+        public Bindable<T> GetUnboundCopy()
+        {
+            var newBindable = CreateInstance();
+            CopyTo(newBindable);
+            return newBindable;
+        }
 
         void ISerializableBindable.SerializeTo(JsonWriter writer, JsonSerializer serializer)
         {

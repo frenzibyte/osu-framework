@@ -635,6 +635,13 @@ namespace osu.Framework.Bindables
         /// <inheritdoc cref="IBindableList{T}.GetBoundCopy"/>
         public BindableList<T> GetBoundCopy() => IBindable.GetBoundCopyImplementation(this);
 
+        IBindable IBindable.GetUnboundCopy() => GetUnboundCopy();
+
+        IBindableList<T> IBindableList<T>.GetUnboundCopy() => GetUnboundCopy();
+
+        /// <inheritdoc cref="IBindableList{T}.GetUnboundCopy"/>
+        public BindableList<T> GetUnboundCopy() => new BindableList<T>(this) { Disabled = Disabled };
+
         #endregion IBindableCollection
 
         #region IEnumerable

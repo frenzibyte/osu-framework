@@ -500,6 +500,13 @@ namespace osu.Framework.Bindables
         /// <inheritdoc cref="IBindable.GetBoundCopy"/>
         public BindableDictionary<TKey, TValue> GetBoundCopy() => IBindable.GetBoundCopyImplementation(this);
 
+        IBindable IBindable.GetUnboundCopy() => GetUnboundCopy();
+
+        IBindableDictionary<TKey, TValue> IBindableDictionary<TKey, TValue>.GetUnboundCopy() => GetUnboundCopy();
+
+        /// <inheritdoc cref="IBindable.GetBoundCopy"/>
+        public BindableDictionary<TKey, TValue> GetUnboundCopy() => new BindableDictionary<TKey, TValue>(this) { Disabled = Disabled };
+
         #endregion IBindableCollection
 
         #region IEnumerable

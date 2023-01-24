@@ -37,5 +37,8 @@ namespace osu.Framework.Bindables
 
         /// <inheritdoc cref="IBindable.GetBoundCopy"/>
         IBindableList<T> GetBoundCopy();
+
+        /// <inheritdoc cref="IBindable.GetUnboundCopy"/>
+        IBindableList<T> GetUnboundCopy();
     }
 }
