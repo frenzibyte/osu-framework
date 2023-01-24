@@ -300,11 +300,17 @@ namespace osu.Framework.Graphics
             }
         }
 
+        private IReadOnlyDependencyContainer injectedDependencies;
+
         /// <summary>
         /// Injects dependencies from an <see cref="IReadOnlyDependencyContainer"/> into this <see cref="Drawable"/>.
         /// </summary>
         /// <param name="dependencies">The dependencies to inject.</param>
-        protected virtual void InjectDependencies(IReadOnlyDependencyContainer dependencies) => dependencies.Inject(this);
+        protected virtual void InjectDependencies(IReadOnlyDependencyContainer dependencies)
+        {
+            injectedDependencies = dependencies;
+            injectedDependencies.Inject(this);
+        }
 
         /// <summary>
         /// Runs once on the update thread after loading has finished.
@@ -314,6 +320,8 @@ namespace osu.Framework.Graphics
             if (loadState < LoadState.Ready) return false;
 
             loadState = LoadState.Loaded;
+
+            injectedDependencies.BindBindables(this);
 
             // From a synchronous point of view, this is the first time the Drawable receives a parent.
             // If this Drawable calculated properties such as DrawInfo that depend on the parent state before this point, they must be re-validated in the now-correct state.

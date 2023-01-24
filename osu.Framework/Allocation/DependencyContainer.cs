@@ -177,15 +177,13 @@ namespace osu.Framework.Allocation
             return parentContainer?.Get(type, info);
         }
 
-        /// <summary>
-        /// Injects dependencies into the given instance.
-        /// </summary>
-        /// <typeparam name="T">The type of the instance to inject dependencies into.</typeparam>
-        /// <param name="instance">The instance to inject dependencies into.</param>
-        /// <exception cref="OperationCanceledException">When the injection process was cancelled.</exception>
         public void Inject<T>(T instance)
             where T : class, IDependencyInjectionCandidate
             => DependencyActivator.Activate(instance, this);
+
+        public void BindBindables<T>(T instance)
+            where T : class, IDependencyInjectionCandidate
+            => DependencyActivator.BindBindables(instance, this);
     }
 
     public class TypeAlreadyCachedException : InvalidOperationException

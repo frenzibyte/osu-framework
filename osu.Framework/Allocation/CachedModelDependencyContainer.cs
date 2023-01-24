@@ -71,6 +71,10 @@ namespace osu.Framework.Allocation
             where T : class, IDependencyInjectionCandidate
             => DependencyActivator.Activate(instance, this);
 
+        public void BindBindables<T>(T instance)
+            where T : class, IDependencyInjectionCandidate
+            => DependencyActivator.BindBindables(instance, this);
+
         /// <summary>
         /// Creates a new shadow model bound to <see cref="shadowModel"/>.
         /// </summary>

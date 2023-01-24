@@ -34,6 +34,13 @@ namespace osu.Framework.Allocation
         /// <typeparam name="T">The type of the instance to inject dependencies into.</typeparam>
         /// <param name="instance">The instance to inject dependencies into.</param>
         void Inject<T>(T instance) where T : class, IDependencyInjectionCandidate;
+
+        /// <summary>
+        /// Binds all resolved bindables of this instance to their corresponding sources in this dependency container.
+        /// </summary>
+        /// <typeparam name="T">The type of the instance to bind resolved bindables from.</typeparam>
+        /// <param name="instance">The instance to bind resolved bindables from.</param>
+        void BindBindables<T>(T instance) where T : class, IDependencyInjectionCandidate;
     }
 
     public static class ReadOnlyDependencyContainerExtensions

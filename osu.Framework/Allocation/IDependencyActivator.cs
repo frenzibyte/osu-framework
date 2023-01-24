@@ -22,6 +22,7 @@ namespace osu.Framework.Allocation
         /// <param name="type">The type.</param>
         /// <param name="injectDel">A function to inject dependencies into the object.</param>
         /// <param name="cacheDel">A function to cache the dependencies of the object.</param>
-        void Register(Type type, InjectDependencyDelegate? injectDel, CacheDependencyDelegate? cacheDel);
+        /// <param name="bindDel">A function to bind bindable dependencies with this object.</param>
+        void Register(Type type, InjectDependencyDelegate? injectDel, CacheDependencyDelegate? cacheDel, BindBindablesDelegate? bindDel);
     }
 }

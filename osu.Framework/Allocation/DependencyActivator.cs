@@ -30,6 +30,7 @@ namespace osu.Framework.Allocation
 
         private readonly List<InjectDependencyDelegate> injectionActivators = new List<InjectDependencyDelegate>();
         private readonly List<CacheDependencyDelegate> buildCacheActivators = new List<CacheDependencyDelegate>();
+        private readonly List<BindBindablesDelegate> bindableActivators = new List<BindBindablesDelegate>();
 
         static DependencyActivator()
         {
@@ -38,10 +39,11 @@ namespace osu.Framework.Allocation
         }
 
         // Source generator pathway.
-        private DependencyActivator(Type type, InjectDependencyDelegate injectDel, CacheDependencyDelegate cacheDel)
+        private DependencyActivator(Type type, InjectDependencyDelegate injectDel, CacheDependencyDelegate cacheDel, BindBindablesDelegate bindDel)
         {
             injectionActivators.Add(injectDel);
             buildCacheActivators.Add(cacheDel);
+            bindableActivators.Add(bindDel);
             activator_cache[type] = this;
         }
 
@@ -50,6 +52,7 @@ namespace osu.Framework.Allocation
         {
             injectionActivators.Add(ResolvedAttribute.CreateActivator(type));
             injectionActivators.Add(BackgroundDependencyLoaderAttribute.CreateActivator(type));
+            // todo: bind bindables reflection support
             buildCacheActivators.Add(CachedAttribute.CreateActivator(type));
             activator_cache[type] = this;
         }
@@ -78,6 +81,29 @@ namespace osu.Framework.Allocation
                 activateRecursively(obj, dependencies, currentType.BaseType);
 
                 foreach (var a in getActivator(currentType).injectionActivators)
+                    a(obj, dependencies);
+            }
+        }
+
+        /// <summary>
+        /// Binds bindables of an object with the <see cref="DependencyContainer"/>.
+        /// </summary>
+        /// <param name="obj">The object to bind bindables of.</param>
+        /// <param name="dependencies">The dependencies to use for binding.</param>
+        public static void BindBindables<T>(T obj, IReadOnlyDependencyContainer dependencies)
+            where T : IDependencyInjectionCandidate
+        {
+            initialiseSourceGeneratedActivators(obj);
+            bindBindablesRecursively(obj, dependencies, obj.GetType());
+
+            static void bindBindablesRecursively(object obj, IReadOnlyDependencyContainer dependencies, Type currentType)
+            {
+                if (currentType == typeof(object))
+                    return;
+
+                bindBindablesRecursively(obj, dependencies, currentType.BaseType);
+
+                foreach (var a in getActivator(currentType).bindableActivators)
                     a(obj, dependencies);
             }
         }
@@ -137,13 +163,14 @@ namespace osu.Framework.Allocation
         {
             public bool IsRegistered(Type type) => activator_cache.ContainsKey(type);
 
-            public void Register(Type type, InjectDependencyDelegate injectDel, CacheDependencyDelegate cacheDel)
+            public void Register(Type type, InjectDependencyDelegate injectDel, CacheDependencyDelegate cacheDel, BindBindablesDelegate bindDel)
             {
                 // The DependencyActivator constructor stores itself to a static dictionary.
                 var _ = new DependencyActivator(
                     type,
                     injectDel ?? ((_, _) => { }),
-                    cacheDel ?? ((_, d, _) => d));
+                    cacheDel ?? ((_, d, _) => d),
+                    bindDel ?? ((_, _) => { }));
             }
         }
     }
@@ -219,6 +246,8 @@ namespace osu.Framework.Allocation
     }
 
     public delegate void InjectDependencyDelegate(object target, IReadOnlyDependencyContainer dependencies);
+
+    public delegate void BindBindablesDelegate(object target, IReadOnlyDependencyContainer dependencies);
 
     public delegate IReadOnlyDependencyContainer CacheDependencyDelegate(object target, IReadOnlyDependencyContainer existingDependencies, CacheInfo info);
 }
