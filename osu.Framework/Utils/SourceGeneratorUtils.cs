@@ -69,7 +69,7 @@ namespace osu.Framework.Utils
                 throw new DependencyNotRegisteredException(callerType, typeof(T));
 
             if (rebindBindables && val is IBindable bindableVal)
-                return (T)bindableVal.GetBoundCopy();
+                return (T)bindableVal.GetUnboundCopy();
 
             // `(int)(object)null` throws a NRE, so `default` is used instead.
             return val == null ? default! : (T)val;
