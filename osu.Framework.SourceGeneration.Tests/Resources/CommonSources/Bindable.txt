@@ -5,11 +5,15 @@ namespace osu.Framework.Bindables
         IBindable GetBoundCopy() => null;
     }
 
-    public interface IBindable<T> : IBindable
+    public interface IBindable<T>
     {
+        IBindable<T> GetBoundCopy() => null;
     }
 
-    public class Bindable<T> : IBindable<T>
+    public class Bindable<T> : IBindable<T>, IBindable
     {
+        public void BindTo(IBindable them)
+        {
+        }
     }
 }

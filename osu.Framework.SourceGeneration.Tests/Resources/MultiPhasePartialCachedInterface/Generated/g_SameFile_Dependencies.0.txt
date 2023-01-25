@@ -9,6 +9,6 @@ partial class SameFile : global::osu.Framework.Allocation.ISourceGeneratedDepend
         if (registry.IsRegistered(typeof(global::SameFile)))
             return;
         base.RegisterForDependencyActivation(registry);
-        registry.Register(typeof(global::SameFile), null, null);
+        registry.Register(typeof(global::SameFile), null, null, null);
     }
 }

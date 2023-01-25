@@ -14,6 +14,6 @@ partial class SameFile : global::osu.Framework.Allocation.ISourceGeneratedDepend
             var dependencies = new global::osu.Framework.Allocation.DependencyContainer(d);
             global::osu.Framework.Utils.SourceGeneratorUtils.CacheDependency(dependencies, typeof(global::SameFile), t, i, typeof(global::ISameFile), null, null);
             return dependencies;
-        });
+        }, null);
     }
 }

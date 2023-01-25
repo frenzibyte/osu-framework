@@ -9,6 +9,6 @@ partial class DifferentFile : global::osu.Framework.Allocation.ISourceGeneratedD
         if (registry.IsRegistered(typeof(global::DifferentFile)))
             return;
         base.RegisterForDependencyActivation(registry);
-        registry.Register(typeof(global::DifferentFile), null, null);
+        registry.Register(typeof(global::DifferentFile), null, null, null);
     }
 }

@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -88,6 +89,40 @@ namespace osu.Framework.SourceGeneration
                                         })));
         }
 
+        public static InvocationExpressionSyntax GetBindableSourceInvocation(string requestedType, string? name, string? parent)
+        {
+            LiteralExpressionSyntax nameSyntax = name == null
+                ? SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                : SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(name));
+
+            ExpressionSyntax parentSyntax = parent == null
+                ? SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                : SyntaxFactory.TypeOfExpression(SyntaxFactory.ParseTypeName(parent));
+
+            if (requestedType.EndsWith("?", StringComparison.Ordinal))
+                requestedType = requestedType.Substring(0, requestedType.Length - 1);
+
+            return SyntaxFactory.InvocationExpression(
+                                    SyntaxFactory.MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        SyntaxFactory.ParseTypeName("global::osu.Framework.Utils.SourceGeneratorUtils"),
+                                        SyntaxFactory.GenericName("GetBindableSource")
+                                                     .WithTypeArgumentList(
+                                                         SyntaxFactory.TypeArgumentList(
+                                                             SyntaxFactory.SeparatedList(new[]
+                                                             {
+                                                                 SyntaxFactory.ParseTypeName(requestedType)
+                                                             })))))
+                                .WithArgumentList(
+                                    SyntaxFactory.ArgumentList(
+                                        SyntaxFactory.SeparatedList(new[]
+                                        {
+                                            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(DependenciesFileEmitter.DEPENDENCIES_PARAMETER_NAME)),
+                                            SyntaxFactory.Argument(nameSyntax),
+                                            SyntaxFactory.Argument(parentSyntax),
+                                        })));
+        }
+
         public static TypeOfExpressionSyntax TypeOf(string typeName)
             => SyntaxFactory.TypeOfExpression(SyntaxFactory.ParseTypeName(typeName));
 
@@ -99,6 +134,9 @@ namespace osu.Framework.SourceGeneration
 
         public static bool IsCachedAttribute(AttributeData? attribute)
             => IsCachedAttribute(attribute?.AttributeClass);
+
+        public static bool IsIBindable(ITypeSymbol? type)
+            => type?.Name == "IBindable";
 
         public static bool IsBackgroundDependencyLoaderAttribute(ITypeSymbol? type)
             => type?.Name == "BackgroundDependencyLoaderAttribute";

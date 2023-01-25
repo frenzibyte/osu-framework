@@ -192,7 +192,9 @@ namespace osu.Framework.SourceGeneration.Emitters
                                          SyntaxFactory.Argument(
                                              emitInjectDependenciesDelegate()),
                                          SyntaxFactory.Argument(
-                                             emitCacheDependenciesDelegate())
+                                             emitCacheDependenciesDelegate()),
+                                         SyntaxFactory.Argument(
+                                             emitBindBindablesDelegate())
                                      }))));
         }
 
@@ -268,6 +270,29 @@ namespace osu.Framework.SourceGeneration.Emitters
 
             static StatementSyntax createEpilogue() =>
                 SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName(LOCAL_DEPENDENCIES_VAR_NAME));
+        }
+
+        private ExpressionSyntax emitBindBindablesDelegate()
+        {
+            if (!Candidate.ResolvedMembers.Any(r => r.IsBindable))
+                return SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
+
+            return SyntaxFactory.ParenthesizedLambdaExpression()
+                                .WithParameterList(
+                                    SyntaxFactory.ParameterList(
+                                        SyntaxFactory.SeparatedList(new[]
+                                        {
+                                            SyntaxFactory.Parameter(
+                                                SyntaxFactory.Identifier(TARGET_PARAMETER_NAME)),
+                                            SyntaxFactory.Parameter(
+                                                SyntaxFactory.Identifier(DEPENDENCIES_PARAMETER_NAME)),
+                                        })))
+                                .WithBlock(
+                                    SyntaxFactory.Block(
+                                        Candidate.ResolvedMembers.Where(r => r.IsBindable)
+                                                 .Select(m => (IStatementEmitter)new BindableBindingEmitter(this, m))
+                                                 .SelectMany(
+                                                     e => e.Emit())));
         }
     }
 

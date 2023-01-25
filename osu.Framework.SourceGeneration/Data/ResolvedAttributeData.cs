@@ -15,7 +15,9 @@ namespace osu.Framework.SourceGeneration.Data
         public readonly string? CachedName;
         public readonly bool CanBeNull;
 
-        public ResolvedAttributeData(string globalPrefixedTypeName, string propertyName, string? globalPrefixedParentTypeName, string? cachedName, bool canBeNull)
+        public readonly bool IsBindable;
+
+        public ResolvedAttributeData(string globalPrefixedTypeName, string propertyName, string? globalPrefixedParentTypeName, string? cachedName, bool canBeNull, bool isBindable)
         {
             GlobalPrefixedTypeName = globalPrefixedTypeName;
             PropertyName = propertyName;
@@ -24,6 +26,7 @@ namespace osu.Framework.SourceGeneration.Data
 
             CachedName = cachedName;
             CanBeNull = canBeNull;
+            IsBindable = isBindable;
 
             // When a parent type exists, infer the property name if one is not provided
             if (globalPrefixedParentTypeName != null)
@@ -49,7 +52,9 @@ namespace osu.Framework.SourceGeneration.Data
 
             canBeNull |= symbol.NullableAnnotation == NullableAnnotation.Annotated;
 
-            return new ResolvedAttributeData(SyntaxHelpers.GetGlobalPrefixedTypeName(symbol.Type)!, symbol.Name, globalPrefixedParentTypeName, name, canBeNull);
+            bool isBindable = SyntaxHelpers.IsIBindable(symbol.Type) || symbol.Type.AllInterfaces.Any(SyntaxHelpers.IsIBindable);
+
+            return new ResolvedAttributeData(SyntaxHelpers.GetGlobalPrefixedTypeName(symbol.Type)!, symbol.Name, globalPrefixedParentTypeName, name, canBeNull, isBindable);
         }
     }
 }

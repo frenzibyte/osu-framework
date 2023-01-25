@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.TypeExtensions;
@@ -72,6 +73,21 @@ namespace osu.Framework.Utils
 
             // `(int)(object)null` throws a NRE, so `default` is used instead.
             return val == null ? default! : (T)val;
+        }
+
+        /// <summary>
+        /// Retrieves a bindable source from an <see cref="IReadOnlyDependencyContainer"/> to use for binding.
+        /// </summary>
+        /// <param name="container">The <see cref="IReadOnlyDependencyContainer"/> to retrieve the dependency from.</param>
+        /// <param name="cachedName">The name of the bindable source.</param>
+        /// <param name="cachedParent">The parent of the bindable source.</param>
+        /// <typeparam name="T">The type of the bindable.</typeparam>
+        /// <returns>The bindable source.</returns>
+        public static T GetBindableSource<T>(IReadOnlyDependencyContainer container, string? cachedName, Type? cachedParent)
+        {
+            var val = (T)container.Get(typeof(T), new CacheInfo(cachedName, cachedParent));
+            Debug.Assert(val is IBindable);
+            return val;
         }
     }
 }

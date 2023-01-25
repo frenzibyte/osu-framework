@@ -6,9 +6,10 @@ namespace osu.Framework.Allocation
     {
         bool IsRegistered(Type type);
 
-        void Register(Type type, InjectDependencyDelegate? injectDel, CacheDependencyDelegate? cacheDel);
+        void Register(Type type, InjectDependencyDelegate? injectDel, CacheDependencyDelegate? cacheDel, BindBindablesDelegate? bindDel = null);
     }
     
     public delegate void InjectDependencyDelegate(object target, IReadOnlyDependencyContainer dependencies);
+    public delegate void BindBindablesDelegate(object target, IReadOnlyDependencyContainer dependencies);
     public delegate IReadOnlyDependencyContainer CacheDependencyDelegate(object target, IReadOnlyDependencyContainer existingDependencies, CacheInfo info);
 }
