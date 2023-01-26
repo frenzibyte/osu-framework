@@ -90,10 +90,10 @@ namespace osu.Framework.Bindables
                 // intentionally don't have throwIfLeased() here.
                 // if the leased bindable decides to disable exclusive access (by setting Disabled = false) then anything will be able to write to Value.
 
+                if (EqualityComparer<T>.Default.Equals(this.value, value)) return;
+
                 if (Disabled)
                     throw new InvalidOperationException($"Can not set value to \"{value.ToString()}\" as bindable is disabled.");
-
-                if (EqualityComparer<T>.Default.Equals(this.value, value)) return;
 
                 SetValue(this.value, value);
             }
@@ -116,10 +116,10 @@ namespace osu.Framework.Bindables
                 // intentionally don't have throwIfLeased() here.
                 // if the leased bindable decides to disable exclusive access (by setting Disabled = false) then anything will be able to write to Default.
 
+                if (EqualityComparer<T>.Default.Equals(defaultValue, value)) return;
+
                 if (Disabled)
                     throw new InvalidOperationException($"Can not set default value to \"{value.ToString()}\" as bindable is disabled.");
-
-                if (EqualityComparer<T>.Default.Equals(defaultValue, value)) return;
 
                 SetDefaultValue(defaultValue, value);
             }
