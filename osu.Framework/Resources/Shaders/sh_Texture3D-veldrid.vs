@@ -15,8 +15,8 @@ uniform highp mat3 g_ToMaskingSpace;
 
 void main(void)
 {
-	// Transform from screen space to masking space.
-	highp vec3 maskingPos = g_ToMaskingSpace * vec3(m_Position.xy, 1.0);
+	// Transform to position to masking space.
+	vec3 maskingPos = g_ToMaskingSpace * vec3(m_Position.xy, 1.0);
 	v_MaskingPosition = maskingPos.xy / maskingPos.z;
 
 	v_TexRect = vec4(0.0);

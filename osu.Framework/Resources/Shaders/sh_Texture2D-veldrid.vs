@@ -15,7 +15,7 @@ layout(location = 4) out mediump vec2 v_BlendRange;
 uniform highp mat4 g_ProjMatrix;
 uniform highp mat3 g_ToMaskingSpace;
 
-void main()
+void main(void)
 {
 	// Transform from screen space to masking space.
 	highp vec3 maskingPos = g_ToMaskingSpace * vec3(m_Position, 1.0);
