@@ -192,11 +192,6 @@ namespace osu.Framework.Platform
         Size MaxSize { get; set; }
 
         /// <summary>
-        /// Whether the window is currently visible.
-        /// </summary>
-        bool Visible { get; set; }
-
-        /// <summary>
         /// The window title.
         /// </summary>
         string Title { get; set; }

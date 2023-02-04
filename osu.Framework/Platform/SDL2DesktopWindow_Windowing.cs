@@ -420,17 +420,17 @@ namespace osu.Framework.Platform
         /// <returns>Whether the window size has been changed after updating.</returns>
         private void fetchWindowSize()
         {
-            SDL.SDL_GetWindowSize(SDLWindowHandle, out int width, out int height);
+            SDL.SDL_GetWindowSize(SDLWindowHandle, out int w, out int h);
 
-            int drawableWidth = graphicsSurface.GetDrawableSize().Width;
+            int drawableW = graphicsSurface.GetDrawableSize().Width;
 
             // When minimised on windows, values may be zero.
             // If we receive zeroes for either of these, it seems safe to completely ignore them.
-            if (width <= 0 || drawableWidth <= 0)
+            if (w <= 0 || drawableW <= 0)
                 return;
 
-            Scale = (float)drawableWidth / width;
-            Size = new Size(width, height);
+            Scale = (float)drawableW / w;
+            Size = new Size(w, h);
 
             // This function may be invoked before the SDL internal states are all changed. (as documented here: https://wiki.libsdl.org/SDL_SetEventFilter)
             // Scheduling the store to config until after the event poll has run will ensure the window is in the correct state.

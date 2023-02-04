@@ -13,11 +13,11 @@ using osu.Framework.Utils;
 using osu.Framework.Testing;
 using osuTK;
 using osuTK.Graphics;
+using osuTK.Graphics.ES30;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Veldrid;
-using osuTK.Graphics.ES30;
 
 namespace osu.Framework.Tests.Visual.Containers
 {

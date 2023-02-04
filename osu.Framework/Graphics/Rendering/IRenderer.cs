@@ -329,7 +329,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <param name="rawData">The content of the shader part.</param>
         /// <param name="partType">The type of the shader part.</param>
         /// <returns>The <see cref="IShaderPart"/>.</returns>
-        protected internal IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[] rawData, ShaderPartType partType);
+        protected internal IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType);
 
         /// <summary>
         /// Creates a new <see cref="IShader"/>.
@@ -377,20 +377,20 @@ namespace osu.Framework.Graphics.Rendering
         /// Sets the value of a uniform.
         /// </summary>
         /// <param name="uniform">The uniform to set.</param>
-        protected internal void SetUniform<T>(IUniformWithValue<T> uniform) where T : unmanaged, IEquatable<T>;
+        internal void SetUniform<T>(IUniformWithValue<T> uniform) where T : unmanaged, IEquatable<T>;
 
         /// <summary>
         /// Sets the current draw depth.
         /// The draw depth is written to every vertex added to <see cref="IVertexBuffer"/>s.
         /// </summary>
         /// <param name="drawDepth">The draw depth.</param>
-        protected internal void SetDrawDepth(float drawDepth);
+        internal void SetDrawDepth(float drawDepth);
 
-        protected internal IVertexBatch<TexturedVertex2D> DefaultQuadBatch { get; }
+        internal IVertexBatch<TexturedVertex2D> DefaultQuadBatch { get; }
 
-        protected internal void PushQuadBatch(IVertexBatch<TexturedVertex2D> quadBatch);
+        internal void PushQuadBatch(IVertexBatch<TexturedVertex2D> quadBatch);
 
-        protected internal void PopQuadBatch();
+        internal void PopQuadBatch();
 
         #region TextureVisualiser Support
 

@@ -75,9 +75,6 @@ namespace osu.Framework.Graphics.Shaders
 
             byte[]? rawData = LoadRaw(name);
 
-            if (rawData == null)
-                throw new FileNotFoundException($"Cannot find shader '{name}' in shaders directory.");
-
             part = renderer.CreateShaderPart(this, name, rawData, partType);
 
             //cache even on failure so we don't try and fail every time.

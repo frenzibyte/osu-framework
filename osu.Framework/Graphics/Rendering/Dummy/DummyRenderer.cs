@@ -28,8 +28,6 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         public ref readonly MaskingInfo CurrentMaskingInfo => ref maskingInfo;
         private readonly MaskingInfo maskingInfo;
 
-        public GraphicsBackend BackendType => default;
-        public bool VerticalSync { get; set; } = true;
         public RectangleI Viewport => RectangleI.Empty;
         public RectangleF Ortho => RectangleF.Empty;
         public RectangleI Scissor => RectangleI.Empty;
@@ -83,12 +81,12 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         {
         }
 
+        public bool BindTexture(Texture texture, int unit = 0, WrapMode? wrapModeS = null, WrapMode? wrapModeT = null)
+            => true;
+
         public void UseProgram(IShader? shader)
         {
         }
-
-        public bool BindTexture(Texture texture, int unit = 0, WrapMode? wrapModeS = null, WrapMode? wrapModeT = null)
-            => true;
 
         public void Clear(ClearInfo clearInfo)
         {

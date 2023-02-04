@@ -260,10 +260,6 @@ namespace osu.Framework.Platform
             set => VSync = value ? VSyncMode.On : VSyncMode.Off;
         }
 
-        public IntPtr WindowHandle => OsuTKGameWindow.WindowInfo.Handle;
-
-        public IntPtr DisplayHandle => throw new NotSupportedException($@"{nameof(DisplayHandle)} is not supported.");
-
         public virtual void CycleMode()
         {
             var currentValue = WindowMode.Value;

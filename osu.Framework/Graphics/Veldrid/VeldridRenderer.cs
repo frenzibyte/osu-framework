@@ -29,7 +29,7 @@ namespace osu.Framework.Graphics.Veldrid
 {
     internal class VeldridRenderer : Renderer
     {
-        private IGraphicsSurface graphics = null!;
+        private IGraphicsSurface graphicsSurface = null!;
 
         protected internal override bool VerticalSync
         {
@@ -88,28 +88,27 @@ namespace osu.Framework.Graphics.Veldrid
             SharedQuadIndex = new VeldridIndexData(this);
         }
 
-        protected override void Initialise(IGraphicsSurface graphics)
+        protected override void Initialise(IGraphicsSurface graphicsSurface)
         {
             // Veldrid must either be initialised on the main/"input" thread, or in a separate thread away from the draw thread at least.
             // Otherwise the window may not render anything on some platforms (macOS at least).
             Debug.Assert(!ThreadSafety.IsDrawThread, "Veldrid cannot be initialised on the draw thread.");
 
-            this.graphics = graphics;
-
-            var size = graphics.GetDrawableSize();
+            this.graphicsSurface = graphicsSurface;
 
             var options = new GraphicsDeviceOptions
             {
                 HasMainSwapchain = true,
                 SwapchainDepthFormat = PixelFormat.R16_UNorm,
+                // todo: we may want to use this over our shader-based toLinear/toSRGB correction functions.
                 // SwapchainSrgbFormat = true,
                 SyncToVerticalBlank = true,
                 PreferDepthRangeZeroToOne = true,
                 PreferStandardClipSpaceYDirection = true,
                 ResourceBindingModel = ResourceBindingModel.Improved,
-                // todo: debug adds overhead, disable this later on.
-                Debug = true,
             };
+
+            var size = graphicsSurface.GetDrawableSize();
 
             var swapchain = new SwapchainDescription
             {
@@ -125,24 +124,26 @@ namespace osu.Framework.Graphics.Veldrid
             switch (RuntimeInfo.OS)
             {
                 case RuntimeInfo.Platform.Windows:
-                    swapchain.Source = SwapchainSource.CreateWin32(graphics.WindowHandle, IntPtr.Zero);
+                    swapchain.Source = SwapchainSource.CreateWin32(graphicsSurface.WindowHandle, IntPtr.Zero);
                     break;
 
                 case RuntimeInfo.Platform.macOS:
-                    var metalGraphics = graphics as IMetalGraphicsSurface ?? throw new InvalidOperationException($"Window graphics API must implement {nameof(IMetalGraphicsSurface)}.");
+                    var metalGraphics = (IMetalGraphicsSurface)graphicsSurface;
                     swapchain.Source = SwapchainSource.CreateNSView(metalGraphics.CreateMetalView());
                     break;
 
                 case RuntimeInfo.Platform.Linux:
-                    // todo: no idea if this works or that's how it should work.
-                    swapchain.Source = SwapchainSource.CreateXlib(graphics.DisplayHandle, graphics.WindowHandle);
+                    var linuxGraphics = (ILinuxGraphicsSurface)graphicsSurface;
+                    swapchain.Source = linuxGraphics.IsWayland
+                        ? SwapchainSource.CreateWayland(graphicsSurface.DisplayHandle, graphicsSurface.WindowHandle)
+                        : SwapchainSource.CreateXlib(graphicsSurface.DisplayHandle, graphicsSurface.WindowHandle);
                     break;
             }
 
-            switch (graphics.Type)
+            switch (graphicsSurface.Type)
             {
                 case GraphicsSurfaceType.OpenGL:
-                    var openGLGraphics = graphics as IOpenGLGraphicsSurface ?? throw new InvalidOperationException($"Window graphics API must implement {nameof(IOpenGLGraphicsSurface)}");
+                    var openGLGraphics = (IOpenGLGraphicsSurface)graphicsSurface;
 
                     Device = GraphicsDevice.CreateOpenGL(options, new OpenGLPlatformInfo(
                         openGLContextHandle: openGLGraphics.WindowContext,
@@ -233,18 +234,18 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected internal override void MakeCurrent()
         {
-            if (graphics.Type == GraphicsSurfaceType.OpenGL)
+            if (graphicsSurface.Type == GraphicsSurfaceType.OpenGL)
             {
-                var openGLGraphics = (IOpenGLGraphicsSurface)graphics;
+                var openGLGraphics = (IOpenGLGraphicsSurface)graphicsSurface;
                 openGLGraphics.MakeCurrent(openGLGraphics.WindowContext);
             }
         }
 
         protected internal override void ClearCurrent()
         {
-            if (graphics.Type == GraphicsSurfaceType.OpenGL)
+            if (graphicsSurface.Type == GraphicsSurfaceType.OpenGL)
             {
-                var openGLGraphics = (IOpenGLGraphicsSurface)graphics;
+                var openGLGraphics = (IOpenGLGraphicsSurface)graphicsSurface;
                 openGLGraphics.ClearCurrent();
             }
         }

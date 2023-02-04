@@ -285,7 +285,7 @@ namespace osu.Framework.Graphics.OpenGL
                 GL.Disable(EnableCap.StencilTest);
         }
 
-        protected override IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[] rawData, ShaderPartType partType)
+        protected override IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType)
         {
             ShaderType glType;
 
