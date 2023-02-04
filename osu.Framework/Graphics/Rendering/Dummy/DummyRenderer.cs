@@ -83,22 +83,7 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         {
         }
 
-        public bool BindTexture(Texture texture, int unit = 0, WrapMode? wrapModeS = null, WrapMode? wrapModeT = null)
-            => true;
-
         public void UseProgram(IShader? shader)
-        {
-        }
-
-        void IRenderer.WaitUntilIdle()
-        {
-        }
-
-        void IRenderer.MakeCurrent()
-        {
-        }
-
-        void IRenderer.ClearCurrent()
         {
         }
 

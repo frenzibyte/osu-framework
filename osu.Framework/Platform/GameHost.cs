@@ -705,7 +705,7 @@ namespace osu.Framework.Platform
 
                 SetupForRun();
 
-                Window = CreateWindow(GraphicsSurfaceType.OpenGL);
+                Window = CreateWindow(GraphicsSurfaceType.Metal);
 
                 populateInputHandlers();
 

@@ -43,6 +43,9 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         public virtual int Height { get; set; }
         public virtual int GetByteSize() => Width * Height * 4;
         public bool Available { get; private set; } = true;
+
+        ulong INativeTexture.TotalBindCount { get; set; }
+
         public bool BypassTextureUploadQueueing { get; set; }
 
         private readonly bool manualMipmaps;
@@ -279,6 +282,8 @@ namespace osu.Framework.Graphics.Veldrid.Textures
         /// This excludes automatic generation of mipmaps via the graphics backend.
         /// </remarks>
         private int maximumUploadedLod;
+
+        private ulong totalBindCount;
 
         protected virtual void DoUpload(ITextureUpload upload)
         {

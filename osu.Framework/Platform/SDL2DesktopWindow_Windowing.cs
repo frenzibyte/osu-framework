@@ -422,7 +422,7 @@ namespace osu.Framework.Platform
         {
             SDL.SDL_GetWindowSize(SDLWindowHandle, out int width, out int height);
 
-            int drawableWidth = graphics.GetDrawableSize().Width;
+            int drawableWidth = graphicsSurface.GetDrawableSize().Width;
 
             // When minimised on windows, values may be zero.
             // If we receive zeroes for either of these, it seems safe to completely ignore them.
