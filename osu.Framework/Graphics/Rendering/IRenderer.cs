@@ -43,14 +43,9 @@ namespace osu.Framework.Graphics.Rendering
         public const int MAX_QUADS = ushort.MaxValue / INDICES_PER_QUAD;
 
         /// <summary>
-        /// The type of the graphics backend represented by this renderer.
-        /// </summary>
-        GraphicsBackend BackendType { get; }
-
-        /// <summary>
         /// Enables or disables vertical sync.
         /// </summary>
-        bool VerticalSync { get; set; }
+        protected internal bool VerticalSync { get; set; }
 
         /// <summary>
         /// The maximum allowed texture size.
@@ -151,9 +146,14 @@ namespace osu.Framework.Graphics.Rendering
         Texture WhitePixel { get; }
 
         /// <summary>
+        /// Whether this <see cref="IRenderer"/> has been initialised using <see cref="Initialise"/>.
+        /// </summary>
+        bool IsInitialised { get; }
+
+        /// <summary>
         /// Performs a once-off initialisation of this <see cref="IRenderer"/>.
         /// </summary>
-        protected internal void Initialise(IWindowGraphics graphics);
+        protected internal void Initialise(IGraphicsSurface graphicsSurface);
 
         /// <summary>
         /// Resets any states to prepare for drawing a new frame.
@@ -167,7 +167,7 @@ namespace osu.Framework.Graphics.Rendering
         protected internal void FinishFrame();
 
         /// <summary>
-        /// Performs a buffer swap.
+        /// Swaps the back buffer with the front buffer to display the new frame.
         /// </summary>
         protected internal void SwapBuffers();
 
@@ -403,11 +403,6 @@ namespace osu.Framework.Graphics.Rendering
         /// Retrieves all <see cref="Texture"/>s that have been created.
         /// </summary>
         internal Texture[] GetAllTextures();
-
-        /// <summary>
-        /// Returns the total amount of times the texture has ever been bound.
-        /// </summary>
-        internal ulong GetTextureBindCount(Texture texture);
 
         #endregion
     }

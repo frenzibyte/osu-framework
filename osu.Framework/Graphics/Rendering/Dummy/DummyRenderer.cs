@@ -44,14 +44,19 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         public bool UsingBackbuffer => false;
         public Texture WhitePixel { get; }
 
+        public bool IsInitialised { get; private set; }
+
         public DummyRenderer()
         {
             maskingInfo = default;
             WhitePixel = new Texture(new DummyNativeTexture(this), WrapMode.None, WrapMode.None);
         }
 
-        void IRenderer.Initialise(IWindowGraphics graphics)
+        bool IRenderer.VerticalSync { get; set; } = true;
+
+        void IRenderer.Initialise(IGraphicsSurface graphicsSurface)
         {
+            IsInitialised = true;
         }
 
         void IRenderer.BeginFrame(Vector2 windowSize)
@@ -63,6 +68,25 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         }
 
         void IRenderer.SwapBuffers()
+        {
+        }
+
+        void IRenderer.WaitUntilIdle()
+        {
+        }
+
+        void IRenderer.MakeCurrent()
+        {
+        }
+
+        void IRenderer.ClearCurrent()
+        {
+        }
+
+        public bool BindTexture(Texture texture, int unit = 0, WrapMode? wrapModeS = null, WrapMode? wrapModeT = null)
+            => true;
+
+        public void UseProgram(IShader? shader)
         {
         }
 
@@ -212,7 +236,5 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         }
 
         Texture[] IRenderer.GetAllTextures() => Array.Empty<Texture>();
-
-        ulong IRenderer.GetTextureBindCount(Texture texture) => 0;
     }
 }

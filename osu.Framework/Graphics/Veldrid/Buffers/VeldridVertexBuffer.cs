@@ -1,14 +1,14 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-#nullable disable
-
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Veldrid.Vertices;
+using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using SixLabors.ImageSharp.Memory;
 using Veldrid;
@@ -26,9 +26,10 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         private readonly BufferUsage usage;
 
         private Memory<DepthWrappingVertex<T>> vertexMemory;
-        private IMemoryOwner<DepthWrappingVertex<T>> memoryOwner;
+        private IMemoryOwner<DepthWrappingVertex<T>>? memoryOwner;
+        private NativeMemoryTracker.NativeMemoryLease? memoryLease;
 
-        private DeviceBuffer buffer;
+        private DeviceBuffer? buffer;
 
         protected VeldridVertexBuffer(VeldridRenderer renderer, int amountVertices, BufferUsage usage)
         {
@@ -69,7 +70,9 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             ThreadSafety.EnsureDrawThread();
 
             var description = new BufferDescription((uint)(Size * STRIDE), BufferUsage.VertexBuffer | usage);
-            buffer = renderer.Factory.CreateBuffer(ref description);
+            buffer = renderer.Factory.CreateBuffer(description);
+
+            memoryLease = NativeMemoryTracker.AddMemory(this, buffer.SizeInBytes);
         }
 
         ~VeldridVertexBuffer()
@@ -103,6 +106,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             if (buffer == null)
                 Initialise();
 
+            Debug.Assert(buffer != null);
             renderer.BindVertexBuffer(buffer, VeldridVertexUtils<DepthWrappingVertex<T>>.Layout);
         }
 
@@ -170,6 +174,9 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
         public void Free()
         {
+            memoryLease?.Dispose();
+            memoryLease = null;
+
             buffer?.Dispose();
             buffer = null;
 
