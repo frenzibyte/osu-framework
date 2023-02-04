@@ -235,7 +235,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             if (graphics.Type == GraphicsSurfaceType.OpenGL)
             {
-                var openGLGraphics = (IOpenGLWindowGraphics)graphics;
+                var openGLGraphics = (IOpenGLGraphicsSurface)graphics;
                 openGLGraphics.MakeCurrent(openGLGraphics.WindowContext);
             }
         }
@@ -244,7 +244,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             if (graphics.Type == GraphicsSurfaceType.OpenGL)
             {
-                var openGLGraphics = (IOpenGLWindowGraphics)graphics;
+                var openGLGraphics = (IOpenGLGraphicsSurface)graphics;
                 openGLGraphics.ClearCurrent();
             }
         }
