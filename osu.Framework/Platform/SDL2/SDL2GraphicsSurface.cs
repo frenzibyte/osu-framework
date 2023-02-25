@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 using SDL2;
+using Vulkan.Xlib;
 
 namespace osu.Framework.Platform.SDL2
 {
@@ -60,29 +61,14 @@ namespace osu.Framework.Platform.SDL2
         {
             int width, height;
 
-            switch (Type)
-            {
-                case GraphicsSurfaceType.OpenGL:
-                default:
-                    SDL.SDL_GL_GetDrawableSize(window.SDLWindowHandle, out width, out height);
-                    break;
-
-                case GraphicsSurfaceType.Vulkan:
-                    SDL.SDL_Vulkan_GetDrawableSize(window.SDLWindowHandle, out width, out height);
-                    break;
-
-                case GraphicsSurfaceType.Metal:
-                    SDL.SDL_Metal_GetDrawableSize(window.SDLWindowHandle, out width, out height);
-                    break;
-
-                case GraphicsSurfaceType.Direct3D11:
-                    // todo: SDL has no "drawable size" method for D3D11, return window size for now.
-                    SDL.SDL_GetWindowSize(window.SDLWindowHandle, out width, out height);
-                    break;
-            }
+            // todo: SDL has no "drawable size" method for D3D11, return window size for now.
+            SDL.SDL_Metal_GetDrawableSize(window.SDLWindowHandle, out width, out height);
 
             return new Size(width, height);
         }
+
+        [DllImport("@rpath/SDL2.framework/SDL2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SDL_GetWindowSizeInPixels(IntPtr window, out int w, out int h);
 
         #region OpenGL-specific implementation
 

@@ -96,20 +96,33 @@ namespace osu.Framework.Graphics.Veldrid
             switch (RuntimeInfo.OS)
             {
                 case RuntimeInfo.Platform.Windows:
+                {
                     swapchain.Source = SwapchainSource.CreateWin32(graphicsSurface.WindowHandle, IntPtr.Zero);
                     break;
+                }
 
                 case RuntimeInfo.Platform.macOS:
+                {
                     var metalGraphics = (IMetalGraphicsSurface)graphicsSurface;
                     swapchain.Source = SwapchainSource.CreateNSView(metalGraphics.CreateMetalView());
                     break;
+                }
+
+                case RuntimeInfo.Platform.iOS:
+                {
+                    var metalGraphics = (IMetalGraphicsSurface)graphicsSurface;
+                    swapchain.Source = SwapchainSource.CreateUIView(metalGraphics.CreateMetalView());
+                    break;
+                }
 
                 case RuntimeInfo.Platform.Linux:
+                {
                     var linuxGraphics = (ILinuxGraphicsSurface)graphicsSurface;
                     swapchain.Source = linuxGraphics.IsWayland
                         ? SwapchainSource.CreateWayland(graphicsSurface.DisplayHandle, graphicsSurface.WindowHandle)
                         : SwapchainSource.CreateXlib(graphicsSurface.DisplayHandle, graphicsSurface.WindowHandle);
                     break;
+                }
             }
 
             switch (graphicsSurface.Type)

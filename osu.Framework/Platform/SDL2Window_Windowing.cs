@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
 using osu.Framework.Logging;
@@ -435,7 +436,7 @@ namespace osu.Framework.Platform
         private void fetchWindowSize()
         {
             SDL.SDL_GetWindowSize(SDLWindowHandle, out int w, out int h);
-            SDL.SDL_GL_GetDrawableSize(SDLWindowHandle, out int drawableW, out int _);
+            SDL.SDL_Metal_GetDrawableSize(SDLWindowHandle, out int drawableW, out int _);
 
             // When minimised on windows, values may be zero.
             // If we receive zeroes for either of these, it seems safe to completely ignore them.
@@ -449,6 +450,9 @@ namespace osu.Framework.Platform
             // Scheduling the store to config until after the event poll has run will ensure the window is in the correct state.
             EventScheduler.AddOnce(storeWindowSizeToConfig);
         }
+
+        [DllImport("@rpath/SDL2.framework/SDL2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SDL_GetWindowSizeInPixels(IntPtr window, out int w, out int h);
 
         #region SDL Event Handling
 
