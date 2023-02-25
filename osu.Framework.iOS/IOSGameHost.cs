@@ -38,7 +38,7 @@ namespace osu.Framework.iOS
         {
         }
 
-        protected override IRenderer CreateRenderer() => new IOSGLRenderer();
+        protected override IRenderer CreateRenderer() => new GLRenderer();
 
         protected override void SetupForRun()
         {
