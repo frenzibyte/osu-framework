@@ -224,6 +224,7 @@ namespace osu.Framework.Platform
             SDL.SDL_SetHint(SDL.SDL_HINT_IME_SHOW_UI, "1");
             SDL.SDL_SetHint(SDL.SDL_HINT_MOUSE_RELATIVE_MODE_CENTER, "0");
             SDL.SDL_SetHint(SDL.SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+            SDL.SDL_SetHint("SDL_AUDIO_CATEGORY", "playback");
 
             // we want text input to only be active when SDL2DesktopWindowTextInput is active.
             // SDL activates it by default on some platforms: https://github.com/libsdl-org/SDL/blob/release-2.0.16/src/video/SDL_video.c#L573-L582
