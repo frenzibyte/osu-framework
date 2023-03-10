@@ -9,8 +9,6 @@ using System.IO;
 using Foundation;
 using osu.Framework.Configuration;
 using osu.Framework.Extensions;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Video;
 using osu.Framework.Input.Bindings;
@@ -29,8 +27,6 @@ namespace osu.Framework.iOS
             : base(string.Empty)
         {
         }
-
-        protected override IRenderer CreateRenderer() => new GLRenderer();
 
         protected override void SetupForRun()
         {

@@ -436,7 +436,7 @@ namespace osu.Framework.Platform
         private void fetchWindowSize()
         {
             SDL.SDL_GetWindowSize(SDLWindowHandle, out int w, out int h);
-            SDL.SDL_Metal_GetDrawableSize(SDLWindowHandle, out int drawableW, out int _);
+            SDL.SDL_GL_GetDrawableSize(SDLWindowHandle, out int drawableW, out int _);
 
             // When minimised on windows, values may be zero.
             // If we receive zeroes for either of these, it seems safe to completely ignore them.

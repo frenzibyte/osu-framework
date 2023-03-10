@@ -376,20 +376,13 @@ namespace osu.Framework.Graphics.Veldrid
 
             int glMaxTextureSize = 0;
 
-            info.ExecuteOnGLThread(() =>
-            {
-                version = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Version)) ?? string.Empty;
-                renderer = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Renderer)) ?? string.Empty;
-                vendor = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Vendor)) ?? string.Empty;
-                glslVersion = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.ShadingLanguageVersion)) ?? string.Empty;
-                extensions = string.Join(' ', info.Extensions);
+            version = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Version)) ?? string.Empty;
+            renderer = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Renderer)) ?? string.Empty;
+            vendor = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.Vendor)) ?? string.Empty;
+            glslVersion = Marshal.PtrToStringUTF8((IntPtr)OpenGLNative.glGetString(StringName.ShadingLanguageVersion)) ?? string.Empty;
+            extensions = string.Join(' ', info.Extensions);
 
-                int size;
-                OpenGLNative.glGetIntegerv(GetPName.MaxTextureSize, &size);
-                glMaxTextureSize = size;
-            });
-
-            maxTextureSize = glMaxTextureSize;
+            maxTextureSize = 4096;
 
             Logger.Log($@"GL Initialized
                                     GL Version:                 {version}

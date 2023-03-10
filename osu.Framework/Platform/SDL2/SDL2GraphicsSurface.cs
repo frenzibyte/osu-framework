@@ -62,7 +62,7 @@ namespace osu.Framework.Platform.SDL2
             int width, height;
 
             // todo: SDL has no "drawable size" method for D3D11, return window size for now.
-            SDL.SDL_Metal_GetDrawableSize(window.SDLWindowHandle, out width, out height);
+            SDL.SDL_GL_GetDrawableSize(window.SDLWindowHandle, out width, out height);
 
             return new Size(width, height);
         }
