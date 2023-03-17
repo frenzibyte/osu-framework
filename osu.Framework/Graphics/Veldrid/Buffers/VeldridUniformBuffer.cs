@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics.Rendering;
+using osu.Framework.Statistics;
 using Veldrid;
 
 namespace osu.Framework.Graphics.Veldrid.Buffers
@@ -12,9 +13,11 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
     {
         /// <summary>
         /// Gets the <see cref="ResourceSet"/> containing the buffer attached to the given layout.
-        /// </summary>
-        /// <param name="layout">The <see cref="ResourceLayout"/> which the buffer should be attached to.</param>
         ResourceSet GetResourceSet(ResourceLayout layout);
+
+        IReadOnlyList<IVeldridUniformBufferStorage> Storages { get; }
+
+        void FreeStorage(IVeldridUniformBufferStorage storage);
 
         /// <summary>
         /// Resets this <see cref="IVeldridUniformBuffer"/>, bringing it to the initial state.
@@ -26,6 +29,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         where TData : unmanaged, IEquatable<TData>
     {
         private VeldridUniformBufferStorage<TData> currentStorage => storages[currentStorageIndex];
+
+        public IReadOnlyList<IVeldridUniformBufferStorage> Storages => storages;
 
         private readonly List<VeldridUniformBufferStorage<TData>> storages = new List<VeldridUniformBufferStorage<TData>>();
         private int currentStorageIndex;
@@ -77,6 +82,12 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             // Upload the data.
             currentStorage.Data = pending;
             pendingData = null;
+        }
+
+        public void FreeStorage(IVeldridUniformBufferStorage storage)
+        {
+            storages.Remove((VeldridUniformBufferStorage<TData>)storage);
+            storage.Dispose();
         }
 
         public void ResetCounters()

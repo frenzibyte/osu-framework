@@ -179,7 +179,19 @@ namespace osu.Framework.Graphics.Veldrid
             }
 
             foreach (var ubo in uniformBufferResetList)
+            {
+                if (ResetId % 300 == 0)
+                {
+                    for (int i = 0; i < ubo.Storages.Count; i++)
+                    {
+                        if (ResetId - ubo.Storages[i].LastUseResetId > 300)
+                            ubo.FreeStorage(ubo.Storages[i--]);
+                    }
+                }
+
                 ubo.ResetCounters();
+            }
+
             uniformBufferResetList.Clear();
 
             Commands.Begin();
