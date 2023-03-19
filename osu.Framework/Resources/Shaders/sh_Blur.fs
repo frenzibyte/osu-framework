@@ -20,11 +20,6 @@ layout(set = 1, binding = 0) uniform lowp texture2D m_Texture;
 layout(set = 1, binding = 1) uniform lowp sampler m_Sampler;
 
 layout(location = 0) out vec4 o_Colour;
-layout(location = 1) out highp vec2 o_v_MaskingPosition;
-layout(location = 2) out lowp vec4 o_v_Colour;
-layout(location = 3) out highp vec2 o_v_TexCoord;
-layout(location = 4) out highp vec4 o_v_TexRect;
-layout(location = 5) out mediump vec2 o_v_BlendRange;
 
 mediump float computeGauss(in mediump float x, in mediump float sigma)
 {
@@ -55,9 +50,4 @@ lowp vec4 blur(int radius, highp vec2 direction, mediump vec2 texCoord, mediump 
 void main(void)
 {
 	o_Colour = blur(g_Radius, g_BlurDirection, v_TexCoord, g_TexSize, g_Sigma);
-	o_v_MaskingPosition = v_MaskingPosition;
-	o_v_Colour = v_Colour;
-	o_v_TexCoord = v_TexCoord;
-	o_v_TexRect = v_TexRect;
-	o_v_BlendRange = v_BlendRange;
 }
