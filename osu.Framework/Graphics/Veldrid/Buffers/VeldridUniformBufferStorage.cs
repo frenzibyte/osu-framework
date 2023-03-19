@@ -2,7 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using Veldrid;
@@ -23,7 +25,11 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         private readonly DeviceBuffer buffer;
         private readonly NativeMemoryTracker.NativeMemoryLease memoryLease;
 
-        public ulong LastUseResetId { get; private set; }
+        private readonly int sizeInBytes;
+
+        private int index = -4;
+
+        public ulong LastUseResetId { get; private set; } = ulong.MaxValue;
 
         private ResourceSet? set;
         private TData data;
@@ -32,7 +38,9 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         {
             this.renderer = renderer;
 
-            buffer = renderer.Factory.CreateBuffer(new BufferDescription((uint)Marshal.SizeOf(default(TData)), BufferUsage.UniformBuffer));
+            sizeInBytes = Marshal.SizeOf(default(TData));
+
+            buffer = renderer.Factory.CreateBuffer(new BufferDescription((uint)sizeInBytes * 100, BufferUsage.UniformBuffer));
             memoryLease = NativeMemoryTracker.AddMemory(this, buffer.SizeInBytes);
 
             IVeldridUniformBufferStorage.StorageCount.Value++;
@@ -44,14 +52,30 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             set
             {
                 data = value;
-                renderer.BufferUpdateCommands.UpdateBuffer(buffer, 0, ref data);
+
+                index += 4;
+                // Logger.Log($"Update data at offset = {index * sizeInBytes} ({index})");
+                renderer.BufferUpdateCommands.UpdateBuffer(buffer, (uint)(index * sizeInBytes), ref data);
             }
         }
 
+        public bool CanUse => index < 96;
+
         public ResourceSet GetResourceSet(ResourceLayout layout)
         {
+            if (LastUseResetId == renderer.ResetId)
+                Debugger.Break();
+
             LastUseResetId = renderer.ResetId;
-            return set ??= renderer.Factory.CreateResourceSet(new ResourceSetDescription(layout, buffer));
+
+            // Logger.Log($"Get resource set at offset = {index * sizeInBytes} ({index})");
+            return set ??= renderer.Factory.CreateResourceSet(new ResourceSetDescription(layout, new DeviceBufferRange(buffer, (uint)(index * (uint)sizeInBytes), (uint)sizeInBytes)));
+        }
+
+        public void Reset()
+        {
+            // Logger.Log("Storage is reset");
+            index = -4;
         }
 
         public void Dispose()

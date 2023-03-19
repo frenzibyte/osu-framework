@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics.Rendering;
+using osu.Framework.Logging;
 using osu.Framework.Statistics;
 using Veldrid;
 
@@ -62,6 +63,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         public ResourceSet GetResourceSet(ResourceLayout layout)
         {
             flushPendingData();
+
+            // Logger.Log($"Get resource data from storage at index {currentStorageIndex}");
             return currentStorage.GetResourceSet(layout);
         }
 
@@ -71,7 +74,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 return;
 
             // Advance the storage index with every new data. Each draw call effectively has a unique UBO.
-            if (++currentStorageIndex == storages.Count)
+            if (!currentStorage.CanUse && ++currentStorageIndex == storages.Count)
                 storages.Add(new VeldridUniformBufferStorage<TData>(renderer));
 
             // Register this UBO to be reset in the next draw call, but only the first time it receives new data.
@@ -93,6 +96,9 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         public void ResetCounters()
         {
             currentStorageIndex = 0;
+
+            foreach (var s in storages)
+                s.Reset();
         }
 
         public void Dispose()
