@@ -354,7 +354,17 @@ namespace osu.Framework.Graphics.Veldrid
             VeldridFrameBuffer? veldridFrameBuffer = (VeldridFrameBuffer?)frameBuffer;
             Framebuffer framebuffer = veldridFrameBuffer?.Framebuffer ?? Device.SwapchainFramebuffer;
 
+            BufferUpdateCommands.End();
+            Commands.End();
+
+            Device.SubmitCommands(BufferUpdateCommands);
+            Device.SubmitCommands(Commands);
+
+            BufferUpdateCommands.Begin();
+            Commands.Begin();
+
             Commands.SetFramebuffer(framebuffer);
+
             pipeline.Outputs = framebuffer.OutputDescription;
         }
 
