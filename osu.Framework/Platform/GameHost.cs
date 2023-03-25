@@ -58,6 +58,7 @@ using Veldrid.SPIRV;
 using BufferUsage = Veldrid.BufferUsage;
 using Image = SixLabors.ImageSharp.Image;
 using PixelFormat = osuTK.Graphics.ES30.PixelFormat;
+using PrimitiveTopology = Veldrid.PrimitiveTopology;
 using Size = System.Drawing.Size;
 
 namespace osu.Framework.Platform
@@ -489,8 +490,10 @@ namespace osu.Framework.Platform
         private bool initialised;
 
         private Shader[] shaders;
-        private VeldridVertexBuffer<Vertex2D> vertexBuffer;
-        private VeldridVertexBuffer<Vertex2D> vertexBuffer2;
+        private DeviceBuffer indexBuffer;
+        private DeviceBuffer vertexBuffer;
+        private DeviceBuffer vertexBuffer2;
+        private Pipeline pipeline;
 
         private const string vertex_shader = @"
 #version 450
@@ -527,8 +530,29 @@ void main(void)
                 new ShaderDescription(ShaderStages.Vertex, Encoding.UTF8.GetBytes(vertex_shader), "main0"),
                 new ShaderDescription(ShaderStages.Fragment, Encoding.UTF8.GetBytes(fragment_shader), "main0"));
 
-            vertexBuffer = new VeldridQuadBuffer<Vertex2D>(veldrid, 1, BufferUsage.Dynamic);
-            vertexBuffer2 = new VeldridQuadBuffer<Vertex2D>(veldrid, 1, BufferUsage.Dynamic);
+            vertexBuffer = veldrid.Factory.CreateBuffer(new BufferDescription((uint)Marshal.SizeOf(typeof(Vertex2D)) * 4, BufferUsage.Dynamic | BufferUsage.VertexBuffer));
+            vertexBuffer2 = veldrid.Factory.CreateBuffer(new BufferDescription((uint)Marshal.SizeOf(typeof(Vertex2D)) * 4, BufferUsage.Dynamic | BufferUsage.VertexBuffer));
+            indexBuffer = veldrid.Factory.CreateBuffer(new BufferDescription(2 * 6, BufferUsage.IndexBuffer));
+
+            pipeline = veldrid.Factory.CreateGraphicsPipeline(new GraphicsPipelineDescription
+            {
+                BlendState = BlendStateDescription.SingleOverrideBlend,
+                DepthStencilState = DepthStencilStateDescription.Disabled,
+                RasterizerState = RasterizerStateDescription.CullNone,
+                PrimitiveTopology = PrimitiveTopology.TriangleList,
+                ResourceLayouts = Array.Empty<ResourceLayout>(),
+                ShaderSet =
+                {
+                    VertexLayouts = new[]
+                    {
+                        new VertexLayoutDescription(
+                            new VertexElementDescription("m_Position", VertexElementFormat.Float2, VertexElementSemantic.Position),
+                            new VertexElementDescription("m_Colour", VertexElementFormat.Float4, VertexElementSemantic.Color))
+                    },
+                    Shaders = shaders
+                },
+                Outputs = veldrid.Device.SwapchainFramebuffer.OutputDescription,
+            });
 
             initialised = true;
         }
@@ -575,35 +599,49 @@ void main(void)
                 else
                 {
                     // Disable depth testing
-                    Renderer.PushDepthInfo(new DepthInfo(false, false));
+                    // Renderer.PushDepthInfo(new DepthInfo(false, false));
                 }
 
                 var renderer = (VeldridRenderer)Renderer;
 
                 initialiseResources(renderer);
 
-                renderer.pipeline.ShaderSet.Shaders = shaders;
+                Vertex2D[] vertices1 =
+                {
+                    new Vertex2D { Position = new Vector2(-0.75f, 0.75f), Colour = Color4.Red },
+                    new Vertex2D { Position = new Vector2(0.75f, 0.75f), Colour = Color4.Red },
+                    new Vertex2D { Position = new Vector2(0.75f, -0.75f), Colour = Color4.Red },
+                    new Vertex2D { Position = new Vector2(-0.75f, -0.75f), Colour = Color4.Red },
+                };
 
-                vertexBuffer.SetVertex(0, new Vertex2D { Position = new Vector2(-0.75f, 0.75f), Colour = Color4.Red });
-                vertexBuffer.SetVertex(1, new Vertex2D { Position = new Vector2(0.75f, 0.75f), Colour = Color4.Red });
-                vertexBuffer.SetVertex(2, new Vertex2D { Position = new Vector2(0.75f, -0.75f), Colour = Color4.Red });
-                vertexBuffer.SetVertex(3, new Vertex2D { Position = new Vector2(-0.75f, -0.75f), Colour = Color4.Red });
-                vertexBuffer2.SetVertex(0, new Vertex2D { Position = new Vector2(-0.25f, 0.25f), Colour = Color4.Blue });
-                vertexBuffer2.SetVertex(1, new Vertex2D { Position = new Vector2(0.25f, 0.25f), Colour = Color4.Blue });
-                vertexBuffer2.SetVertex(2, new Vertex2D { Position = new Vector2(0.25f, -0.25f), Colour = Color4.Blue });
-                vertexBuffer2.SetVertex(3, new Vertex2D { Position = new Vector2(-0.25f, -0.25f), Colour = Color4.Blue });
+                Vertex2D[] vertices2 =
+                {
+                    new Vertex2D { Position = new Vector2(-0.25f, 0.25f), Colour = Color4.Blue },
+                    new Vertex2D { Position = new Vector2(0.25f, 0.25f), Colour = Color4.Blue },
+                    new Vertex2D { Position = new Vector2(0.25f, -0.25f), Colour = Color4.Blue },
+                    new Vertex2D { Position = new Vector2(-0.25f, -0.25f), Colour = Color4.Blue },
+                };
 
-                vertexBuffer.UpdateRange(0, 4);
-                vertexBuffer2.UpdateRange(0, 4);
+                ushort[] indices = { 0, 1, 3, 2, 3, 1 };
 
-                vertexBuffer.DrawRange(0, 4);
+                renderer.Commands.UpdateBuffer(vertexBuffer, 0, vertices1);
+                renderer.Commands.UpdateBuffer(vertexBuffer2, 0, vertices2);
+                renderer.Commands.UpdateBuffer(indexBuffer, 0, indices);
+
+                renderer.Commands.SetVertexBuffer(0, vertexBuffer);
+                renderer.Commands.SetIndexBuffer(indexBuffer, IndexFormat.UInt16);
+                renderer.Commands.SetPipeline(pipeline);
+                renderer.Commands.DrawIndexed(6, 1, 0, 0, 0);
+
                 renderer.Commands.ResetRenderPass();
-                vertexBuffer2.DrawRange(0, 4);
+
+                renderer.Commands.SetVertexBuffer(0, vertexBuffer2);
+                renderer.Commands.DrawIndexed(6, 1, 0, 0, 0);
 
                 // Back pass
                 // buffer.Object.Draw(Renderer);
 
-                Renderer.PopDepthInfo();
+                // Renderer.PopDepthInfo();
 
                 Renderer.FinishFrame();
 
