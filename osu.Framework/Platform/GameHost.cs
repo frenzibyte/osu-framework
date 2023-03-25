@@ -30,7 +30,6 @@ using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
@@ -44,13 +43,10 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Veldrid;
-using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
-using osu.Framework.Testing;
-using osuTK.Graphics;
 using Image = SixLabors.ImageSharp.Image;
 using PixelFormat = osuTK.Graphics.ES30.PixelFormat;
 using Size = System.Drawing.Size;
@@ -477,11 +473,6 @@ namespace osu.Framework.Platform
 
         private readonly DepthValue depthValue = new DepthValue();
 
-        [CanBeNull]
-        private VeldridFrameBuffer frameBuffer;
-
-        private Game game;
-
         protected virtual void DrawFrame()
         {
             if (Root == null)
@@ -490,83 +481,59 @@ namespace osu.Framework.Platform
             if (ExecutionState != ExecutionState.Running)
                 return;
 
-            game ??= Root.ChildrenOfType<Game>().Single();
-            game.Draw(Renderer);
+            ObjectUsage<DrawNode> buffer;
 
-            // ObjectUsage<DrawNode> buffer;
-            //
-            // using (drawMonitor.BeginCollecting(PerformanceCollectionType.Sleep))
-            //     buffer = DrawRoots.GetForRead();
-            //
-            // if (buffer == null)
-            //     return;
-            //
-            // try
-            // {
-            //     using (drawMonitor.BeginCollecting(PerformanceCollectionType.DrawReset))
-            //         Renderer.BeginFrame(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
-            //
-            //     if (false)
-            //     {
-            //         depthValue.Reset();
-            //
-            //         Renderer.SetBlend(BlendingParameters.None);
-            //
-            //         Renderer.SetBlendMask(BlendingMask.None);
-            //         Renderer.PushDepthInfo(DepthInfo.Default);
-            //
-            //         // Front pass
-            //         buffer.Object.DrawOpaqueInteriorSubTree(Renderer, depthValue);
-            //
-            //         Renderer.PopDepthInfo();
-            //         Renderer.SetBlendMask(BlendingMask.All);
-            //
-            //         // The back pass doesn't write depth, but needs to depth test properly
-            //         Renderer.PushDepthInfo(new DepthInfo(true, false));
-            //     }
-            //     else
-            //     {
-            //         // Disable depth testing
-            //         Renderer.PushDepthInfo(new DepthInfo(false, false));
-            //     }
-            //
-            //     var renderer = (VeldridRenderer)Renderer;
-            //     var game = Root.ChildrenOfType<Game>().Single();
-            //     var shader = game.Shaders.Load("Texture2D", "Texture");
-            //
-            //     renderer.BindShader(shader);
-            //     renderer.DrawQuad(Renderer.WhitePixel, new Quad(Root.DrawWidth / 2 - 500, Root.DrawHeight / 2 - 500, 1000, 1000), Color4.Red);
-            //     renderer.UnbindShader(shader);
-            //
-            //     renderer.FlushCurrentBatch(FlushBatchSource.SetShader);
-            //
-            //     frameBuffer ??= (VeldridFrameBuffer)Renderer.CreateFrameBuffer();
-            //
-            //     renderer.Commands.SetFramebuffer(frameBuffer.Framebuffer);
-            //     renderer.Commands.SetFramebuffer(renderer.Device.SwapchainFramebuffer);
-            //
-            //     renderer.BindShader(shader);
-            //     renderer.DrawQuad(Renderer.WhitePixel, new Quad(Root.DrawWidth / 2 - 250, Root.DrawHeight / 2 - 250, 500, 500), Color4.Blue);
-            //     renderer.UnbindShader(shader);
-            //
-            //     renderer.FlushCurrentBatch(FlushBatchSource.SetShader);
-            //
-            //     // Back pass
-            //     // buffer.Object.Draw(Renderer);
-            //
-            //     Renderer.PopDepthInfo();
-            //
-            //     Renderer.FinishFrame();
-            //
-            //     using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
-            //         Swap();
-            //
-            //     Window.OnDraw();
-            // }
-            // finally
-            // {
-            //     buffer.Dispose();
-            // }
+            using (drawMonitor.BeginCollecting(PerformanceCollectionType.Sleep))
+                buffer = DrawRoots.GetForRead();
+
+            if (buffer == null)
+                return;
+
+            try
+            {
+                using (drawMonitor.BeginCollecting(PerformanceCollectionType.DrawReset))
+                    Renderer.BeginFrame(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+
+                if (!bypassFrontToBackPass.Value)
+                {
+                    depthValue.Reset();
+
+                    Renderer.SetBlend(BlendingParameters.None);
+
+                    Renderer.SetBlendMask(BlendingMask.None);
+                    Renderer.PushDepthInfo(DepthInfo.Default);
+
+                    // Front pass
+                    buffer.Object.DrawOpaqueInteriorSubTree(Renderer, depthValue);
+
+                    Renderer.PopDepthInfo();
+                    Renderer.SetBlendMask(BlendingMask.All);
+
+                    // The back pass doesn't write depth, but needs to depth test properly
+                    Renderer.PushDepthInfo(new DepthInfo(true, false));
+                }
+                else
+                {
+                    // Disable depth testing
+                    Renderer.PushDepthInfo(new DepthInfo(false, false));
+                }
+
+                // Back pass
+                buffer.Object.Draw(Renderer);
+
+                Renderer.PopDepthInfo();
+
+                Renderer.FinishFrame();
+
+                using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
+                    Swap();
+
+                Window.OnDraw();
+            }
+            finally
+            {
+                buffer.Dispose();
+            }
         }
 
         /// <summary>
