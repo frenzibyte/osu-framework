@@ -12,6 +12,7 @@ using osu.Framework.Testing;
 // behavior "in the wild".
 
 [assembly: InternalsVisibleTo("osu.Framework.Android")]
+[assembly: InternalsVisibleTo("SampleGame")]
 [assembly: InternalsVisibleTo("osu.Framework.Benchmarks")]
 [assembly: InternalsVisibleTo("osu.Framework.iOS")]
 [assembly: InternalsVisibleTo("osu.Framework.Tests")]

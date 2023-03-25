@@ -12,6 +12,7 @@ using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Performance;
+using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Visualisation;
@@ -28,6 +29,10 @@ namespace osu.Framework
 {
     public abstract partial class Game : Container, IKeyBindingHandler<FrameworkAction>, IKeyBindingHandler<PlatformAction>, IHandleGlobalKeyboardInput
     {
+        public virtual void Draw(IRenderer renderer1)
+        {
+        }
+
         public IWindow Window => Host?.Window;
 
         public ResourceStore<byte[]> Resources { get; private set; }
