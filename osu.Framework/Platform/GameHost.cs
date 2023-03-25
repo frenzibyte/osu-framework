@@ -13,6 +13,7 @@ using System.Linq;
 using System.Runtime;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -51,6 +52,8 @@ using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
 using osu.Framework.Testing;
 using osuTK.Graphics;
+using Veldrid;
+using Veldrid.SPIRV;
 using Image = SixLabors.ImageSharp.Image;
 using PixelFormat = osuTK.Graphics.ES30.PixelFormat;
 using Size = System.Drawing.Size;
@@ -481,6 +484,61 @@ namespace osu.Framework.Platform
         private VeldridFrameBuffer frameBuffer;
 
         private Game game;
+        private Shader[] shaders;
+        private bool initialised;
+
+        private const string vertex_shader = @"
+#version 450
+
+layout(location = 0) in highp vec2 m_Position;
+layout(location = 1) in lowp vec4 m_Colour;
+layout(location = 2) in highp vec2 m_TexCoord;
+layout(location = 3) in highp vec4 m_TexRect;
+layout(location = 4) in mediump vec2 m_BlendRange;
+
+layout(location = 0) out highp vec2 v_MaskingPosition;
+layout(location = 1) out lowp vec4 v_Colour;
+layout(location = 2) out highp vec2 v_TexCoord;
+layout(location = 3) out highp vec4 v_TexRect;
+layout(location = 4) out mediump vec2 v_BlendRange;
+
+void main(void)
+{
+	// Transform from screen space to masking space.
+	highp vec3 maskingPos = vec3(m_Position, 1.0);
+	v_MaskingPosition = maskingPos.xy / maskingPos.z;
+
+	v_Colour = m_Colour;
+	v_TexCoord = m_TexCoord;
+	v_TexRect = m_TexRect;
+	v_BlendRange = m_BlendRange;
+
+	gl_Position = vec4(m_Position, 0.5, 1.0);
+}";
+
+        private const string fragment_shader = @"
+#version 450
+
+layout(location = 1) in lowp vec4 v_Colour;
+
+layout(location = 0) out vec4 o_Colour;
+
+void main(void)
+{
+    o_Colour = v_Colour;
+}";
+
+        private void initialiseResources(VeldridRenderer veldrid)
+        {
+            if (initialised)
+                return;
+
+            shaders = veldrid.Device.ResourceFactory.CreateFromSpirv(
+                new ShaderDescription(ShaderStages.Vertex, Encoding.UTF8.GetBytes(vertex_shader), "main0"),
+                new ShaderDescription(ShaderStages.Fragment, Encoding.UTF8.GetBytes(fragment_shader), "main0"));
+
+            initialised = true;
+        }
 
         protected virtual void DrawFrame()
         {
@@ -528,23 +586,18 @@ namespace osu.Framework.Platform
                 }
 
                 var renderer = (VeldridRenderer)Renderer;
-                var game = Root.ChildrenOfType<Game>().Single();
-                var shader = game.Shaders.Load("Texture2D", "Texture");
 
-                renderer.BindShader(shader);
-                renderer.DrawQuad(Renderer.WhitePixel, new Quad(Root.DrawWidth / 2 - 500, Root.DrawHeight / 2 - 500, 1000, 1000), Color4.Red);
-                renderer.UnbindShader(shader);
+                initialiseResources(renderer);
+
+                renderer.pipeline.ShaderSet.Shaders = shaders;
+
+                renderer.DrawQuad(renderer.WhitePixel, new Quad(-0.75f, -0.75f, 0.75f * 2, 0.75f * 2), Color4.Red);
 
                 renderer.FlushCurrentBatch(FlushBatchSource.SetShader);
 
-                frameBuffer ??= (VeldridFrameBuffer)Renderer.CreateFrameBuffer();
+                // renderer.Commands.ResetRenderPass();
 
-                renderer.Commands.SetFramebuffer(frameBuffer.Framebuffer);
-                renderer.Commands.SetFramebuffer(renderer.Device.SwapchainFramebuffer);
-
-                renderer.BindShader(shader);
-                renderer.DrawQuad(Renderer.WhitePixel, new Quad(Root.DrawWidth / 2 - 250, Root.DrawHeight / 2 - 250, 500, 500), Color4.Blue);
-                renderer.UnbindShader(shader);
+                renderer.DrawQuad(renderer.WhitePixel, new Quad(-0.25f, -0.25f, 0.25f * 2, 0.25f * 2), Color4.Blue);
 
                 renderer.FlushCurrentBatch(FlushBatchSource.SetShader);
 

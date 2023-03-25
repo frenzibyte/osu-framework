@@ -55,7 +55,7 @@ namespace osu.Framework.Graphics.Veldrid
         private IGraphicsSurface graphicsSurface = null!;
         private DeviceBuffer? boundVertexBuffer;
 
-        private GraphicsPipelineDescription pipeline = new GraphicsPipelineDescription
+        public GraphicsPipelineDescription pipeline = new GraphicsPipelineDescription
         {
             RasterizerState = RasterizerStateDescription.CullNone,
             BlendState = BlendStateDescription.SingleOverrideBlend,
@@ -185,6 +185,7 @@ namespace osu.Framework.Graphics.Veldrid
             // BufferUpdateCommands = Factory.CreateCommandList();
 
             pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
+            pipeline.ResourceLayouts = Array.Empty<ResourceLayout>();
         }
 
         private Vector2 currentSize;
@@ -385,50 +386,50 @@ namespace osu.Framework.Graphics.Veldrid
             var veldridShader = (VeldridShader)Shader!;
 
             pipeline.PrimitiveTopology = type;
-            Array.Resize(ref pipeline.ResourceLayouts, veldridShader.LayoutCount);
-
-            // Activate texture layouts.
-            foreach (var (unit, _) in boundTextureUnits)
-            {
-                var layout = veldridShader.GetTextureLayout(unit);
-                if (layout == null)
-                    continue;
-
-                pipeline.ResourceLayouts[layout.Set] = layout.Layout;
-            }
-
-            // Activate uniform buffer layouts.
-            foreach (var (name, _) in boundUniformBuffers)
-            {
-                var layout = veldridShader.GetUniformBufferLayout(name);
-                if (layout == null)
-                    continue;
-
-                pipeline.ResourceLayouts[layout.Set] = layout.Layout;
-            }
+            // Array.Resize(ref pipeline.ResourceLayouts, veldridShader.LayoutCount);
+            //
+            // // Activate texture layouts.
+            // foreach (var (unit, _) in boundTextureUnits)
+            // {
+            //     var layout = veldridShader.GetTextureLayout(unit);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     pipeline.ResourceLayouts[layout.Set] = layout.Layout;
+            // }
+            //
+            // // Activate uniform buffer layouts.
+            // foreach (var (name, _) in boundUniformBuffers)
+            // {
+            //     var layout = veldridShader.GetUniformBufferLayout(name);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     pipeline.ResourceLayouts[layout.Set] = layout.Layout;
+            // }
 
             // Activate the pipeline.
             Commands.SetPipeline(getPipelineInstance());
 
             // Activate texture resources.
-            foreach (var (unit, texture) in boundTextureUnits)
-            {
-                var layout = veldridShader.GetTextureLayout(unit);
-                if (layout == null)
-                    continue;
-
-                Commands.SetGraphicsResourceSet((uint)layout.Set, texture.GetResourceSet(this, layout.Layout));
-            }
-
-            // Activate uniform buffer resources.
-            foreach (var (name, buffer) in boundUniformBuffers)
-            {
-                var layout = veldridShader.GetUniformBufferLayout(name);
-                if (layout == null)
-                    continue;
-
-                Commands.SetGraphicsResourceSet((uint)layout.Set, buffer.GetResourceSet(layout.Layout));
-            }
+            // foreach (var (unit, texture) in boundTextureUnits)
+            // {
+            //     var layout = veldridShader.GetTextureLayout(unit);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     Commands.SetGraphicsResourceSet((uint)layout.Set, texture.GetResourceSet(this, layout.Layout));
+            // }
+            //
+            // // Activate uniform buffer resources.
+            // foreach (var (name, buffer) in boundUniformBuffers)
+            // {
+            //     var layout = veldridShader.GetUniformBufferLayout(name);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     Commands.SetGraphicsResourceSet((uint)layout.Set, buffer.GetResourceSet(layout.Layout));
+            // }
 
             Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
 

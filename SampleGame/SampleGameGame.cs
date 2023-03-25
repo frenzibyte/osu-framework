@@ -33,17 +33,17 @@ namespace SampleGame
                 Size = new Vector2(300, 300),
                 Colour = Color4.Green
             });
-            Add(new BufferedContainer(cachedFrameBuffer: false)
-            {
-                AutoSizeAxes = Axes.Both,
-            });
-            Add(box = new Box
-            {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                Size = new Vector2(150, 150),
-                Colour = Color4.Tomato
-            });
+            // Add(new BufferedContainer(cachedFrameBuffer: false)
+            // {
+            //     AutoSizeAxes = Axes.Both,
+            // });
+            // Add(box = new Box
+            // {
+            //     Anchor = Anchor.Centre,
+            //     Origin = Anchor.Centre,
+            //     Size = new Vector2(150, 150),
+            //     Colour = Color4.Tomato
+            // });
 
             shader = Shaders.Load("Texture2D", "Texture");
         }
@@ -62,7 +62,7 @@ namespace SampleGame
             veldrid.Commands.Begin();
 
             veldrid.BindShader(shader);
-            veldrid.DrawQuad(veldrid.WhitePixel, new Quad(DrawWidth / 2 - 500, DrawHeight / 2 - 500, 1000, 1000), Color4.Red);
+            veldrid.DrawQuad(veldrid.WhitePixel, new Quad(-0.75f, -0.75f, 0.75f * 2, 0.75f * 2), Color4.Red);
             veldrid.UnbindShader(shader);
 
             veldrid.FlushCurrentBatch(FlushBatchSource.SetShader);
@@ -71,7 +71,7 @@ namespace SampleGame
             veldrid.Commands.SetFramebuffer(veldrid.Device.SwapchainFramebuffer);
 
             veldrid.BindShader(shader);
-            veldrid.DrawQuad(veldrid.WhitePixel, new Quad(DrawWidth / 2 - 250, DrawHeight / 2 - 250, 500, 500), Color4.Blue);
+            veldrid.DrawQuad(veldrid.WhitePixel, new Quad(-0.25f, -0.25f, 0.25f * 2, 0.25f * 2), Color4.Blue);
             veldrid.UnbindShader(shader);
 
             veldrid.FlushCurrentBatch(FlushBatchSource.SetShader);

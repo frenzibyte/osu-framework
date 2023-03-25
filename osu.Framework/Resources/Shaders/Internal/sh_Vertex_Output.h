@@ -8,12 +8,6 @@ void main()
 {
     {{ real_main }}(); // Invoke real main func
 
-    if (g_BackbufferDraw)
-        gl_Position.z = m_BackbufferDrawDepth;
-
-    if (g_IsDepthRangeZeroToOne)
-        gl_Position.z = gl_Position.z / 2.0 + 0.5;
-
-    if (g_IsClipSpaceYInverted)
-        gl_Position.y = -gl_Position.y;
+    gl_Position.z = m_BackbufferDrawDepth;
+    gl_Position.z = gl_Position.z / 2.0 + 0.5;
 }
