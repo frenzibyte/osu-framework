@@ -44,7 +44,7 @@ namespace osu.Framework.Graphics.Veldrid
         public ResourceFactory Factory => Device.ResourceFactory;
 
         public CommandList Commands { get; private set; } = null!;
-        public CommandList BufferUpdateCommands { get; private set; } = null!;
+        // public CommandList BufferUpdateCommands { get; private set; } = null!;
 
         public VeldridIndexData SharedLinearIndex { get; }
         public VeldridIndexData SharedQuadIndex { get; }
@@ -182,7 +182,7 @@ namespace osu.Framework.Graphics.Veldrid
             MaxTextureSize = maxTextureSize;
 
             Commands = Factory.CreateCommandList();
-            BufferUpdateCommands = Factory.CreateCommandList();
+            // BufferUpdateCommands = Factory.CreateCommandList();
 
             pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
         }
@@ -202,7 +202,7 @@ namespace osu.Framework.Graphics.Veldrid
             uniformBufferResetList.Clear();
 
             Commands.Begin();
-            BufferUpdateCommands.Begin();
+            // BufferUpdateCommands.Begin();
 
             base.BeginFrame(windowSize);
         }
@@ -211,10 +211,11 @@ namespace osu.Framework.Graphics.Veldrid
         {
             base.FinishFrame();
 
-            BufferUpdateCommands.End();
-            Device.SubmitCommands(BufferUpdateCommands);
+            // BufferUpdateCommands.End();
+            // Device.SubmitCommands(BufferUpdateCommands);
 
             Commands.End();
+            // Commands.Present();
             Device.SubmitCommands(Commands);
         }
 
@@ -354,18 +355,8 @@ namespace osu.Framework.Graphics.Veldrid
             VeldridFrameBuffer? veldridFrameBuffer = (VeldridFrameBuffer?)frameBuffer;
             Framebuffer framebuffer = veldridFrameBuffer?.Framebuffer ?? Device.SwapchainFramebuffer;
 
-            BufferUpdateCommands.End();
-            Commands.End();
-
-            Device.SubmitCommands(BufferUpdateCommands);
-            Device.SubmitCommands(Commands);
-
-            BufferUpdateCommands.Begin();
-            Commands.Begin();
-
             Commands.SetFramebuffer(framebuffer);
-
-            pipeline.Outputs = framebuffer.OutputDescription;
+            // pipeline.Outputs = framebuffer.OutputDescription;
         }
 
         public void BindVertexBuffer(DeviceBuffer buffer, VertexLayoutDescription layout)
@@ -440,6 +431,12 @@ namespace osu.Framework.Graphics.Veldrid
             }
 
             Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
+
+            // Commands.End();
+            // Device.SubmitCommands(Commands);
+            //
+            // Commands.Begin();
+            // Commands.SetFramebuffer(((VeldridFrameBuffer?)FrameBuffer)?.Framebuffer ?? Device.SwapchainFramebuffer);
         }
 
         /// <summary>
