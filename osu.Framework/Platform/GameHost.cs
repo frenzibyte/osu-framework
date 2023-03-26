@@ -575,32 +575,8 @@ void main(void)
 
             try
             {
-                using (drawMonitor.BeginCollecting(PerformanceCollectionType.DrawReset))
-                    Renderer.BeginFrame(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
-
-                if (false)
-                {
-                    depthValue.Reset();
-
-                    Renderer.SetBlend(BlendingParameters.None);
-
-                    Renderer.SetBlendMask(BlendingMask.None);
-                    Renderer.PushDepthInfo(DepthInfo.Default);
-
-                    // Front pass
-                    buffer.Object.DrawOpaqueInteriorSubTree(Renderer, depthValue);
-
-                    Renderer.PopDepthInfo();
-                    Renderer.SetBlendMask(BlendingMask.All);
-
-                    // The back pass doesn't write depth, but needs to depth test properly
-                    Renderer.PushDepthInfo(new DepthInfo(true, false));
-                }
-                else
-                {
-                    // Disable depth testing
-                    // Renderer.PushDepthInfo(new DepthInfo(false, false));
-                }
+                // using (drawMonitor.BeginCollecting(PerformanceCollectionType.DrawReset))
+                //     Renderer.BeginFrame(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
                 var renderer = (VeldridRenderer)Renderer;
 
@@ -624,6 +600,13 @@ void main(void)
 
                 ushort[] indices = { 0, 1, 3, 2, 3, 1 };
 
+                renderer.Device.ResizeMainWindow((uint)Window.ClientSize.Width, (uint)Window.ClientSize.Height);
+
+                renderer.Commands.Begin();
+                renderer.Commands.SetFramebuffer(renderer.Device.SwapchainFramebuffer);
+                renderer.Commands.ClearColorTarget(0, RgbaFloat.Black);
+                renderer.Commands.ClearDepthStencil(1);
+
                 renderer.Commands.UpdateBuffer(vertexBuffer, 0, vertices1);
                 renderer.Commands.UpdateBuffer(vertexBuffer2, 0, vertices2);
                 renderer.Commands.UpdateBuffer(indexBuffer, 0, indices);
@@ -638,12 +621,8 @@ void main(void)
                 renderer.Commands.SetVertexBuffer(0, vertexBuffer2);
                 renderer.Commands.DrawIndexed(6, 1, 0, 0, 0);
 
-                // Back pass
-                // buffer.Object.Draw(Renderer);
-
-                // Renderer.PopDepthInfo();
-
-                Renderer.FinishFrame();
+                renderer.Commands.End();
+                renderer.Device.SubmitCommands(renderer.Commands);
 
                 using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
                     Swap();
