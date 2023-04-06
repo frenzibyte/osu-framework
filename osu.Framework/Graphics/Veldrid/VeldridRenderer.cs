@@ -19,6 +19,7 @@ using osu.Framework.Graphics.Veldrid.Shaders;
 using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Statistics;
 using osuTK;
+using osuTK.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -96,6 +97,7 @@ namespace osu.Framework.Graphics.Veldrid
                 SwapchainDepthFormat = PixelFormat.R16_UNorm,
                 SyncToVerticalBlank = true,
                 ResourceBindingModel = ResourceBindingModel.Improved,
+                Debug = true,
             };
 
             var size = graphicsSurface.GetDrawableSize();
@@ -252,12 +254,12 @@ namespace osu.Framework.Graphics.Veldrid
             }
         }
 
-        protected override void ClearImplementation(ClearInfo clearInfo)
+        protected override void ClearImplementation(ClearInfo clearInfo, bool depth)
         {
             Commands.ClearColorTarget(0, clearInfo.Colour.ToRgbaFloat());
 
             var framebuffer = (FrameBuffer as VeldridFrameBuffer)?.Framebuffer ?? Device.SwapchainFramebuffer;
-            if (framebuffer.DepthTarget != null)
+            if (framebuffer.DepthTarget != null && depth)
                 Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
         }
 
@@ -269,7 +271,7 @@ namespace osu.Framework.Graphics.Veldrid
                 return false;
 
             foreach (var res in veldridTexture.GetResourceList())
-                boundTextureUnits[unit++] = res;
+                BindTextureResource(res, unit++);
 
             return true;
         }
@@ -389,6 +391,11 @@ namespace osu.Framework.Graphics.Veldrid
             VeldridFrameBuffer? veldridFrameBuffer = (VeldridFrameBuffer?)frameBuffer;
             Framebuffer framebuffer = veldridFrameBuffer?.Framebuffer ?? Device.SwapchainFramebuffer;
 
+            SetFramebuffer(framebuffer);
+        }
+
+        public void SetFramebuffer(Framebuffer framebuffer)
+        {
             Commands.SetFramebuffer(framebuffer);
             pipeline.Outputs = framebuffer.OutputDescription;
         }
@@ -560,8 +567,8 @@ namespace osu.Framework.Graphics.Veldrid
             }
         }
 
-        protected override IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType)
-            => new VeldridShaderPart(rawData, partType, manager);
+        protected override IShaderPart CreateShaderPart(IShaderStore store, string name, byte[]? rawData, ShaderPartType partType)
+            => new VeldridShaderPart(this, rawData, partType, store);
 
         protected override IShader CreateShader(string name, IShaderPart[] parts, IUniformBuffer<GlobalUniformData> globalUniformBuffer)
             => new VeldridShader(this, name, parts.Cast<VeldridShaderPart>().ToArray(), globalUniformBuffer);
@@ -585,7 +592,7 @@ namespace osu.Framework.Graphics.Veldrid
             => new VeldridUniformBuffer<TData>(this);
 
         protected override INativeTexture CreateNativeTexture(int width, int height, bool manualMipmaps = false, TextureFilteringMode filteringMode = TextureFilteringMode.Linear,
-                                                              Rgba32 initialisationColour = default)
+                                                              Color4 initialisationColour = default)
             => new VeldridTexture(this, width, height, manualMipmaps, filteringMode.ToSamplerFilter(), initialisationColour);
 
         protected override INativeTexture CreateNativeVideoTexture(int width, int height)
@@ -599,5 +606,7 @@ namespace osu.Framework.Graphics.Veldrid
         {
             uniformBufferResetList.Add(buffer);
         }
+
+        public void BindTextureResource(VeldridTextureResources resource, int unit) => boundTextureUnits[unit] = resource;
     }
 }

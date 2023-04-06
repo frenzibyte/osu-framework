@@ -14,11 +14,11 @@ using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.IO.Stores;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osuTK;
+using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Memory;
@@ -246,7 +246,7 @@ namespace osu.Framework.Graphics.OpenGL
             ScheduleDisposal(GL.DeleteFramebuffer, ((GLFrameBuffer)frameBuffer).FrameBuffer);
         }
 
-        protected override void ClearImplementation(ClearInfo clearInfo)
+        protected override void ClearImplementation(ClearInfo clearInfo, bool depth)
         {
             if (clearInfo.Colour != CurrentClearInfo.Colour)
                 GL.ClearColor(clearInfo.Colour);
@@ -379,28 +379,6 @@ namespace osu.Framework.Graphics.OpenGL
         protected override IShader CreateShader(string name, IShaderPart[] parts, IUniformBuffer<GlobalUniformData> globalUniformBuffer)
             => new GLShader(this, name, parts.Cast<GLShaderPart>().ToArray(), globalUniformBuffer);
 
-        private IShader? mipmapShader;
-
-        public IShader GetMipmapShader()
-        {
-            if (mipmapShader != null)
-                return mipmapShader;
-
-            var store = new PassthroughShaderStore(
-                new NamespacedResourceStore<byte[]>(
-                    new NamespacedResourceStore<byte[]>(
-                        new DllResourceStore(typeof(Game).Assembly),
-                        @"Resources"),
-                    "Shaders"));
-
-            mipmapShader = new GLShader(this, "mipmap", new[]
-            {
-                new GLShaderPart(this, "mipmap.vs", store.LoadRaw("sh_mipmap.vs"), ShaderType.VertexShader, store),
-                new GLShaderPart(this, "mipmap.fs", store.LoadRaw("sh_mipmap.fs"), ShaderType.FragmentShader, store),
-            });
-            return mipmapShader;
-        }
-
         public override IFrameBuffer CreateFrameBuffer(RenderBufferFormat[]? renderBufferFormats = null, TextureFilteringMode filteringMode = TextureFilteringMode.Linear)
         {
             All glFilteringMode;
@@ -483,17 +461,5 @@ namespace osu.Framework.Graphics.OpenGL
             => new GLLinearBatch<TVertex>(this, size, maxBuffers, GLUtils.ToPrimitiveType(topology));
 
         protected override IVertexBatch<TVertex> CreateQuadBatch<TVertex>(int size, int maxBuffers) => new GLQuadBatch<TVertex>(this, size, maxBuffers);
-
-        private class PassthroughShaderStore : IShaderStore
-        {
-            private readonly IResourceStore<byte[]> store;
-
-            public PassthroughShaderStore(IResourceStore<byte[]> store)
-            {
-                this.store = store;
-            }
-
-            public byte[]? LoadRaw(string name) => store.Get(name);
-        }
     }
 }

@@ -10,6 +10,8 @@ using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using SixLabors.ImageSharp;
+using osuTK.Graphics;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace osu.Framework.Graphics.Rendering
 {
@@ -217,7 +219,7 @@ namespace osu.Framework.Graphics.Rendering
         /// Clears the currently bound frame buffer.
         /// </summary>
         /// <param name="clearInfo">The clearing parameters.</param>
-        void Clear(ClearInfo clearInfo);
+        void Clear(ClearInfo clearInfo, bool depth = true);
 
         /// <summary>
         /// Applies a new scissor test enablement state.
@@ -341,6 +343,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <summary>
         /// Creates a new <see cref="IShaderPart"/>.
         /// </summary>
+        /// <param name="store">The shader resource store to load headers with.</param>
         /// <param name="name">The name of the shader part.</param>
         /// <param name="rawData">The content of the shader part.</param>
         /// <param name="partType">The type of the shader part.</param>

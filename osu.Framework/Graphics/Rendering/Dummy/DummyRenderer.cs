@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using osuTK;
+using osuTK.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
@@ -100,7 +101,7 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         {
         }
 
-        public void Clear(ClearInfo clearInfo)
+        public void Clear(ClearInfo clearInfo, bool depth)
         {
         }
 

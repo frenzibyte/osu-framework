@@ -20,10 +20,12 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
         public readonly ShaderPartType Type;
 
         private readonly List<string> shaderCodes = new List<string>();
+        private readonly VeldridRenderer renderer;
         private readonly IShaderStore store;
 
-        public VeldridShaderPart(byte[]? data, ShaderPartType type, ShaderManager manager)
+        public VeldridShaderPart(VeldridRenderer renderer, byte[]? data, ShaderPartType type, IShaderStore store)
         {
+            this.renderer = renderer;
             this.store = store;
 
             Type = type;
@@ -105,8 +107,8 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
 
                 if (mainFile)
                 {
-                    string internalIncludes = loadFile(manager.LoadRaw("Internal/sh_Compatibility.h"), false) + "\n";
-                    internalIncludes += loadFile(manager.LoadRaw("Internal/sh_GlobalUniforms.h"), false) + "\n";
+                    string internalIncludes = loadFile(store.LoadRaw("Internal/sh_Compatibility.h"), false) + "\n";
+                    internalIncludes += loadFile(store.LoadRaw("Internal/sh_GlobalUniforms.h"), false) + "\n";
                     code = internalIncludes + code;
 
                     if (Type == ShaderPartType.Vertex)
