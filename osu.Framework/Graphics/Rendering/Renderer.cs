@@ -124,6 +124,9 @@ namespace osu.Framework.Graphics.Rendering
         private readonly Lazy<TextureWhitePixel> whitePixel;
         private readonly LockedWeakList<Texture> allTextures = new LockedWeakList<Texture>();
 
+        internal int CurrentMaskingIndex { get; private set; }
+
+        protected IArrayBuffer<ShaderMaskingInfo>? MaskingBuffer { get; private set; }
         private IUniformBuffer<GlobalUniformData>? globalUniformBuffer;
         private IVertexBatch<TexturedVertex2D>? defaultQuadBatch;
         private IVertexBatch? currentActiveBatch;
@@ -189,6 +192,9 @@ namespace osu.Framework.Graphics.Rendering
                 IsClipSpaceYInverted = IsClipSpaceYInverted,
                 IsUvOriginTopLeft = IsUvOriginTopLeft
             };
+
+            MaskingBuffer ??= ((IRenderer)this).CreateArrayBuffer<ShaderMaskingInfo>(1024);
+            CurrentMaskingIndex = 0;
 
             Debug.Assert(defaultQuadBatch != null);
 
@@ -625,9 +631,12 @@ namespace osu.Framework.Graphics.Rendering
             if (CurrentMaskingInfo == maskingInfo)
                 return;
 
-            FlushCurrentBatch(FlushBatchSource.SetMasking);
+            // FlushCurrentBatch(FlushBatchSource.SetMasking);
 
-            globalUniformBuffer!.Data = globalUniformBuffer.Data with
+            int lastMaskingIndex = CurrentMaskingIndex;
+            CurrentMaskingIndex = (CurrentMaskingIndex + 1) % 1024;
+
+            MaskingBuffer![CurrentMaskingIndex] = new ShaderMaskingInfo
             {
                 IsMasking = IsMaskingActive,
                 MaskingRect = new Vector4(
@@ -661,35 +670,35 @@ namespace osu.Framework.Graphics.Rendering
                         maskingInfo.BorderColour.BottomRight.SRGB.G,
                         maskingInfo.BorderColour.BottomRight.SRGB.B,
                         maskingInfo.BorderColour.BottomRight.SRGB.A)
-                    : globalUniformBuffer.Data.BorderColour,
+                    : MaskingBuffer[lastMaskingIndex].BorderColour,
                 MaskingBlendRange = maskingInfo.BlendRange,
                 AlphaExponent = maskingInfo.AlphaExponent,
                 EdgeOffset = maskingInfo.EdgeOffset,
                 DiscardInner = maskingInfo.Hollow,
                 InnerCornerRadius = maskingInfo.Hollow
                     ? maskingInfo.HollowCornerRadius
-                    : globalUniformBuffer.Data.InnerCornerRadius
+                    : MaskingBuffer[lastMaskingIndex].InnerCornerRadius
             };
 
-            if (isPushing)
-            {
-                // When drawing to a viewport that doesn't match the projection size (e.g. via framebuffers), the resultant image will be scaled
-                Vector2 projectionScale = new Vector2(ProjectionMatrix.Row0.X / 2, -ProjectionMatrix.Row1.Y / 2);
-                Vector2 viewportScale = Vector2.Multiply(Viewport.Size, projectionScale);
-
-                Vector2 location = (maskingInfo.ScreenSpaceAABB.Location - ScissorOffset) * viewportScale;
-                Vector2 size = maskingInfo.ScreenSpaceAABB.Size * viewportScale;
-
-                RectangleI actualRect = new RectangleI(
-                    (int)Math.Floor(location.X),
-                    (int)Math.Floor(location.Y),
-                    (int)Math.Ceiling(size.X),
-                    (int)Math.Ceiling(size.Y));
-
-                PushScissor(overwritePreviousScissor ? actualRect : RectangleI.Intersect(scissorRectStack.Peek(), actualRect));
-            }
-            else
-                PopScissor();
+            // if (isPushing)
+            // {
+            //     // When drawing to a viewport that doesn't match the projection size (e.g. via framebuffers), the resultant image will be scaled
+            //     Vector2 projectionScale = new Vector2(ProjectionMatrix.Row0.X / 2, -ProjectionMatrix.Row1.Y / 2);
+            //     Vector2 viewportScale = Vector2.Multiply(Viewport.Size, projectionScale);
+            //
+            //     Vector2 location = (maskingInfo.ScreenSpaceAABB.Location - ScissorOffset) * viewportScale;
+            //     Vector2 size = maskingInfo.ScreenSpaceAABB.Size * viewportScale;
+            //
+            //     RectangleI actualRect = new RectangleI(
+            //         (int)Math.Floor(location.X),
+            //         (int)Math.Floor(location.Y),
+            //         (int)Math.Ceiling(size.X),
+            //         (int)Math.Ceiling(size.Y));
+            //
+            //     PushScissor(overwritePreviousScissor ? actualRect : RectangleI.Intersect(scissorRectStack.Peek(), actualRect));
+            // }
+            // else
+            //     PopScissor();
 
             currentMaskingInfo = maskingInfo;
         }
@@ -1045,6 +1054,10 @@ namespace osu.Framework.Graphics.Rendering
         /// <inheritdoc cref="IRenderer.CreateUniformBuffer{TData}"/>
         protected abstract IUniformBuffer<TData> CreateUniformBuffer<TData>() where TData : unmanaged, IEquatable<TData>;
 
+        /// <param name="length"></param>
+        /// <inheritdoc cref="IRenderer.CreateArrayBuffer{TData}"/>
+        protected abstract IArrayBuffer<TData> CreateArrayBuffer<TData>(int length) where TData : unmanaged, IEquatable<TData>;
+
         /// <summary>
         /// Creates a new <see cref="INativeTexture"/>.
         /// </summary>
@@ -1147,14 +1160,31 @@ namespace osu.Framework.Graphics.Rendering
             return CreateQuadBatch<TVertex>(size, maxBuffers);
         }
 
-        private readonly HashSet<Type> validUboTypes = new HashSet<Type>();
-
         IUniformBuffer<TData> IRenderer.CreateUniformBuffer<TData>()
         {
             Trace.Assert(ThreadSafety.IsDrawThread);
 
-            if (validUboTypes.Contains(typeof(TData)))
-                return CreateUniformBuffer<TData>();
+            validateBufferDataType<TData>();
+
+            return CreateUniformBuffer<TData>();
+        }
+
+        IArrayBuffer<TData> IRenderer.CreateArrayBuffer<TData>(int length)
+        {
+            Trace.Assert(ThreadSafety.IsDrawThread);
+
+            validateBufferDataType<TData>();
+
+            return CreateArrayBuffer<TData>(length);
+        }
+
+        private readonly HashSet<Type> validBufferDataTypes = new HashSet<Type>();
+
+        private void validateBufferDataType<TData>()
+            where TData : unmanaged, IEquatable<TData>
+        {
+            if (validBufferDataTypes.Contains(typeof(TData)))
+                return;
 
             if (typeof(TData).StructLayoutAttribute?.Pack != 1)
                 throw new ArgumentException($"{typeof(TData).ReadableName()} requires a packing size of 1.");
@@ -1183,8 +1213,7 @@ namespace osu.Framework.Graphics.Rendering
             if (finalPadding != null)
                 throw new ArgumentException($"{typeof(TData).ReadableName()} alignment requires a {finalPadding} to be added at the end.");
 
-            validUboTypes.Add(typeof(TData));
-            return CreateUniformBuffer<TData>();
+            validBufferDataTypes.Add(typeof(TData));
 
             static void checkValidType(FieldInfo field)
             {
