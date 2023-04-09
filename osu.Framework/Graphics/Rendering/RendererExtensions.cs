@@ -78,7 +78,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2((inflatedCoordRect.Left + inflatedCoordRect.Right) / 2, inflatedCoordRect.Top),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
-                Colour = topColour.Linear.NegateAlphaIfTrue(additive),
+                Colour = topColour.SRGB.NegateAlphaIfTrue(additive),
             });
             vertexAction(new TexturedVertex2D
             {
@@ -86,7 +86,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2(inflatedCoordRect.Left, inflatedCoordRect.Bottom),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
-                Colour = drawColour.BottomLeft.Linear.NegateAlphaIfTrue(additive),
+                Colour = drawColour.BottomLeft.SRGB.NegateAlphaIfTrue(additive),
             });
             vertexAction(new TexturedVertex2D
             {
@@ -94,7 +94,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2((inflatedCoordRect.Left + inflatedCoordRect.Right) / 2, inflatedCoordRect.Bottom),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
-                Colour = bottomColour.Linear.NegateAlphaIfTrue(additive),
+                Colour = bottomColour.SRGB.NegateAlphaIfTrue(additive),
             });
             vertexAction(new TexturedVertex2D
             {
@@ -102,7 +102,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2(inflatedCoordRect.Right, inflatedCoordRect.Bottom),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
-                Colour = drawColour.BottomRight.Linear.NegateAlphaIfTrue(additive),
+                Colour = drawColour.BottomRight.SRGB.NegateAlphaIfTrue(additive),
             });
 
             long area = (long)vertexTriangle.Area;
@@ -168,7 +168,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2(inflatedCoordRect.Left, inflatedCoordRect.Bottom),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
-                Colour = drawColour.BottomLeft.Linear.NegateAlphaIfTrue(additive),
+                Colour = drawColour.BottomLeft.SRGB.NegateAlphaIfTrue(additive),
             });
             vertexAction(new TexturedVertex2D
             {
@@ -176,7 +176,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2(inflatedCoordRect.Right, inflatedCoordRect.Bottom),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
-                Colour = drawColour.BottomRight.Linear.NegateAlphaIfTrue(additive),
+                Colour = drawColour.BottomRight.SRGB.NegateAlphaIfTrue(additive),
             });
             vertexAction(new TexturedVertex2D
             {
@@ -184,7 +184,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2(inflatedCoordRect.Right, inflatedCoordRect.Top),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
-                Colour = drawColour.TopRight.Linear.NegateAlphaIfTrue(additive),
+                Colour = drawColour.TopRight.SRGB.NegateAlphaIfTrue(additive),
             });
             vertexAction(new TexturedVertex2D
             {
@@ -192,7 +192,7 @@ namespace osu.Framework.Graphics.Rendering
                 TexturePosition = new Vector2(inflatedCoordRect.Left, inflatedCoordRect.Top),
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
-                Colour = drawColour.TopLeft.Linear.NegateAlphaIfTrue(additive),
+                Colour = drawColour.TopLeft.SRGB.NegateAlphaIfTrue(additive),
             });
 
             long area = (long)vertexQuad.Area;
@@ -243,10 +243,7 @@ namespace osu.Framework.Graphics.Rendering
         public static void DrawFrameBuffer(this IRenderer renderer, IFrameBuffer frameBuffer, Quad vertexQuad, ColourInfo drawColour, Action<TexturedVertex2D>? vertexAction = null,
                                            Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, bool premultipliedAlpha = true)
         {
-            // The strange Y coordinate and Height are a result of OpenGL coordinate systems having Y grow upwards and not downwards.
-            RectangleF textureRect = new RectangleF(0, frameBuffer.Texture.Height, frameBuffer.Texture.Width, -frameBuffer.Texture.Height);
-
-            renderer.DrawQuad(frameBuffer.Texture, vertexQuad, drawColour, textureRect, vertexAction, inflationPercentage, blendRangeOverride, null, premultipliedAlpha);
+            renderer.DrawQuad(frameBuffer.Texture, vertexQuad, drawColour, null, vertexAction, inflationPercentage, blendRangeOverride);
         }
 
         /// <summary>
