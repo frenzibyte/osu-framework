@@ -25,12 +25,12 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
 
         private readonly List<string> shaderCodes = new List<string>();
         private readonly VeldridRenderer renderer;
-        private readonly ShaderManager manager;
+        private readonly IShaderStore store;
 
-        public VeldridShaderPart(VeldridRenderer renderer, byte[]? data, ShaderPartType type, ShaderManager manager)
+        public VeldridShaderPart(VeldridRenderer renderer, byte[]? data, ShaderPartType type, IShaderStore store)
         {
             this.renderer = renderer;
-            this.manager = manager;
+            this.store = store;
 
             Type = type;
 
@@ -110,7 +110,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                         //                        if (File.Exists(includeName))
                         //                            rawData = File.ReadAllBytes(includeName);
                         //#endif
-                        code += loadFile(manager.LoadRaw(includeName), false) + '\n';
+                        code += loadFile(store.LoadRaw(includeName), false) + '\n';
                     }
                     else
                         code += line + '\n';
@@ -118,24 +118,24 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
 
                 if (mainFile)
                 {
-                    string internalIncludes = loadFile(manager.LoadRaw("Internal/sh_Compatibility.h"), false) + "\n";
+                    string internalIncludes = loadFile(store.LoadRaw("Internal/sh_Compatibility.h"), false) + "\n";
 
-                    internalIncludes += loadFile(manager.LoadRaw("Internal/sh_GlobalUniforms.h"), false) + "\n";
-                    internalIncludes += loadFile(manager.LoadRaw("Internal/sh_MaskingInfo.h"), false) + "\n";
+                    internalIncludes += loadFile(store.LoadRaw("Internal/sh_GlobalUniforms.h"), false) + "\n";
+                    internalIncludes += loadFile(store.LoadRaw("Internal/sh_MaskingInfo.h"), false) + "\n";
 
                     if (renderer.Device.Features.StructuredBuffer)
-                        internalIncludes += loadFile(manager.LoadRaw("Internal/sh_MaskingBuffer_SSBO.h"), false) + "\n";
+                        internalIncludes += loadFile(store.LoadRaw("Internal/sh_MaskingBuffer_SSBO.h"), false) + "\n";
                     else
-                        internalIncludes += loadFile(manager.LoadRaw("Internal/sh_MaskingBuffer_UBO.h"), false) + "\n";
+                        internalIncludes += loadFile(store.LoadRaw("Internal/sh_MaskingBuffer_UBO.h"), false) + "\n";
 
                     if (Type == ShaderPartType.Vertex)
-                        internalIncludes += loadFile(manager.LoadRaw("Internal/sh_Vertex_Input.h"), false) + "\n";
+                        internalIncludes += loadFile(store.LoadRaw("Internal/sh_Vertex_Input.h"), false) + "\n";
 
                     code = internalIncludes + code;
 
                     if (Type == ShaderPartType.Vertex)
                     {
-                        string backbufferCode = loadFile(manager.LoadRaw("Internal/sh_Vertex_Output.h"), false);
+                        string backbufferCode = loadFile(store.LoadRaw("Internal/sh_Vertex_Output.h"), false);
 
                         if (!string.IsNullOrEmpty(backbufferCode))
                         {

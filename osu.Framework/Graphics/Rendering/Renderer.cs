@@ -9,12 +9,14 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using osu.Framework.Development;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Shaders.Types;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.IO.Stores;
 using osu.Framework.Lists;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
@@ -74,7 +76,7 @@ namespace osu.Framework.Graphics.Rendering
         public bool IsInitialised { get; private set; }
 
         protected ClearInfo CurrentClearInfo { get; private set; }
-        protected BlendingParameters CurrentBlendingParameters { get; private set; }
+        public BlendingParameters CurrentBlendingParameters { get; private set; }
         protected BlendingMask CurrentBlendingMask { get; private set; }
 
         /// <summary>
@@ -113,7 +115,7 @@ namespace osu.Framework.Graphics.Rendering
         private readonly Stack<DepthInfo> depthStack = new Stack<DepthInfo>();
         private readonly Stack<StencilInfo> stencilStack = new Stack<StencilInfo>();
         private readonly Stack<Vector2I> scissorOffsetStack = new Stack<Vector2I>();
-        private readonly Stack<IFrameBuffer> frameBufferStack = new Stack<IFrameBuffer>();
+        private readonly Stack<IFrameBuffer?> frameBufferStack = new Stack<IFrameBuffer?>();
         private readonly Stack<IShader> shaderStack = new Stack<IShader>();
         private readonly Stack<bool> scissorStateStack = new Stack<bool>();
 
@@ -364,12 +366,12 @@ namespace osu.Framework.Graphics.Rendering
 
         #region Clear
 
-        public void Clear(ClearInfo clearInfo)
+        public void Clear(ClearInfo clearInfo, bool depth = true)
         {
             PushDepthInfo(new DepthInfo(writeDepth: true));
             PushScissorState(false);
 
-            ClearImplementation(clearInfo);
+            ClearImplementation(clearInfo, depth);
 
             CurrentClearInfo = clearInfo;
 
@@ -381,7 +383,8 @@ namespace osu.Framework.Graphics.Rendering
         /// Informs the graphics device to clear the color and depth targets of the currently bound framebuffer.
         /// </summary>
         /// <param name="clearInfo">The clear parameters.</param>
-        protected abstract void ClearImplementation(ClearInfo clearInfo);
+        /// <param name="depth"></param>
+        protected abstract void ClearImplementation(ClearInfo clearInfo, bool depth);
 
         #endregion
 
@@ -934,13 +937,13 @@ namespace osu.Framework.Graphics.Rendering
 
         #region Framebuffers
 
-        public void BindFrameBuffer(IFrameBuffer frameBuffer)
+        public void BindFrameBuffer(IFrameBuffer? frameBuffer)
         {
             frameBufferStack.Push(frameBuffer);
             setFrameBuffer(frameBuffer);
         }
 
-        public void UnbindFrameBuffer(IFrameBuffer frameBuffer)
+        public void UnbindFrameBuffer(IFrameBuffer? frameBuffer)
         {
             if (FrameBuffer != frameBuffer)
                 return;
@@ -1040,7 +1043,7 @@ namespace osu.Framework.Graphics.Rendering
         public abstract IFrameBuffer CreateFrameBuffer(RenderBufferFormat[]? renderBufferFormats = null, TextureFilteringMode filteringMode = TextureFilteringMode.Linear);
 
         /// <inheritdoc cref="IRenderer.CreateShaderPart"/>
-        protected abstract IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType);
+        protected abstract IShaderPart CreateShaderPart(IShaderStore manager, string name, byte[]? rawData, ShaderPartType partType);
 
         /// <inheritdoc cref="IRenderer.CreateShader"/>
         protected abstract IShader CreateShader(string name, IShaderPart[] parts, IUniformBuffer<GlobalUniformData> globalUniformBuffer);
@@ -1068,7 +1071,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <param name="initialisationColour">The colour to initialise texture levels with (in the case of sub region initial uploads).</param>
         /// <returns>The <see cref="INativeTexture"/>.</returns>
         protected abstract INativeTexture CreateNativeTexture(int width, int height, bool manualMipmaps = false, TextureFilteringMode filteringMode = TextureFilteringMode.Linear,
-                                                              Rgba32 initialisationColour = default);
+                                                              Color4 initialisationColour = default);
 
         /// <summary>
         /// Creates a new <see cref="INativeTexture"/> for video sprites.
@@ -1078,7 +1081,7 @@ namespace osu.Framework.Graphics.Rendering
         /// <returns>The video <see cref="INativeTexture"/>.</returns>
         protected abstract INativeTexture CreateNativeVideoTexture(int width, int height);
 
-        public Texture CreateTexture(int width, int height, bool manualMipmaps, TextureFilteringMode filteringMode, WrapMode wrapModeS, WrapMode wrapModeT, Rgba32 initialisationColour)
+        public Texture CreateTexture(int width, int height, bool manualMipmaps, TextureFilteringMode filteringMode, WrapMode wrapModeS, WrapMode wrapModeT, Color4 initialisationColour)
             => CreateTexture(CreateNativeTexture(width, height, manualMipmaps, filteringMode, initialisationColour), wrapModeS, wrapModeT);
 
         public Texture CreateVideoTexture(int width, int height) => CreateTexture(CreateNativeVideoTexture(width, height));
@@ -1092,6 +1095,29 @@ namespace osu.Framework.Graphics.Rendering
         /// <returns>The <see cref="Texture"/>.</returns>
         internal Texture CreateTexture(INativeTexture nativeTexture, WrapMode wrapModeS = WrapMode.None, WrapMode wrapModeT = WrapMode.None)
             => registerTexture(new Texture(nativeTexture, wrapModeS, wrapModeT));
+
+        private IShader? mipmapShader;
+
+        internal IShader GetMipmapShader()
+        {
+            if (mipmapShader != null)
+                return mipmapShader;
+
+            var store = new PassthroughShaderStore(
+                new NamespacedResourceStore<byte[]>(
+                    new NamespacedResourceStore<byte[]>(
+                        new DllResourceStore(typeof(Game).Assembly),
+                        @"Resources"),
+                    "Shaders"));
+
+            mipmapShader = CreateShader("mipmap", new[]
+            {
+                CreateShaderPart(store, "mipmap.vs", store.LoadRaw("sh_mipmap.vs"), ShaderPartType.Vertex),
+                CreateShaderPart(store, "mipmap.fs", store.LoadRaw("sh_mipmap.fs"), ShaderPartType.Fragment),
+            }, globalUniformBuffer.AsNonNull());
+
+            return mipmapShader;
+        }
 
         private Texture registerTexture(Texture texture)
         {
@@ -1119,6 +1145,7 @@ namespace osu.Framework.Graphics.Rendering
         IVertexBatch<TexturedVertex2D> IRenderer.DefaultQuadBatch => DefaultQuadBatch;
         void IRenderer.BeginFrame(Vector2 windowSize) => BeginFrame(windowSize);
         void IRenderer.FinishFrame() => FinishFrame();
+        void IRenderer.FlushCurrentBatch(FlushBatchSource? source) => FlushCurrentBatch(source);
         void IRenderer.SwapBuffers() => SwapBuffers();
         void IRenderer.WaitUntilIdle() => WaitUntilIdle();
         void IRenderer.WaitUntilNextFrameReady() => WaitUntilNextFrameReady();
@@ -1129,7 +1156,7 @@ namespace osu.Framework.Graphics.Rendering
         void IRenderer.PushQuadBatch(IVertexBatch<TexturedVertex2D> quadBatch) => PushQuadBatch(quadBatch);
         void IRenderer.PopQuadBatch() => PopQuadBatch();
         Image<Rgba32> IRenderer.TakeScreenshot() => TakeScreenshot();
-        IShaderPart IRenderer.CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType) => CreateShaderPart(manager, name, rawData, partType);
+        IShaderPart IRenderer.CreateShaderPart(IShaderStore manager, string name, byte[]? rawData, ShaderPartType partType) => CreateShaderPart(manager, name, rawData, partType);
         IShader IRenderer.CreateShader(string name, IShaderPart[] parts) => CreateShader(name, parts, globalUniformBuffer!);
 
         IVertexBatch<TVertex> IRenderer.CreateLinearBatch<TVertex>(int size, int maxBuffers, PrimitiveTopology topology)
@@ -1278,5 +1305,17 @@ namespace osu.Framework.Graphics.Rendering
         Texture[] IRenderer.GetAllTextures() => allTextures.ToArray();
 
         #endregion
+
+        private class PassthroughShaderStore : IShaderStore
+        {
+            private readonly IResourceStore<byte[]> store;
+
+            public PassthroughShaderStore(IResourceStore<byte[]> store)
+            {
+                this.store = store;
+            }
+
+            public byte[]? LoadRaw(string name) => store.Get(name);
+        }
     }
 }

@@ -18,6 +18,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osuTK;
+using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Memory;
@@ -245,7 +246,7 @@ namespace osu.Framework.Graphics.OpenGL
             ScheduleDisposal(GL.DeleteFramebuffer, ((GLFrameBuffer)frameBuffer).FrameBuffer);
         }
 
-        protected override void ClearImplementation(ClearInfo clearInfo)
+        protected override void ClearImplementation(ClearInfo clearInfo, bool depth)
         {
             if (clearInfo.Colour != CurrentClearInfo.Colour)
                 GL.ClearColor(clearInfo.Colour);
@@ -354,7 +355,7 @@ namespace osu.Framework.Graphics.OpenGL
             return image;
         }
 
-        protected override IShaderPart CreateShaderPart(ShaderManager manager, string name, byte[]? rawData, ShaderPartType partType)
+        protected override IShaderPart CreateShaderPart(IShaderStore store, string name, byte[]? rawData, ShaderPartType partType)
         {
             ShaderType glType;
 
@@ -372,7 +373,7 @@ namespace osu.Framework.Graphics.OpenGL
                     throw new ArgumentException($"Unsupported shader part type: {partType}", nameof(partType));
             }
 
-            return new GLShaderPart(this, name, rawData, glType, manager);
+            return new GLShaderPart(this, name, rawData, glType, store);
         }
 
         protected override IShader CreateShader(string name, IShaderPart[] parts, IUniformBuffer<GlobalUniformData> globalUniformBuffer)
@@ -437,7 +438,7 @@ namespace osu.Framework.Graphics.OpenGL
         }
 
         protected override INativeTexture CreateNativeTexture(int width, int height, bool manualMipmaps = false, TextureFilteringMode filteringMode = TextureFilteringMode.Linear,
-                                                              Rgba32 initialisationColour = default)
+                                                              Color4 initialisationColour = default)
         {
             All glFilteringMode;
 
