@@ -108,6 +108,11 @@ namespace osu.Framework.Graphics.Rendering
         Matrix4 ProjectionMatrix { get; }
 
         /// <summary>
+        /// The current blending parameters.
+        /// </summary>
+        BlendingParameters CurrentBlendingParameters { get; }
+
+        /// <summary>
         /// The current depth parameters.
         /// </summary>
         DepthInfo CurrentDepthInfo { get; }
@@ -146,11 +151,6 @@ namespace osu.Framework.Graphics.Rendering
         /// The texture for a white pixel.
         /// </summary>
         Texture WhitePixel { get; }
-
-        /// <summary>
-        /// The current blending parameters.
-        /// </summary>
-        BlendingParameters CurrentBlendingParameters { get; }
 
         /// <summary>
         /// Whether this <see cref="IRenderer"/> has been initialised using <see cref="Initialise"/>.

@@ -8,7 +8,6 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.OpenGL.Buffers;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering.Vertices;
-using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Statistics;
 using osu.Framework.Utils;
@@ -29,17 +28,14 @@ namespace osu.Framework.Graphics.Rendering
         /// <param name="vertexAction">An action that adds vertices to a <see cref="IVertexBatch{T}"/>.</param>
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="textureCoords">The texture coordinates of the triangle's vertices (translated from the corresponding quad's rectangle).</param>
-        /// <param name="premultipliedAlpha">Whether the texture has premultiplied alpha or not.</param>
         public static void DrawTriangle(this IRenderer renderer, Texture texture, Triangle vertexTriangle, ColourInfo drawColour, RectangleF? textureRect = null,
-                                        Action<TexturedVertex2D>? vertexAction = null, Vector2? inflationPercentage = null, RectangleF? textureCoords = null, bool premultipliedAlpha = false)
+                                        Action<TexturedVertex2D>? vertexAction = null, Vector2? inflationPercentage = null, RectangleF? textureCoords = null)
         {
             if (!texture.Available)
                 throw new ObjectDisposedException(texture.ToString(), "Can not draw a triangle with a disposed texture.");
 
             if (!renderer.BindTexture(texture))
                 return;
-
-            GlobalPropertyManager.Set(GlobalProperty.TextureHasPremultipliedAlpha, premultipliedAlpha);
 
             RectangleF texRect = texture.GetTextureRect(textureRect);
             Vector2 inflationAmount = inflationPercentage.HasValue ? new Vector2(inflationPercentage.Value.X * texRect.Width, inflationPercentage.Value.Y * texRect.Height) : Vector2.Zero;
@@ -125,17 +121,14 @@ namespace osu.Framework.Graphics.Rendering
         /// <param name="inflationPercentage">The percentage amount that <paramref name="textureRect"/> should be inflated.</param>
         /// <param name="blendRangeOverride">The range over which the edges of the <paramref name="textureRect"/> should be blended.</param>
         /// <param name="textureCoords">The texture coordinates of the quad's vertices.</param>
-        /// <param name="premultipliedAlpha">Whether the texture has premultiplied alpha or not.</param>
         public static void DrawQuad(this IRenderer renderer, Texture texture, Quad vertexQuad, ColourInfo drawColour, RectangleF? textureRect = null, Action<TexturedVertex2D>? vertexAction = null,
-                                    Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, RectangleF? textureCoords = null, bool premultipliedAlpha = false)
+                                    Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null, RectangleF? textureCoords = null)
         {
             if (!texture.Available)
                 throw new ObjectDisposedException(texture.ToString(), "Can not draw a quad with a disposed texture.");
 
             if (!renderer.BindTexture(texture))
                 return;
-
-            GlobalPropertyManager.Set(GlobalProperty.TextureHasPremultipliedAlpha, premultipliedAlpha);
 
             RectangleF texRect = texture.GetTextureRect(textureRect);
             Vector2 inflationAmount = inflationPercentage.HasValue ? new Vector2(inflationPercentage.Value.X * texRect.Width, inflationPercentage.Value.Y * texRect.Height) : Vector2.Zero;

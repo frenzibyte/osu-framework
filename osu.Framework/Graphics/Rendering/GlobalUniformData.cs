@@ -18,13 +18,13 @@ namespace osu.Framework.Graphics.Rendering
         public UniformMatrix4 ProjMatrix;
         public UniformMatrix3 ToMaskingSpace;
         public UniformBool IsMasking;
+        public UniformBool TextureHasPremultipliedAlpha;
         public UniformFloat CornerRadius;
         public UniformFloat CornerExponent;
-        private readonly UniformPadding4 pad2;
 
         public UniformVector4 MaskingRect;
         public UniformFloat BorderThickness;
-        private readonly UniformPadding12 pad3;
+        private readonly UniformPadding12 pad1;
 
         public UniformMatrix4 BorderColour;
         public UniformFloat MaskingBlendRange;

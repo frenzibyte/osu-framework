@@ -876,6 +876,8 @@ namespace osu.Framework.Graphics.Rendering
                 CurrentWrapModeT = wrapModeT;
             }
 
+            globalUniformBuffer!.Data = globalUniformBuffer.Data with { TextureHasPremultipliedAlpha = texture.IsFramebufferTexture };
+
             lastBoundTexture[unit] = texture;
             lastBoundTextureIsAtlas[unit] = false;
             lastActiveTextureUnit = unit;

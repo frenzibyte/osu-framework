@@ -19,6 +19,8 @@ layout(std140, set = -1, binding = 0) uniform g_GlobalUniforms
     mat3 g_ToMaskingSpace;
 
     bool g_IsMasking;
+    bool g_TextureHasPremultipliedAlpha;
+
     highp float g_CornerRadius;
     highp float g_CornerExponent;
     highp vec4 g_MaskingRect;

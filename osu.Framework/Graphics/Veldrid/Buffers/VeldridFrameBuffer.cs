@@ -135,6 +135,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         {
             protected override TextureUsage Usages => base.Usages | TextureUsage.RenderTarget;
 
+            public override bool IsFramebufferTexture => true;
+
             public FrameBufferTexture(VeldridRenderer renderer, SamplerFilter filteringMode = SamplerFilter.MinLinear_MagLinear_MipLinear)
                 : base(renderer, 1, 1, true, filteringMode)
             {

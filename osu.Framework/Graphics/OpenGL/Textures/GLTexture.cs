@@ -44,6 +44,8 @@ namespace osu.Framework.Graphics.OpenGL.Textures
 
         ulong INativeTexture.TotalBindCount { get; set; }
 
+        public virtual bool IsFramebufferTexture => false;
+
         public bool BypassTextureUploadQueueing { get; set; }
 
         private int internalWidth;

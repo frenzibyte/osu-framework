@@ -9,8 +9,6 @@ layout(location = 1) in lowp vec4 v_Colour;
 
 layout(location = 4) in mediump vec2 v_BlendRange;
 
-uniform bool g_TextureHasPremultipliedAlpha;
-
 highp float distanceFromRoundedRect(highp vec2 offset, highp float radius)
 {
 	highp vec2 maskingPosition = v_MaskingPosition + offset;
