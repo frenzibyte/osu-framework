@@ -63,10 +63,26 @@ lowp vec4 getRoundedColor(lowp vec4 texel, mediump vec2 texCoord)
 {
 	InitMasking(v_MaskingIndex);
 
-	if (!g_MaskingInfo.IsMasking && v_BlendRange == vec2(0.0))
+	// The rest of the shader assumes that textures have non-premultiplied alpha
+	if (g_TextureHasPremultipliedAlpha)
 	{
-		return v_Colour * texel;
+		// Technically, fully additive colours can not have their alpha
+		// unmultiplied, because it is zero (no opacity). Hence the following
+		// hack: set alpha to a small, but non-zero value, such that it permits
+		// unmultiplication and later remultiplication without visibly affecting
+		// the blending.
+		texel.a = max(texel.a, 1.0 / 1024.0);
+
+		// More hackiness: because osu! blends non-physically in sRGB space for
+		// asthetic reasons, we need to unmultiply alpha in sRGB space.
+		texel.rgb = texel.rgb / texel.a;
 	}
+
+	bool isEmissive = v_Colour.a < 0.0;
+	vec4 colour = abs(v_Colour);
+
+	if (!g_MaskingInfo.IsMasking && v_BlendRange == vec2(0.0))
+		return toEmissive(toPremultipliedAlpha(colour * texel), isEmissive);
 
 	highp float dist = distanceFromRoundedRect(vec2(0.0), g_MaskingInfo.CornerRadius);
 	lowp float alphaFactor = 1.0;
@@ -98,14 +114,10 @@ lowp vec4 getRoundedColor(lowp vec4 texel, mediump vec2 texCoord)
 	alphaFactor *= min(fadeStart - dist, 1.0);
 
 	if (v_BlendRange.x > 0.0 || v_BlendRange.y > 0.0)
-	{
 		alphaFactor *= clamp(1.0 - distanceFromDrawingRect(texCoord), 0.0, 1.0);
-	}
 
 	if (alphaFactor <= 0.0)
-	{
 		return vec4(0.0);
-	}
 
 	// This ends up softening glow without negatively affecting edge smoothness much.
 	alphaFactor = pow(alphaFactor, g_MaskingInfo.AlphaExponent);
@@ -116,12 +128,10 @@ lowp vec4 getRoundedColor(lowp vec4 texel, mediump vec2 texCoord)
 	lowp vec4 borderColour = getBorderColour();
 
 	if (colourWeight <= 0.0)
-	{
-		return vec4(borderColour.rgb, borderColour.a * alphaFactor);
-	}
+		return toEmissive(toPremultipliedAlpha(vec4(borderColour.rgb, borderColour.a * alphaFactor)), isEmissive);
 
-	lowp vec4 dest = vec4(v_Colour.rgb, v_Colour.a * alphaFactor) * texel;
+	lowp vec4 dest = vec4(colour.rgb, colour.a * alphaFactor) * texel;
 	lowp vec4 src = vec4(borderColour.rgb, borderColour.a * (1.0 - colourWeight));
 
-	return blend(src, dest);
+	return toEmissive(blend(toPremultipliedAlpha(src), toPremultipliedAlpha(dest)), isEmissive);
 }

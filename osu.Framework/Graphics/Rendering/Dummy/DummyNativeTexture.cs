@@ -17,6 +17,7 @@ namespace osu.Framework.Graphics.Rendering.Dummy
         public int Width { get; set; } = 1;
         public int Height { get; set; } = 1;
         public bool Available => true;
+        public bool IsFramebufferTexture => false;
         public bool BypassTextureUploadQueueing { get; set; }
         public bool UploadComplete => true;
         public bool IsQueuedForUpload { get; set; }

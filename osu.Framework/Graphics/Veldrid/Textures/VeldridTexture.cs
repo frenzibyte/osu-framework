@@ -53,6 +53,8 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         ulong INativeTexture.TotalBindCount { get; set; }
 
+        public virtual bool IsFramebufferTexture => false;
+
         public bool BypassTextureUploadQueueing { get; set; }
 
         private readonly bool manualMipmaps;

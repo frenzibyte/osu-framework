@@ -392,13 +392,14 @@ namespace osu.Framework.Graphics.Rendering
 
         public void SetBlend(BlendingParameters blendingParameters)
         {
-            if (CurrentBlendingParameters == blendingParameters)
+            BlendingParameters oldBlendingParameters = CurrentBlendingParameters;
+            CurrentBlendingParameters = blendingParameters;
+
+            if (CurrentBlendingParameters.EqualsExceptForAdditive(oldBlendingParameters))
                 return;
 
             FlushCurrentBatch(FlushBatchSource.SetBlend);
             SetBlendImplementation(blendingParameters);
-
-            CurrentBlendingParameters = blendingParameters;
         }
 
         public void SetBlendMask(BlendingMask blendingMask)
@@ -886,6 +887,8 @@ namespace osu.Framework.Graphics.Rendering
                 globalUniformBuffer!.Data = globalUniformBuffer.Data with { WrapModeT = (int)wrapModeT };
                 CurrentWrapModeT = wrapModeT;
             }
+
+            globalUniformBuffer!.Data = globalUniformBuffer.Data with { TextureHasPremultipliedAlpha = texture.IsFramebufferTexture };
 
             lastBoundTexture[unit] = texture;
             lastBoundTextureIsAtlas[unit] = false;

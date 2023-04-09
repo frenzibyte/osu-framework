@@ -109,6 +109,11 @@ namespace osu.Framework.Graphics.Rendering
         Matrix4 ProjectionMatrix { get; }
 
         /// <summary>
+        /// The current blending parameters.
+        /// </summary>
+        BlendingParameters CurrentBlendingParameters { get; }
+
+        /// <summary>
         /// The current depth parameters.
         /// </summary>
         DepthInfo CurrentDepthInfo { get; }

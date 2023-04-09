@@ -16,6 +16,7 @@ layout(std140, set = -1, binding = 0) uniform g_GlobalUniforms
     bool g_IsUvOriginTopLeft;
 
     mat4 g_ProjMatrix;
+    bool g_TextureHasPremultipliedAlpha;
 
     // 0 -> None
     // 1 -> ClampToEdge

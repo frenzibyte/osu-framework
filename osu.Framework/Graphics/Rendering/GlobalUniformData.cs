@@ -17,8 +17,9 @@ namespace osu.Framework.Graphics.Rendering
 
         public UniformMatrix4 ProjMatrix;
 
+        public UniformBool TextureHasPremultipliedAlpha;
         public UniformInt WrapModeS;
         public UniformInt WrapModeT;
-        private readonly UniformPadding8 pad1;
+        private readonly UniformPadding4 pad1;
     }
 }
