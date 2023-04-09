@@ -125,13 +125,17 @@ lowp vec4 getRoundedColor(lowp vec4 texel, mediump vec2 texCoord)
 	highp float borderStart = 1.0 + fadeStart - g_MaskingInfo.BorderThickness;
 	lowp float colourWeight = min(borderStart - dist, 1.0);
 
+	lowp vec4 contentColour = abs(v_Colour) * texel;
+
+	if (colourWeight == 1.0)
+		return toEmissive(toPremultipliedAlpha(vec4(contentColour.rgb, contentColour.a * alphaFactor)), isEmissive);
+
 	lowp vec4 borderColour = getBorderColour();
 
 	if (colourWeight <= 0.0)
 		return toEmissive(toPremultipliedAlpha(vec4(borderColour.rgb, borderColour.a * alphaFactor)), isEmissive);
 
-	lowp vec4 dest = vec4(colour.rgb, colour.a * alphaFactor) * texel;
-	lowp vec4 src = vec4(borderColour.rgb, borderColour.a * (1.0 - colourWeight));
-
-	return toEmissive(blend(toPremultipliedAlpha(src), toPremultipliedAlpha(dest)), isEmissive);
+	contentColour.a *= alphaFactor;
+	borderColour.a *= 1.0 - colourWeight;
+	return toEmissive(blend(toPremultipliedAlpha(borderColour), toPremultipliedAlpha(contentColour)), isEmissive);
 }
