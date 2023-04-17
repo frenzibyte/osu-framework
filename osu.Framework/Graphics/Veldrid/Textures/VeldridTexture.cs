@@ -260,7 +260,13 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 } while (mergeFound);
 
                 // Mipmap generation using the merged upload regions follows
+                IFrameBuffer? previousFrameBuffer = Renderer.FrameBuffer;
                 BlendingParameters previousBlendingParameters = Renderer.CurrentBlendingParameters;
+
+                // todo: this is very bad for metal on apple gpus, since unbinding a framebuffer would make it lose its depth/stencil content.
+                // this should probably be moved into a separate command list.
+                if (previousFrameBuffer != null)
+                    Renderer.UnbindFrameBuffer(previousFrameBuffer);
 
                 // Use a simple render state (no blending, masking, scissoring, stenciling, etc.)
                 Renderer.SetBlend(BlendingParameters.None);
@@ -356,6 +362,9 @@ namespace osu.Framework.Graphics.Veldrid.Textures
                 Renderer.PopDepthInfo();
 
                 Renderer.SetBlend(previousBlendingParameters);
+
+                if (previousFrameBuffer != null)
+                    Renderer.BindFrameBuffer(previousFrameBuffer);
             }
 
             // Uncomment the following block of code in order to compare the above with the renderer mipmap generation method CommandList.GenerateMipmaps().
