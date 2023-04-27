@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Development;
 using osu.Framework.Graphics.OpenGL.Buffers;
 using osu.Framework.Graphics.Primitives;
@@ -42,6 +43,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
 
         public virtual int Width { get; set; }
         public virtual int Height { get; set; }
+
         public virtual int GetByteSize() => Width * Height * 4;
         public bool Available { get; private set; } = true;
 
@@ -194,6 +196,8 @@ namespace osu.Framework.Graphics.OpenGL.Textures
             }
         }
 
+        private readonly List<RectangleI> uploadedRegions = new List<RectangleI>();
+
         public unsafe bool Upload()
         {
             if (!Available)
@@ -202,7 +206,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
             // We should never run raw OGL calls on another thread than the main thread due to race conditions.
             ThreadSafety.EnsureDrawThread();
 
-            List<RectangleI> uploadedRegions = new List<RectangleI>();
+            uploadedRegions.Clear();
 
             while (tryGetNextUpload(out ITextureUpload upload))
             {
@@ -215,11 +219,19 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 }
             }
 
+            GenerateMipmaps();
+            return uploadedRegions.Count != 0;
+        }
+
+        public void GenerateMipmaps()
+        {
+            var regions = uploadedRegions.ToList();
+
             // Generate mipmaps for just the updated regions of the texture.
             // This implementation is functionally equivalent to GL.GenerateMipmap(),
             // only that it is much more efficient if only small parts of the texture
             // have been updated.
-            if (uploadedRegions.Count != 0 && !manualMipmaps)
+            if (regions.Count != 0 && !manualMipmaps)
             {
                 // Merge overlapping upload regions to prevent redundant mipmap generation.
                 // i goes through the list left-to-right, j goes through it right-to-left
@@ -231,18 +243,18 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 {
                     mergeFound = false;
 
-                    for (int i = 0; i < uploadedRegions.Count; ++i)
+                    for (int i = 0; i < regions.Count; ++i)
                     {
-                        RectangleI toMerge = uploadedRegions[i];
+                        RectangleI toMerge = regions[i];
 
-                        for (int j = uploadedRegions.Count - 1; j > i; --j)
+                        for (int j = regions.Count - 1; j > i; --j)
                         {
-                            RectangleI mergeCandidate = uploadedRegions[j];
+                            RectangleI mergeCandidate = regions[j];
 
                             if (!toMerge.Intersect(mergeCandidate).IsEmpty)
                             {
-                                uploadedRegions[i] = toMerge = RectangleI.Union(toMerge, mergeCandidate);
-                                uploadedRegions.RemoveAt(j);
+                                regions[i] = toMerge = RectangleI.Union(toMerge, mergeCandidate);
+                                regions.RemoveAt(j);
                                 mergeFound = true;
                             }
                         }
@@ -266,12 +278,12 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 Renderer.BindTexture(this);
                 Renderer.GetMipmapShader().Bind();
 
-                while (uploadedRegions.Count > 0)
+                while (regions.Count > 0)
                 {
                     int width = internalWidth;
                     int height = internalHeight;
 
-                    int count = Math.Min(uploadedRegions.Count, IRenderer.MAX_QUADS);
+                    int count = Math.Min(regions.Count, IRenderer.MAX_QUADS);
 
                     // Generate quad buffer that will hold all the updated regions
                     var quadBuffer = new GLQuadBuffer<UncolouredVertex2D>(Renderer, count, BufferUsageHint.StreamDraw);
@@ -289,14 +301,14 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                             // in order to ensure all the texels affected by linear interpolation are touched.
                             // We could skip the rounding & use a single vertex buffer for all levels if we had
                             // conservative raster, but alas, that's only supported on NV and Intel.
-                            Vector2I topLeft = uploadedRegions[i].TopLeft;
+                            Vector2I topLeft = regions[i].TopLeft;
                             topLeft = new Vector2I(topLeft.X / 2, topLeft.Y / 2);
-                            Vector2I bottomRight = uploadedRegions[i].BottomRight;
+                            Vector2I bottomRight = regions[i].BottomRight;
                             bottomRight = new Vector2I(MathUtils.DivideRoundUp(bottomRight.X, 2), MathUtils.DivideRoundUp(bottomRight.Y, 2));
-                            uploadedRegions[i] = new RectangleI(topLeft.X, topLeft.Y, bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
+                            regions[i] = new RectangleI(topLeft.X, topLeft.Y, bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
 
                             // Normalize the draw rectangle into the unit square, which doubles as texture sampler coordinates.
-                            RectangleF r = (RectangleF)uploadedRegions[i] / new Vector2(width, height);
+                            RectangleF r = (RectangleF)regions[i] / new Vector2(width, height);
 
                             quadBuffer.SetVertex(i * 4 + 0, new UncolouredVertex2D { Position = r.BottomLeft });
                             quadBuffer.SetVertex(i * 4 + 1, new UncolouredVertex2D { Position = r.BottomRight });
@@ -320,7 +332,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                         Renderer.PopViewport();
                     }
 
-                    uploadedRegions.RemoveRange(0, count);
+                    regions.RemoveRange(0, count);
                 }
 
                 // Restore previous render state
@@ -345,8 +357,6 @@ namespace osu.Framework.Graphics.OpenGL.Textures
             //     GL.Hint(HintTarget.GenerateMipmapHint, HintMode.Nicest);
             //     GL.GenerateMipmap(TextureTarget.Texture2D);
             // }
-
-            return uploadedRegions.Count != 0;
         }
 
         public bool UploadComplete

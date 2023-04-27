@@ -38,6 +38,10 @@ namespace osu.Framework.Graphics.Rendering.Dummy
 
         public bool Upload() => true;
 
+        public void GenerateMipmaps()
+        {
+        }
+
         public bool Bind(int unit) => true;
 
         public int GetByteSize() => 0;

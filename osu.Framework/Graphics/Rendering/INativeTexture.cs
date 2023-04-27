@@ -79,6 +79,8 @@ namespace osu.Framework.Graphics.Rendering
         /// <returns>Whether any uploads occurred.</returns>
         bool Upload();
 
+        void GenerateMipmaps();
+
         /// <summary>
         /// The size of this texture in bytes.
         /// </summary>
