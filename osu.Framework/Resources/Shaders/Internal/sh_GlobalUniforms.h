@@ -1,6 +1,9 @@
+#ifndef GLOBAL_UNIFORMS_H
+#define GLOBAL_UNIFORMS_H
+
 // This file is automatically included in every shader.
 
-layout(std140, set = -1, binding = 0) uniform g_GlobalUniforms
+layout(std140, set = 0, binding = 0) uniform g_GlobalUniforms
 {
     // Whether the backbuffer is currently being drawn to.
     bool g_BackbufferDraw;
@@ -37,3 +40,5 @@ layout(std140, set = -1, binding = 0) uniform g_GlobalUniforms
     int g_WrapModeS;
     int g_WrapModeT;
 };
+
+#endif

@@ -17,7 +17,6 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
     internal class GLShaderPart : IShaderPart
     {
         public static readonly Regex SHADER_INPUT_PATTERN = new Regex(@"^\s*layout\s*\(\s*location\s*=\s*(-?\d+)\s*\)\s*(in\s+(?:(?:lowp|mediump|highp)\s+)?\w+\s+(\w+)\s*;)", RegexOptions.Multiline);
-        private static readonly Regex uniform_pattern = new Regex(@"^(\s*layout\s*\(.*)set\s*=\s*(-?\d)(.*\)\s*uniform)", RegexOptions.Multiline);
         private static readonly Regex include_pattern = new Regex(@"^\s*#\s*include\s+[""<](.*)["">]");
 
         internal bool Compiled { get; private set; }
@@ -54,12 +53,6 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
             // Update the location of the m_BackbufferDrawDepth input to be placed after all other inputs.
             for (int i = 0; i < shaderCodes.Count; i++)
                 shaderCodes[i] = shaderCodes[i].Replace("layout(location = -1)", $"layout(location = {lastInputIndex + 1})");
-
-            // Increment the binding set of all uniform blocks.
-            // After this transformation, the g_GlobalUniforms block is placed in set 0 and all other user blocks begin from 1.
-            // The difference in implementation here (compared to above) is intentional, as uniform blocks must be consistent between the shader stages, so they can't be easily appended.
-            for (int i = 0; i < shaderCodes.Count; i++)
-                shaderCodes[i] = uniform_pattern.Replace(shaderCodes[i], match => $"{match.Groups[1].Value}set = {int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) + 1}{match.Groups[3].Value}");
         }
 
         private string loadFile(byte[] bytes, bool mainFile)
@@ -94,6 +87,9 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
                         continue;
                     }
 
+                    if (line.Equals("#include <global_uniforms>", StringComparison.Ordinal))
+                        line = "#include \"sh_GlobalUniforms.h\"";
+
                     Match includeMatch = include_pattern.Match(line);
 
                     if (includeMatch.Success)
@@ -113,9 +109,7 @@ namespace osu.Framework.Graphics.OpenGL.Shaders
 
                 if (mainFile)
                 {
-                    string internalIncludes = loadFile(store.GetRawData("Internal/sh_Compatibility.h"), false) + "\n";
-                    internalIncludes += loadFile(store.GetRawData("Internal/sh_GlobalUniforms.h"), false) + "\n";
-                    code = internalIncludes + code;
+                    code = loadFile(store.GetRawData("Internal/sh_Compatibility.h"), false) + "\n" + code;
 
                     if (Type == ShaderType.VertexShader)
                     {
