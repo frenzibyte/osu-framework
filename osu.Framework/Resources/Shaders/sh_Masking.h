@@ -1,4 +1,6 @@
-﻿layout(location = 0) in highp vec2 v_MaskingPosition;
+﻿#include <global_uniforms>
+
+layout(location = 0) in highp vec2 v_MaskingPosition;
 layout(location = 1) in lowp vec4 v_Colour;
 
 #ifdef HIGH_PRECISION_VERTEX

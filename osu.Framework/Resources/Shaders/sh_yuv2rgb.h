@@ -1,3 +1,4 @@
+#include <global_uniforms>
 #include "sh_TextureWrapping.h"
 
 layout(set = 0, binding = 0) uniform lowp texture2D m_TextureY;

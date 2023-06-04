@@ -1,3 +1,4 @@
+#include <global_uniforms>
 #include "sh_Utils.h"
 
 layout(location = 0) in highp vec2 m_Position;

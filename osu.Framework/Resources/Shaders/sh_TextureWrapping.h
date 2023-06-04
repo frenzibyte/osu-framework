@@ -1,3 +1,5 @@
+#include <global_uniforms>
+
 float wrap(float coord, int mode, float rangeMin, float rangeMax)
 {
     if (mode == 1)

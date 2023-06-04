@@ -1,3 +1,5 @@
+#include <global_uniforms>
+
 layout(location = 0) in vec2 m_Position;
 layout(location = 1) in vec2 m_TexCoord;
 layout(location = 2) in float m_Time;
@@ -6,7 +8,7 @@ layout(location = 3) in vec2 m_Direction;
 layout(location = 1) out vec4 v_Colour;
 layout(location = 2) out vec2 v_TexCoord;
 
-layout(std140, set = 0, binding = 0) uniform m_ParticleParameters
+layout(std140, set = 1, binding = 0) uniform m_ParticleParameters
 {
     float g_FadeClock;
     float g_Gravity;
