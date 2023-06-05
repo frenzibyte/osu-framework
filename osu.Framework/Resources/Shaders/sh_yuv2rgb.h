@@ -1,12 +1,12 @@
 #include <global_uniforms>
 #include "sh_TextureWrapping.h"
 
-layout(set = 0, binding = 0) uniform lowp texture2D m_TextureY;
-layout(set = 0, binding = 1) uniform lowp sampler m_SamplerY;
-layout(set = 1, binding = 0) uniform lowp texture2D m_TextureU;
-layout(set = 1, binding = 1) uniform lowp sampler m_SamplerU;
-layout(set = 2, binding = 0) uniform lowp texture2D m_TextureV;
-layout(set = 2, binding = 1) uniform lowp sampler m_SamplerV;
+layout(set = 1, binding = 0) uniform lowp texture2D m_TextureY;
+layout(set = 1, binding = 1) uniform lowp sampler m_SamplerY;
+layout(set = 2, binding = 0) uniform lowp texture2D m_TextureU;
+layout(set = 2, binding = 1) uniform lowp sampler m_SamplerU;
+layout(set = 3, binding = 0) uniform lowp texture2D m_TextureV;
+layout(set = 3, binding = 1) uniform lowp sampler m_SamplerV;
 
 layout(std140, set = 3, binding = 0) uniform m_yuvData
 {

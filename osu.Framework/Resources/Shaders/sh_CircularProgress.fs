@@ -7,7 +7,7 @@
 
 layout(location = 2) in highp vec2 v_TexCoord;
 
-layout(std140, set = 0, binding = 0) uniform m_CircularProgressParameters
+layout(std140, set = 1, binding = 0) uniform m_CircularProgressParameters
 {
     mediump float innerRadius;
     mediump float progress;
@@ -15,8 +15,8 @@ layout(std140, set = 0, binding = 0) uniform m_CircularProgressParameters
     bool roundedCaps;
 };
 
-layout(set = 1, binding = 0) uniform lowp texture2D m_Texture;
-layout(set = 1, binding = 1) uniform lowp sampler m_Sampler;
+layout(set = 2, binding = 0) uniform lowp texture2D m_Texture;
+layout(set = 2, binding = 1) uniform lowp sampler m_Sampler;
 
 layout(location = 0) out vec4 o_Colour;
 
