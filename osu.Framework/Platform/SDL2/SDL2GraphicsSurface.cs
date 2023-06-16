@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using osu.Framework.Configuration;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 using SDL2;
@@ -17,10 +18,14 @@ namespace osu.Framework.Platform.SDL2
     {
         private readonly SDL2Window window;
 
+        public IWindow Window => window;
+
         private IntPtr context;
 
         public IntPtr WindowHandle => window.WindowHandle;
         public IntPtr DisplayHandle => window.DisplayHandle;
+
+        public WindowMode WindowMode => window.WindowMode.Value;
 
         public GraphicsSurfaceType Type { get; }
 

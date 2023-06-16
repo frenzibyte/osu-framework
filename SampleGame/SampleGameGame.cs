@@ -26,10 +26,21 @@ namespace SampleGame
             });
         }
 
+        private bool first = true;
+
         protected override void Update()
         {
             base.Update();
-            box.Rotation += (float)Time.Elapsed / 10;
+            box.Rotation = 0;
+
+            if (first)
+            {
+                box.MoveTo(new Vector2(DrawWidth, 0))
+                   .MoveTo(new Vector2(0f, 0f), 1000)
+                   .Loop();
+
+                first = false;
+            }
         }
     }
 }

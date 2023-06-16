@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Extensions.TypeExtensions;
@@ -40,6 +41,8 @@ namespace osu.Framework.Graphics.Rendering
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
         private const int vbo_free_check_interval = 300;
+
+        private IGraphicsSurface graphicsSurface = null!;
 
         protected internal abstract bool VerticalSync { get; set; }
         protected internal abstract bool AllowTearing { get; set; }
@@ -163,6 +166,8 @@ namespace osu.Framework.Graphics.Rendering
 
         void IRenderer.Initialise(IGraphicsSurface graphicsSurface)
         {
+            this.graphicsSurface = graphicsSurface;
+
             switch (graphicsSurface.Type)
             {
                 case GraphicsSurfaceType.OpenGL:
@@ -180,6 +185,18 @@ namespace osu.Framework.Graphics.Rendering
             resetScheduler.AddDelayed(disposalQueue.CheckPendingDisposals, 0, true);
 
             IsInitialised = true;
+        }
+
+        /// <summary>
+        /// Performs the operations necessary before beginning a draw frame (e.g. waiting for V-sync).
+        /// </summary>
+        /// <remarks>
+        /// This is called before <see cref="BeginFrame"/>, which can get delayed waiting for a free <see cref="DrawNode"/> buffer.
+        /// </remarks>
+        protected internal virtual void PrepareForFrame()
+        {
+            AllowTearing = graphicsSurface.Window.WindowMode.Value == WindowMode.Fullscreen;
+            WaitUntilNextFrameReady();
         }
 
         /// <summary>
@@ -1141,6 +1158,7 @@ namespace osu.Framework.Graphics.Rendering
         }
 
         IVertexBatch<TexturedVertex2D> IRenderer.DefaultQuadBatch => DefaultQuadBatch;
+        void IRenderer.PrepareForFrame() => PrepareForFrame();
         void IRenderer.BeginFrame(Vector2 windowSize) => BeginFrame(windowSize);
         void IRenderer.FinishFrame() => FinishFrame();
         void IRenderer.FlushCurrentBatch(FlushBatchSource? source) => FlushCurrentBatch(source);

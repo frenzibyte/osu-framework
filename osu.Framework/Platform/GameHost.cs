@@ -476,13 +476,11 @@ namespace osu.Framework.Platform
             if (ExecutionState != ExecutionState.Running)
                 return;
 
-            Renderer.AllowTearing = windowMode.Value == WindowMode.Fullscreen;
-
             ObjectUsage<DrawNode> buffer;
 
             using (drawMonitor.BeginCollecting(PerformanceCollectionType.Sleep))
             {
-                Renderer.WaitUntilNextFrameReady();
+                Renderer.PrepareForFrame();
                 buffer = DrawRoots.GetForRead();
             }
 

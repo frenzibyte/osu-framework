@@ -164,6 +164,14 @@ namespace osu.Framework.Graphics.Rendering
         protected internal void Initialise(IGraphicsSurface graphicsSurface);
 
         /// <summary>
+        /// Performs the operations necessary before beginning a draw frame (e.g. waiting for V-sync).
+        /// </summary>
+        /// <remarks>
+        /// This is called before <see cref="BeginFrame"/>, which can get delayed waiting for a free <see cref="DrawNode"/> buffer.
+        /// </remarks>
+        protected internal void PrepareForFrame();
+
+        /// <summary>
         /// Resets any states to prepare for drawing a new frame.
         /// </summary>
         /// <param name="windowSize">The full window size.</param>

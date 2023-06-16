@@ -15,6 +15,8 @@ namespace osu.Framework.Platform
     {
         private readonly OsuTKWindow window;
 
+        public IWindow Window => window;
+
         public GraphicsSurfaceType Type => GraphicsSurfaceType.OpenGL;
 
         public IntPtr WindowHandle => window.WindowInfo.Handle;

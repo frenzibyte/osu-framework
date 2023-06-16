@@ -64,6 +64,10 @@ namespace osu.Framework.Graphics.Rendering.Dummy
             IsInitialised = true;
         }
 
+        public void PrepareForFrame()
+        {
+        }
+
         void IRenderer.BeginFrame(Vector2 windowSize)
         {
         }

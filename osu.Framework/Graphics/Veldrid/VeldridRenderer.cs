@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
@@ -83,6 +84,9 @@ namespace osu.Framework.Graphics.Veldrid
             SharedLinearIndex = new VeldridIndexData(this);
             SharedQuadIndex = new VeldridIndexData(this);
         }
+
+        private IBindable<Display> currentDisplayBindable = null!;
+        private Display? pendingActiveDisplay;
 
         protected override void Initialise(IGraphicsSurface graphicsSurface)
         {
@@ -199,6 +203,12 @@ namespace osu.Framework.Graphics.Veldrid
             BufferUpdateCommands = Factory.CreateCommandList();
 
             pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
+
+            currentDisplayBindable = graphicsSurface.Window.CurrentDisplayBindable.GetBoundCopy();
+            currentDisplayBindable.BindValueChanged(v =>
+            {
+                Device.UpdateActiveDisplay(v.NewValue.Bounds.X, v.NewValue.Bounds.Y, v.NewValue.Bounds.Width, v.NewValue.Bounds.Height);
+            }, true);
         }
 
         private Vector2 currentSize;

@@ -3,6 +3,7 @@
 
 using System;
 using System.Drawing;
+using osu.Framework.Configuration;
 
 namespace osu.Framework.Platform
 {
@@ -11,6 +12,11 @@ namespace osu.Framework.Platform
     /// </summary>
     public interface IGraphicsSurface
     {
+        /// <summary>
+        /// The window associated with this graphics surface.
+        /// </summary>
+        IWindow Window { get; }
+
         /// <summary>
         /// A pointer representing a handle to this window, provided by the operating system.
         /// </summary>
