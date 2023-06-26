@@ -251,7 +251,7 @@ namespace osu.Framework
             renderScale = config.GetBindable<float>(FrameworkSetting.RenderScale);
             renderScale.BindValueChanged(updateRenderScale, true);
 
-            renderScale.Value = 1f;
+            renderScale.Value = 0.1f;
         }
 
         private void updateRenderScale(ValueChangedEvent<float> scale)
