@@ -6,9 +6,11 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Platform;
+using osuTK;
 
 namespace osu.Framework.Tests.Visual.Platform
 {
@@ -30,13 +32,30 @@ namespace osu.Framework.Tests.Visual.Platform
                 Font = FrameworkFont.Regular.With(size: 24),
             });
 
-            Add(new BasicDropdown<RendererType>
+            Add(new FillFlowContainer
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
-                Items = host.GetPreferredRenderersForCurrentPlatform().OrderBy(t => t),
-                Current = config.GetBindable<RendererType>(FrameworkSetting.Renderer),
-                Width = 200f,
+                AutoSizeAxes = Axes.Both,
+                Direction = FillDirection.Vertical,
+                Children = new Drawable[]
+                {
+                    new BasicDropdown<RendererType>
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Items = host.GetPreferredRenderersForCurrentPlatform().OrderBy(t => t),
+                        Current = config.GetBindable<RendererType>(FrameworkSetting.Renderer),
+                        Width = 200f,
+                    },
+                    new BasicSliderBar<float>
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Current = config.GetBindable<float>(FrameworkSetting.RenderScale),
+                        Size = new Vector2(200f, 30f),
+                    }
+                }
             });
         });
     }
