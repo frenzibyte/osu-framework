@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Performance;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Platform;
 using osu.Framework.Utils;
 using osuTK;
 using osuTK.Graphics;
@@ -32,7 +33,7 @@ namespace osu.Framework.Tests.Visual.Performance
             Schedule(() =>
             {
                 if (game.FrameStatistics.Value == FrameStatisticsMode.None)
-                    game.FrameStatistics.Value = FrameStatisticsMode.Minimal;
+                    game.FrameStatistics.Value = FrameStatisticsMode.Full;
             });
         }
 
@@ -52,12 +53,18 @@ namespace osu.Framework.Tests.Visual.Performance
             AddSliderStep("sprites count", 1, 1000, 100, v => spritesCount = v);
             AddToggleStep("gradient colour", v => gradientColour = v);
             AddToggleStep("randomise colour", v => randomiseColour = v);
+            AddStep("report draw thread", () =>
+            {
+                var drawThread = Dependencies.Get<GameHost>().DrawThread;
+
+                drawThread.Scheduler.Add(() => drawThread.Monitor!.LogOutput = true);
+                // Dependencies.Get<GameHost>().DrawThread.Monitor!.LogOutput = true;
+            });
+            AddStep("recreate", recreate);
         }
 
-        protected override void Update()
+        private void recreate()
         {
-            base.Update();
-
             Flow.Clear();
 
             for (int i = 0; i < spritesCount; i++)

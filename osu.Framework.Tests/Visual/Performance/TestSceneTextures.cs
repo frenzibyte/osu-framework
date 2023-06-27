@@ -7,6 +7,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
 
 namespace osu.Framework.Tests.Visual.Performance
@@ -17,17 +18,25 @@ namespace osu.Framework.Tests.Visual.Performance
         private float fillWidth;
         private float fillHeight;
         private bool disableMipmaps;
+        private bool uniqueTextures;
         private bool gradientColour;
         private bool randomiseColour;
 
         private Texture nonMipmappedSampleTexture = null!;
         private Texture mipmappedSampleTexture = null!;
 
+        private IResourceStore<TextureUpload> textureLoaderStore = null!;
+
+        [Resolved]
+        private IRenderer renderer { get; set; } = null!;
+
         [BackgroundDependencyLoader]
-        private void load(Game game, TextureStore store, IRenderer renderer, GameHost host)
+        private void load(Game game, TextureStore store, GameHost host)
         {
+            textureLoaderStore = host.CreateTextureLoaderStore(new NamespacedResourceStore<byte[]>(game.Resources, @"Textures"));
+
             mipmappedSampleTexture = store.Get(@"sample-texture");
-            nonMipmappedSampleTexture = new TextureStore(renderer, host.CreateTextureLoaderStore(game.Resources), manualMipmaps: true).Get(@"Textures/sample-texture");
+            nonMipmappedSampleTexture = new TextureStore(renderer, textureLoaderStore, manualMipmaps: true).Get(@"sample-texture");
         }
 
         protected override void LoadComplete()
@@ -35,19 +44,45 @@ namespace osu.Framework.Tests.Visual.Performance
             base.LoadComplete();
 
             AddToggleStep("disable mipmaps", v => disableMipmaps = v);
+            AddToggleStep("unique textures", v => uniqueTextures = v);
         }
 
         protected override Drawable CreateDrawable()
         {
-            var sprite = base.CreateDrawable();
+            var baseSprite = base.CreateDrawable();
 
-            return new Sprite
+            var sprite = new Sprite
             {
-                Texture = disableMipmaps ? nonMipmappedSampleTexture : mipmappedSampleTexture,
-                Colour = sprite.Colour,
-                RelativeSizeAxes = sprite.RelativeSizeAxes,
-                Size = sprite.Size,
+                Colour = baseSprite.Colour,
+                RelativeSizeAxes = baseSprite.RelativeSizeAxes,
+                Size = baseSprite.Size,
             };
+
+            if (uniqueTextures)
+                sprite.Texture = new TextureStore(renderer, textureLoaderStore, manualMipmaps: disableMipmaps).Get(@"sample-texture");
+            else
+                sprite.Texture = disableMipmaps ? nonMipmappedSampleTexture : mipmappedSampleTexture;
+
+            return sprite;
+        }
+
+        private partial class TestSprite : Sprite
+        {
+            protected override DrawNode CreateDrawNode() => new TestSpriteDrawNode(this);
+
+            private class TestSpriteDrawNode : SpriteDrawNode
+            {
+                public TestSpriteDrawNode(Sprite source)
+                    : base(source)
+                {
+                }
+
+                public override void Draw(IRenderer renderer)
+                {
+                    base.Draw(renderer);
+                    renderer.FlushCurrentBatch(FlushBatchSource.SomethingElse);
+                }
+            }
         }
     }
 }

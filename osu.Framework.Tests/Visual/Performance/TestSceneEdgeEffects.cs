@@ -10,7 +10,7 @@ using Container = osu.Framework.Graphics.Containers.Container;
 namespace osu.Framework.Tests.Visual.Performance
 {
     [Description("tests masking overhead")]
-    public partial class TestSceneEdgeEffects : TestSceneTextures
+    public partial class TestSceneEdgeEffects : TestSceneBoxes
     {
         private float cornerRadius;
         private float cornerExponent;
