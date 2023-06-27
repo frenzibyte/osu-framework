@@ -193,31 +193,6 @@ namespace osu.Framework
             Localisation = CreateLocalisationManager(config);
             dependencies.CacheAs(Localisation);
 
-            frameSyncMode = config.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
-
-            executionMode = config.GetBindable<ExecutionMode>(FrameworkSetting.ExecutionMode);
-
-            logOverlayVisibility = config.GetBindable<bool>(FrameworkSetting.ShowLogOverlay);
-            logOverlayVisibility.BindValueChanged(visibility =>
-            {
-                if (visibility.NewValue)
-                {
-                    if (logOverlay == null)
-                    {
-                        LoadComponentAsync(logOverlay = new LogOverlay
-                        {
-                            Depth = float.MinValue / 2,
-                        }, overlayContent.Add);
-                    }
-
-                    logOverlay.Show();
-                }
-                else
-                {
-                    logOverlay?.Hide();
-                }
-            }, true);
-
             contentContainer = new Container
             {
                 Anchor = Anchor.Centre,
@@ -247,6 +222,31 @@ namespace osu.Framework
             });
 
             base.AddInternal(contentContainer);
+
+            frameSyncMode = config.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
+
+            executionMode = config.GetBindable<ExecutionMode>(FrameworkSetting.ExecutionMode);
+
+            logOverlayVisibility = config.GetBindable<bool>(FrameworkSetting.ShowLogOverlay);
+            logOverlayVisibility.BindValueChanged(visibility =>
+            {
+                if (visibility.NewValue)
+                {
+                    if (logOverlay == null)
+                    {
+                        LoadComponentAsync(logOverlay = new LogOverlay
+                        {
+                            Depth = float.MinValue / 2,
+                        }, overlayContent.Add);
+                    }
+
+                    logOverlay.Show();
+                }
+                else
+                {
+                    logOverlay?.Hide();
+                }
+            }, true);
 
             renderScale = config.GetBindable<float>(FrameworkSetting.RenderScale);
             renderScale.BindValueChanged(updateRenderScale, true);
