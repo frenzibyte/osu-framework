@@ -206,11 +206,15 @@ namespace osu.Framework
                         Origin = Anchor.Centre,
                         RelativeSizeAxes = Axes.Both,
                     },
-                    overlayContent = new DrawSizePreservingFillContainer
+                    new SafeAreaContainer
                     {
-                        TargetDrawSize = new Vector2(1280, 960),
                         RelativeSizeAxes = Axes.Both,
-                    }
+                        Child = overlayContent = new DrawSizePreservingFillContainer
+                        {
+                            TargetDrawSize = new Vector2(1280, 960),
+                            RelativeSizeAxes = Axes.Both,
+                        }
+                    },
                 }
             };
 
