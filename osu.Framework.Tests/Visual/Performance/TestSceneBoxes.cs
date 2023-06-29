@@ -57,7 +57,7 @@ namespace osu.Framework.Tests.Visual.Performance
             {
                 var drawThread = Dependencies.Get<GameHost>().DrawThread;
 
-                drawThread.Scheduler.Add(() => drawThread.Monitor!.LogOutput = true);
+                // drawThread.Scheduler.Add(() => drawThread.Monitor!.LogOutput = true);
                 // Dependencies.Get<GameHost>().DrawThread.Monitor!.LogOutput = true;
             });
             AddStep("recreate", recreate);

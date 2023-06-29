@@ -28,7 +28,9 @@ using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -44,12 +46,14 @@ using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
+using osu.Framework.Testing;
+using osuTK.Graphics;
 using Rectangle = System.Drawing.Rectangle;
 using Size = System.Drawing.Size;
 
 namespace osu.Framework.Platform
 {
-    public abstract class GameHost : IIpcHost, IDisposable
+    public abstract partial class GameHost : IIpcHost, IDisposable
     {
         public IWindow Window { get; private set; }
 
@@ -530,7 +534,16 @@ namespace osu.Framework.Platform
                 }
 
                 // Back pass
-                buffer.Object.Draw(Renderer);
+                shader ??= Root.ChildrenOfType<Game>().Single().Shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
+                shader.Bind();
+
+                foreach (var quad in quads)
+                {
+                    Renderer.DrawQuad(Renderer.WhitePixel, new Quad(quad.TopLeft / 1.2f, quad.TopRight / 1.2f, quad.BottomLeft / 1.2f, quad.BottomRight / 1.2f), Color4.White);
+                    Renderer.FlushCurrentBatch(FlushBatchSource.SomethingElse);
+                }
+
+                shader.Unbind();
 
                 Renderer.PopDepthInfo();
 
@@ -1333,6 +1346,7 @@ namespace osu.Framework.Platform
         private bool isDisposed;
 
         private readonly ManualResetEventSlim stoppedEvent = new ManualResetEventSlim(false);
+        private IShader shader;
 
         protected virtual void Dispose(bool disposing)
         {

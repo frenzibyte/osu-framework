@@ -34,11 +34,6 @@ namespace osu.Framework.Tests.Visual.Performance
             });
         }
 
-        protected override void Update()
-        {
-            base.Update();
-        }
-
         private partial class TestSprite : Box
         {
             protected override DrawNode CreateDrawNode() => new TestSpriteDrawNode(this);
