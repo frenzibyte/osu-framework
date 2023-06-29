@@ -30,6 +30,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
@@ -42,12 +43,16 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Veldrid;
+using osu.Framework.Graphics.Veldrid.Shaders;
+using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
 using osu.Framework.Testing;
 using osuTK.Graphics;
+using Veldrid;
+using PrimitiveTopology = Veldrid.PrimitiveTopology;
 using Rectangle = System.Drawing.Rectangle;
 using Size = System.Drawing.Size;
 
@@ -534,13 +539,28 @@ namespace osu.Framework.Platform
                 }
 
                 // Back pass
+                var veldrid = (VeldridRenderer)Renderer;
+
                 shader ??= Root.ChildrenOfType<Game>().Single().Shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
-                shader.Bind();
+
+                veldridPipeline ??= veldrid.Factory.CreateGraphicsPipeline(new GraphicsPipelineDescription
+                {
+                    BlendState = BlendStateDescription.SingleOverrideBlend,
+                    DepthStencilState = DepthStencilStateDescription.DepthOnlyLessEqual with { DepthComparison = ComparisonKind.Less },
+                    Outputs = veldrid.Device.SwapchainFramebuffer.OutputDescription,
+                    PrimitiveTopology = PrimitiveTopology.TriangleList,
+                    RasterizerState = RasterizerStateDescription.CullNone,
+                    ResourceBindingModel = ResourceBindingModel.Improved,
+                    ResourceLayouts = Array.Empty<ResourceLayout>(),
+                    ShaderSet = new ShaderSetDescription(new[] { VeldridVertexUtils<DepthWrappingVertex<TexturedVertex2D>>.Layout }, ((VeldridShader)shader).Shaders)
+                });
 
                 Vector2 size = new Vector2(0.04f, 0.02f);
 
                 const int row = 20;
                 var spacing = new Vector2(size.X + 0.01f, size.Y + 0.01f);
+
+                veldrid.Commands.SetPipeline(veldridPipeline);
 
                 for (int i = 0; i < 500; i++)
                 {
@@ -551,8 +571,6 @@ namespace osu.Framework.Platform
                     Renderer.DrawQuad(Renderer.WhitePixel, new Quad(quad.TopLeft / 1.2f, quad.TopRight / 1.2f, quad.BottomLeft / 1.2f, quad.BottomRight / 1.2f), Color4.White);
                     Renderer.FlushCurrentBatch(FlushBatchSource.SomethingElse);
                 }
-
-                shader.Unbind();
 
                 Renderer.PopDepthInfo();
 
@@ -1356,6 +1374,7 @@ namespace osu.Framework.Platform
 
         private readonly ManualResetEventSlim stoppedEvent = new ManualResetEventSlim(false);
         private IShader shader;
+        private Pipeline veldridPipeline;
 
         protected virtual void Dispose(bool disposing)
         {

@@ -425,10 +425,8 @@ namespace osu.Framework.Graphics.Veldrid
 
         public void DrawVertices(PrimitiveTopology type, int indexStart, int indicesCount)
         {
-            var veldridShader = (VeldridShader)Shader!;
-
-            pipeline.PrimitiveTopology = type;
-            Array.Resize(ref pipeline.ResourceLayouts, veldridShader.LayoutCount);
+            // pipeline.PrimitiveTopology = type;
+            // Array.Resize(ref pipeline.ResourceLayouts, veldridShader.LayoutCount);
 
             // Activate texture layouts.
             // foreach (var (unit, _) in boundTextureUnits)
@@ -451,7 +449,7 @@ namespace osu.Framework.Graphics.Veldrid
             // }
 
             // Activate the pipeline.
-            Commands.SetPipeline(getPipelineInstance());
+            // Commands.SetPipeline(getPipelineInstance());
 
             // Activate texture resources.
             // foreach (var (unit, texture) in boundTextureUnits)
