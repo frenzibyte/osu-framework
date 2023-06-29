@@ -537,8 +537,17 @@ namespace osu.Framework.Platform
                 shader ??= Root.ChildrenOfType<Game>().Single().Shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
                 shader.Bind();
 
-                foreach (var quad in quads)
+                Vector2 size = new Vector2(0.04f, 0.02f);
+
+                const int row = 20;
+                var spacing = new Vector2(size.X + 0.01f, size.Y + 0.01f);
+
+                for (int i = 0; i < 500; i++)
                 {
+                    float x = (float)(0.01 + (i % row) * spacing.X) * 2 - 1;
+                    float y = (float)-((0.1 + Math.Truncate((double)i / row) * spacing.Y) * 2 - 1);
+                    var quad = new Quad(x, y, size.X, size.Y);
+
                     Renderer.DrawQuad(Renderer.WhitePixel, new Quad(quad.TopLeft / 1.2f, quad.TopRight / 1.2f, quad.BottomLeft / 1.2f, quad.BottomRight / 1.2f), Color4.White);
                     Renderer.FlushCurrentBatch(FlushBatchSource.SomethingElse);
                 }
