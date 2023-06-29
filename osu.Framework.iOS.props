@@ -48,6 +48,7 @@
   <Target Name="OsuFrameworkIOSRemoveQuartz" BeforeTargets="_ComputeLinkNativeExecutableInputs" AfterTargets="_LoadLinkerOutput">
     <ItemGroup>
       <_LinkerFrameworks Remove="Quartz"/>
+      <_LinkerFrameworks Remove="ApplicationServices"/>
     </ItemGroup>
   </Target>
 </Project>
