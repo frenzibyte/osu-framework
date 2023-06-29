@@ -176,7 +176,7 @@ namespace osu.Framework.Graphics.Rendering
 
             Initialise(graphicsSurface);
 
-            defaultQuadBatch = CreateQuadBatch<TexturedVertex2D>(100, 1000);
+            defaultQuadBatch = CreateQuadBatch<TexturedVertex2D>(2000, 1);
             resetScheduler.AddDelayed(disposalQueue.CheckPendingDisposals, 0, true);
 
             IsInitialised = true;
