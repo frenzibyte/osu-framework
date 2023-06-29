@@ -480,7 +480,7 @@ namespace osu.Framework.Platform
 
         private bool didRenderFrame;
 
-        protected virtual void DrawFrame()
+        protected virtual unsafe void DrawFrame()
         {
             if (Root == null)
                 return;
@@ -543,6 +543,28 @@ namespace osu.Framework.Platform
 
                 shader ??= Root.ChildrenOfType<Game>().Single().Shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
 
+                veldridVertexBuffer ??= veldrid.Factory.CreateBuffer(new BufferDescription((uint)(VeldridVertexUtils<TexturedVertex2D>.STRIDE * 500 * 4), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
+                veldridVertexResource ??= veldrid.Device.Map(veldridVertexBuffer, MapMode.Write);
+
+                if (veldridIndexBuffer == null)
+                {
+                    veldridIndexBuffer = veldrid.Factory.CreateBuffer(new BufferDescription(2 * 500 * 6, BufferUsage.IndexBuffer | BufferUsage.Dynamic));
+
+                    ushort[] indices = new ushort[500 * 6];
+
+                    for (int i = 0; i < 500; i++)
+                    {
+                        indices[i * 6] = (ushort)(i * 4 + 0);
+                        indices[i * 6 + 1] = (ushort)(i * 4 + 1);
+                        indices[i * 6 + 2] = (ushort)(i * 4 + 3);
+                        indices[i * 6 + 3] = (ushort)(i * 4 + 2);
+                        indices[i * 6 + 4] = (ushort)(i * 4 + 3);
+                        indices[i * 6 + 5] = (ushort)(i * 4 + 1);
+                    }
+
+                    veldrid.Device.UpdateBuffer(veldridIndexBuffer, 0, indices);
+                }
+
                 veldridPipeline ??= veldrid.Factory.CreateGraphicsPipeline(new GraphicsPipelineDescription
                 {
                     BlendState = BlendStateDescription.SingleOverrideBlend,
@@ -552,7 +574,7 @@ namespace osu.Framework.Platform
                     RasterizerState = RasterizerStateDescription.CullNone,
                     ResourceBindingModel = ResourceBindingModel.Improved,
                     ResourceLayouts = Array.Empty<ResourceLayout>(),
-                    ShaderSet = new ShaderSetDescription(new[] { VeldridVertexUtils<DepthWrappingVertex<TexturedVertex2D>>.Layout }, ((VeldridShader)shader).Shaders)
+                    ShaderSet = new ShaderSetDescription(new[] { VeldridVertexUtils<TexturedVertex2D>.Layout }, ((VeldridShader)shader).Shaders)
                 });
 
                 Vector2 size = new Vector2(0.04f, 0.02f);
@@ -561,15 +583,30 @@ namespace osu.Framework.Platform
                 var spacing = new Vector2(size.X + 0.01f, size.Y + 0.01f);
 
                 veldrid.Commands.SetPipeline(veldridPipeline);
+                veldrid.Commands.SetVertexBuffer(0, veldridVertexBuffer);
+                veldrid.Commands.SetIndexBuffer(veldridIndexBuffer, IndexFormat.UInt16);
+
+                int vertexIndex = 0;
 
                 for (int i = 0; i < 500; i++)
                 {
                     float x = (float)(0.01 + (i % row) * spacing.X) * 2 - 1;
                     float y = (float)-((0.1 + Math.Truncate((double)i / row) * spacing.Y) * 2 - 1);
                     var quad = new Quad(x, y, size.X, size.Y);
+                    quad = new Quad(quad.TopLeft / 1.2f, quad.TopRight / 1.2f, quad.BottomLeft / 1.2f, quad.BottomRight / 1.2f);
 
-                    Renderer.DrawQuad(Renderer.WhitePixel, new Quad(quad.TopLeft / 1.2f, quad.TopRight / 1.2f, quad.BottomLeft / 1.2f, quad.BottomRight / 1.2f), Color4.White);
-                    Renderer.FlushCurrentBatch(FlushBatchSource.SomethingElse);
+                    // vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.BottomLeft }; // 0
+                    // vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.BottomRight }; // 1
+                    // vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.TopLeft }; // 3
+                    // vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.TopRight }; // 2
+                    // vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.TopLeft }; // 3
+                    // vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.BottomRight }; // 1
+                    vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.BottomLeft }; // 0
+                    vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.BottomRight }; // 1
+                    vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.TopRight }; // 2
+                    vertices[vertexIndex++] = new TexturedVertex2D { Position = quad.TopLeft }; // 3
+
+                    veldrid.Commands.DrawIndexed(6, 1, (uint)((vertexIndex - 4) * 1.5f), 0, 0);
                 }
 
                 Renderer.PopDepthInfo();
@@ -1375,6 +1412,10 @@ namespace osu.Framework.Platform
         private readonly ManualResetEventSlim stoppedEvent = new ManualResetEventSlim(false);
         private IShader shader;
         private Pipeline veldridPipeline;
+        private DeviceBuffer veldridVertexBuffer;
+        private MappedResource? veldridVertexResource;
+        private DeviceBuffer veldridIndexBuffer;
+        private unsafe TexturedVertex2D* vertices => (TexturedVertex2D*)veldridVertexResource!.Value.Data;
 
         protected virtual void Dispose(bool disposing)
         {
