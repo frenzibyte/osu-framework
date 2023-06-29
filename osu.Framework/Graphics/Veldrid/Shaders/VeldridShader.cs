@@ -211,7 +211,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                 renderer.Factory.CreateShader(fragmentShaderDescription)
             };
 
-            BindUniformBlock("g_GlobalUniforms", globalUniformBuffer);
+            // BindUniformBlock("g_GlobalUniforms", globalUniformBuffer);
         }
 
         private bool isDisposed;

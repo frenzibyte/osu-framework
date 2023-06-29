@@ -441,14 +441,14 @@ namespace osu.Framework.Graphics.Veldrid
             // }
 
             // Activate uniform buffer layouts.
-            foreach (var (name, _) in boundUniformBuffers)
-            {
-                var layout = veldridShader.GetUniformBufferLayout(name);
-                if (layout == null)
-                    continue;
-
-                pipeline.ResourceLayouts[layout.Set] = layout.Layout;
-            }
+            // foreach (var (name, _) in boundUniformBuffers)
+            // {
+            //     var layout = veldridShader.GetUniformBufferLayout(name);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     pipeline.ResourceLayouts[layout.Set] = layout.Layout;
+            // }
 
             // Activate the pipeline.
             Commands.SetPipeline(getPipelineInstance());
@@ -464,14 +464,14 @@ namespace osu.Framework.Graphics.Veldrid
             // }
 
             // Activate uniform buffer resources.
-            foreach (var (name, buffer) in boundUniformBuffers)
-            {
-                var layout = veldridShader.GetUniformBufferLayout(name);
-                if (layout == null)
-                    continue;
-
-                Commands.SetGraphicsResourceSet((uint)layout.Set, buffer.GetResourceSet(layout.Layout));
-            }
+            // foreach (var (name, buffer) in boundUniformBuffers)
+            // {
+            //     var layout = veldridShader.GetUniformBufferLayout(name);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     Commands.SetGraphicsResourceSet((uint)layout.Set, buffer.GetResourceSet(layout.Layout));
+            // }
 
             Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
         }

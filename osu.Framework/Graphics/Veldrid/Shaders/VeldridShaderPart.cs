@@ -49,10 +49,10 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
             // Update the location of the m_BackbufferDrawDepth input to be placed after all other inputs.
             code = code.Replace("layout(location = -1)", $"layout(location = {lastInputIndex + 1})");
 
-            // Increment the binding set of all uniform blocks.
-            // After this transformation, the g_GlobalUniforms block is placed in set 0 and all other user blocks begin from 1.
-            // The difference in implementation here (compared to above) is intentional, as uniform blocks must be consistent between the shader stages, so they can't be easily appended.
-            code = uniform_pattern.Replace(code, match => $"{match.Groups[1].Value}set = {int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) + 1}{match.Groups[3].Value}");
+            // // Increment the binding set of all uniform blocks.
+            // // After this transformation, the g_GlobalUniforms block is placed in set 0 and all other user blocks begin from 1.
+            // // The difference in implementation here (compared to above) is intentional, as uniform blocks must be consistent between the shader stages, so they can't be easily appended.
+            // code = uniform_pattern.Replace(code, match => $"{match.Groups[1].Value}set = {int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) + 1}{match.Groups[3].Value}");
         }
 
         private VeldridShaderPart(string code, string header, ShaderPartType type, IShaderStore store)
@@ -111,7 +111,7 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                 if (mainFile)
                 {
                     string internalIncludes = loadFile(store.GetRawData("Internal/sh_Compatibility.h"), false) + "\n";
-                    internalIncludes += loadFile(store.GetRawData("Internal/sh_GlobalUniforms.h"), false) + "\n";
+                    // internalIncludes += loadFile(store.GetRawData("Internal/sh_GlobalUniforms.h"), false) + "\n";
                     result = internalIncludes + result;
 
                     Inputs.AddRange(shader_input_pattern.Matches(result).Select(m => new VeldridShaderAttribute(int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture), m.Groups[2].Value)).ToList());
