@@ -431,14 +431,14 @@ namespace osu.Framework.Graphics.Veldrid
             Array.Resize(ref pipeline.ResourceLayouts, veldridShader.LayoutCount);
 
             // Activate texture layouts.
-            foreach (var (unit, _) in boundTextureUnits)
-            {
-                var layout = veldridShader.GetTextureLayout(unit);
-                if (layout == null)
-                    continue;
-
-                pipeline.ResourceLayouts[layout.Set] = layout.Layout;
-            }
+            // foreach (var (unit, _) in boundTextureUnits)
+            // {
+            //     var layout = veldridShader.GetTextureLayout(unit);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     pipeline.ResourceLayouts[layout.Set] = layout.Layout;
+            // }
 
             // Activate uniform buffer layouts.
             foreach (var (name, _) in boundUniformBuffers)
@@ -454,14 +454,14 @@ namespace osu.Framework.Graphics.Veldrid
             Commands.SetPipeline(getPipelineInstance());
 
             // Activate texture resources.
-            foreach (var (unit, texture) in boundTextureUnits)
-            {
-                var layout = veldridShader.GetTextureLayout(unit);
-                if (layout == null)
-                    continue;
-
-                Commands.SetGraphicsResourceSet((uint)layout.Set, texture.GetResourceSet(this, layout.Layout));
-            }
+            // foreach (var (unit, texture) in boundTextureUnits)
+            // {
+            //     var layout = veldridShader.GetTextureLayout(unit);
+            //     if (layout == null)
+            //         continue;
+            //
+            //     Commands.SetGraphicsResourceSet((uint)layout.Set, texture.GetResourceSet(this, layout.Layout));
+            // }
 
             // Activate uniform buffer resources.
             foreach (var (name, buffer) in boundUniformBuffers)
