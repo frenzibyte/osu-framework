@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using osu.Framework.Caching;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
@@ -60,23 +61,14 @@ namespace osu.Framework.Graphics.Veldrid
         public CommandList Commands { get; private set; } = null!;
         public CommandList BufferUpdateCommands { get; private set; } = null!;
 
+        public VeldridPipeline Pipeline = null!;
+
         public VeldridIndexData SharedLinearIndex { get; }
         public VeldridIndexData SharedQuadIndex { get; }
 
         private readonly HashSet<IVeldridUniformBuffer> uniformBufferResetList = new HashSet<IVeldridUniformBuffer>();
-        private readonly Dictionary<int, VeldridTextureResources> boundTextureUnits = new Dictionary<int, VeldridTextureResources>();
-        private readonly Dictionary<string, IVeldridUniformBuffer> boundUniformBuffers = new Dictionary<string, IVeldridUniformBuffer>();
         private IGraphicsSurface graphicsSurface = null!;
         private DeviceBuffer? boundVertexBuffer;
-
-        private GraphicsPipelineDescription pipeline = new GraphicsPipelineDescription
-        {
-            RasterizerState = RasterizerStateDescription.CullNone,
-            BlendState = BlendStateDescription.SingleOverrideBlend,
-            ShaderSet = { VertexLayouts = new VertexLayoutDescription[1] }
-        };
-
-        private static readonly GlobalStatistic<int> stat_graphics_pipeline_created = GlobalStatistics.Get<int>(nameof(VeldridRenderer), "Total pipelines created");
 
         public VeldridRenderer()
         {
@@ -198,7 +190,13 @@ namespace osu.Framework.Graphics.Veldrid
             Commands = Factory.CreateCommandList();
             BufferUpdateCommands = Factory.CreateCommandList();
 
-            pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
+            Pipeline = new VeldridPipeline(this, new GraphicsPipelineDescription
+            {
+                RasterizerState = RasterizerStateDescription.CullNone,
+                BlendState = BlendStateDescription.SingleOverrideBlend,
+                ShaderSet = { VertexLayouts = new VertexLayoutDescription[1] },
+                Outputs = Device.SwapchainFramebuffer.OutputDescription
+            });
         }
 
         private Vector2 currentSize;
@@ -217,6 +215,8 @@ namespace osu.Framework.Graphics.Veldrid
 
             Commands.Begin();
             BufferUpdateCommands.Begin();
+
+            Pipeline.NewFrame();
 
             base.BeginFrame(windowSize);
         }
@@ -263,7 +263,11 @@ namespace osu.Framework.Graphics.Veldrid
                 Commands.ClearDepthStencil((float)clearInfo.Depth, (byte)clearInfo.Stencil);
         }
 
-        protected override void SetScissorStateImplementation(bool enabled) => pipeline.RasterizerState.ScissorTestEnabled = enabled;
+        protected override void SetScissorStateImplementation(bool enabled) => Pipeline.UpdateState(pipeline =>
+        {
+            pipeline.RasterizerState.ScissorTestEnabled = enabled;
+            return pipeline;
+        });
 
         protected override bool SetTextureImplementation(INativeTexture? texture, int unit)
         {
@@ -273,7 +277,7 @@ namespace osu.Framework.Graphics.Veldrid
             var resources = veldridTexture.GetResourceList();
 
             for (int i = 0; i < resources.Count; i++)
-                BindTextureResource(resources[i], unit++);
+                Pipeline.BindTextureResource(resources[i], unit++);
 
             return true;
         }
@@ -341,23 +345,31 @@ namespace osu.Framework.Graphics.Veldrid
         protected override void SetShaderImplementation(IShader shader)
         {
             var veldridShader = (VeldridShader)shader;
-            pipeline.ShaderSet.Shaders = veldridShader.Shaders;
+            Pipeline.BindShader(veldridShader);
         }
 
         protected override void SetBlendImplementation(BlendingParameters blendingParameters)
         {
-            pipeline.BlendState.AttachmentStates[0].BlendEnabled = !blendingParameters.IsDisabled;
-            pipeline.BlendState.AttachmentStates[0].SourceColorFactor = blendingParameters.Source.ToBlendFactor();
-            pipeline.BlendState.AttachmentStates[0].SourceAlphaFactor = blendingParameters.SourceAlpha.ToBlendFactor();
-            pipeline.BlendState.AttachmentStates[0].DestinationColorFactor = blendingParameters.Destination.ToBlendFactor();
-            pipeline.BlendState.AttachmentStates[0].DestinationAlphaFactor = blendingParameters.DestinationAlpha.ToBlendFactor();
-            pipeline.BlendState.AttachmentStates[0].ColorFunction = blendingParameters.RGBEquation.ToBlendFunction();
-            pipeline.BlendState.AttachmentStates[0].AlphaFunction = blendingParameters.AlphaEquation.ToBlendFunction();
+            Pipeline.UpdateState(pipeline =>
+            {
+                pipeline.BlendState.AttachmentStates[0].BlendEnabled = !blendingParameters.IsDisabled;
+                pipeline.BlendState.AttachmentStates[0].SourceColorFactor = blendingParameters.Source.ToBlendFactor();
+                pipeline.BlendState.AttachmentStates[0].SourceAlphaFactor = blendingParameters.SourceAlpha.ToBlendFactor();
+                pipeline.BlendState.AttachmentStates[0].DestinationColorFactor = blendingParameters.Destination.ToBlendFactor();
+                pipeline.BlendState.AttachmentStates[0].DestinationAlphaFactor = blendingParameters.DestinationAlpha.ToBlendFactor();
+                pipeline.BlendState.AttachmentStates[0].ColorFunction = blendingParameters.RGBEquation.ToBlendFunction();
+                pipeline.BlendState.AttachmentStates[0].AlphaFunction = blendingParameters.AlphaEquation.ToBlendFunction();
+                return pipeline;
+            });
         }
 
         protected override void SetBlendMaskImplementation(BlendingMask blendingMask)
         {
-            pipeline.BlendState.AttachmentStates[0].ColorWriteMask = blendingMask.ToColorWriteMask();
+            Pipeline.UpdateState(pipeline =>
+            {
+                pipeline.BlendState.AttachmentStates[0].ColorWriteMask = blendingMask.ToColorWriteMask();
+                return pipeline;
+            });
         }
 
         protected override void SetViewportImplementation(RectangleI viewport)
@@ -372,20 +384,28 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected override void SetDepthInfoImplementation(DepthInfo depthInfo)
         {
-            pipeline.DepthStencilState.DepthTestEnabled = depthInfo.DepthTest;
-            pipeline.DepthStencilState.DepthWriteEnabled = depthInfo.WriteDepth;
-            pipeline.DepthStencilState.DepthComparison = depthInfo.Function.ToComparisonKind();
+            Pipeline.UpdateState(pipeline =>
+            {
+                pipeline.DepthStencilState.DepthTestEnabled = depthInfo.DepthTest;
+                pipeline.DepthStencilState.DepthWriteEnabled = depthInfo.WriteDepth;
+                pipeline.DepthStencilState.DepthComparison = depthInfo.Function.ToComparisonKind();
+                return pipeline;
+            });
         }
 
         protected override void SetStencilInfoImplementation(StencilInfo stencilInfo)
         {
-            pipeline.DepthStencilState.StencilTestEnabled = stencilInfo.StencilTest;
-            pipeline.DepthStencilState.StencilReference = (uint)stencilInfo.TestValue;
-            pipeline.DepthStencilState.StencilReadMask = pipeline.DepthStencilState.StencilWriteMask = (byte)stencilInfo.Mask;
-            pipeline.DepthStencilState.StencilBack.Pass = pipeline.DepthStencilState.StencilFront.Pass = stencilInfo.TestPassedOperation.ToStencilOperation();
-            pipeline.DepthStencilState.StencilBack.Fail = pipeline.DepthStencilState.StencilFront.Fail = stencilInfo.StencilTestFailOperation.ToStencilOperation();
-            pipeline.DepthStencilState.StencilBack.DepthFail = pipeline.DepthStencilState.StencilFront.DepthFail = stencilInfo.DepthTestFailOperation.ToStencilOperation();
-            pipeline.DepthStencilState.StencilBack.Comparison = pipeline.DepthStencilState.StencilFront.Comparison = stencilInfo.TestFunction.ToComparisonKind();
+            Pipeline.UpdateState(pipeline =>
+            {
+                pipeline.DepthStencilState.StencilTestEnabled = stencilInfo.StencilTest;
+                pipeline.DepthStencilState.StencilReference = (uint)stencilInfo.TestValue;
+                pipeline.DepthStencilState.StencilReadMask = pipeline.DepthStencilState.StencilWriteMask = (byte)stencilInfo.Mask;
+                pipeline.DepthStencilState.StencilBack.Pass = pipeline.DepthStencilState.StencilFront.Pass = stencilInfo.TestPassedOperation.ToStencilOperation();
+                pipeline.DepthStencilState.StencilBack.Fail = pipeline.DepthStencilState.StencilFront.Fail = stencilInfo.StencilTestFailOperation.ToStencilOperation();
+                pipeline.DepthStencilState.StencilBack.DepthFail = pipeline.DepthStencilState.StencilFront.DepthFail = stencilInfo.DepthTestFailOperation.ToStencilOperation();
+                pipeline.DepthStencilState.StencilBack.Comparison = pipeline.DepthStencilState.StencilFront.Comparison = stencilInfo.TestFunction.ToComparisonKind();
+                return pipeline;
+            });
         }
 
         protected override void SetFrameBufferImplementation(IFrameBuffer? frameBuffer)
@@ -399,16 +419,27 @@ namespace osu.Framework.Graphics.Veldrid
         public void SetFramebuffer(Framebuffer framebuffer)
         {
             Commands.SetFramebuffer(framebuffer);
-            pipeline.Outputs = framebuffer.OutputDescription;
+
+            Pipeline.UpdateState(pipeline =>
+            {
+                pipeline.Outputs = framebuffer.OutputDescription;
+                return pipeline;
+            });
         }
 
-        public void BindVertexBuffer(DeviceBuffer buffer, VertexLayoutDescription layout)
+        public void BindVertexBuffer(DeviceBuffer buffer, VertexLayoutDescription layout, PrimitiveTopology type)
         {
             if (buffer == boundVertexBuffer)
                 return;
 
             Commands.SetVertexBuffer(0, buffer);
-            pipeline.ShaderSet.VertexLayouts[0] = layout;
+
+            Pipeline.UpdateState(pipeline =>
+            {
+                pipeline.ShaderSet.VertexLayouts[0] = layout;
+                pipeline.PrimitiveTopology = type;
+                return pipeline;
+            });
 
             FrameStatistics.Increment(StatisticsCounterType.VBufBinds);
 
@@ -420,60 +451,7 @@ namespace osu.Framework.Graphics.Veldrid
         public void BindUniformBuffer(string blockName, IVeldridUniformBuffer veldridBuffer)
         {
             FlushCurrentBatch(FlushBatchSource.BindBuffer);
-            boundUniformBuffers[blockName] = veldridBuffer;
-        }
-
-        public void DrawVertices(PrimitiveTopology type, int indexStart, int indicesCount)
-        {
-            var veldridShader = (VeldridShader)Shader!;
-
-            pipeline.PrimitiveTopology = type;
-            Array.Resize(ref pipeline.ResourceLayouts, veldridShader.LayoutCount);
-
-            // Activate texture layouts.
-            foreach (var (unit, _) in boundTextureUnits)
-            {
-                var layout = veldridShader.GetTextureLayout(unit);
-                if (layout == null)
-                    continue;
-
-                pipeline.ResourceLayouts[layout.Set] = layout.Layout;
-            }
-
-            // Activate uniform buffer layouts.
-            foreach (var (name, _) in boundUniformBuffers)
-            {
-                var layout = veldridShader.GetUniformBufferLayout(name);
-                if (layout == null)
-                    continue;
-
-                pipeline.ResourceLayouts[layout.Set] = layout.Layout;
-            }
-
-            // Activate the pipeline.
-            Commands.SetPipeline(getPipelineInstance());
-
-            // Activate texture resources.
-            foreach (var (unit, texture) in boundTextureUnits)
-            {
-                var layout = veldridShader.GetTextureLayout(unit);
-                if (layout == null)
-                    continue;
-
-                Commands.SetGraphicsResourceSet((uint)layout.Set, texture.GetResourceSet(this, layout.Layout));
-            }
-
-            // Activate uniform buffer resources.
-            foreach (var (name, buffer) in boundUniformBuffers)
-            {
-                var layout = veldridShader.GetUniformBufferLayout(name);
-                if (layout == null)
-                    continue;
-
-                Commands.SetGraphicsResourceSet((uint)layout.Set, buffer.GetResourceSet(layout.Layout));
-            }
-
-            Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
+            Pipeline.BindUniformBuffer(veldridBuffer, blockName);
         }
 
         /// <summary>
@@ -492,19 +470,6 @@ namespace osu.Framework.Graphics.Veldrid
                 UnbindFrameBuffer(frameBuffer);
 
             frameBuffer.DeleteResources(true);
-        }
-
-        private readonly Dictionary<GraphicsPipelineDescription, Pipeline> pipelineCache = new Dictionary<GraphicsPipelineDescription, Pipeline>();
-
-        private Pipeline getPipelineInstance()
-        {
-            if (!pipelineCache.TryGetValue(pipeline, out var instance))
-            {
-                pipelineCache[pipeline.Clone()] = instance = Factory.CreateGraphicsPipeline(ref pipeline);
-                stat_graphics_pipeline_created.Value++;
-            }
-
-            return instance;
         }
 
         protected internal override unsafe Image<Rgba32> TakeScreenshot()
@@ -640,7 +605,5 @@ namespace osu.Framework.Graphics.Veldrid
         {
             uniformBufferResetList.Add(buffer);
         }
-
-        public void BindTextureResource(VeldridTextureResources resource, int unit) => boundTextureUnits[unit] = resource;
     }
 }

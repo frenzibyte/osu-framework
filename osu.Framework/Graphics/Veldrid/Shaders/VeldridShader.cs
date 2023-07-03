@@ -40,8 +40,8 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
         IReadOnlyDictionary<string, IUniform> IShader.Uniforms => throw new NotSupportedException();
         public int LayoutCount => uniformLayouts.Count + textureLayouts.Count;
 
-        private readonly Dictionary<string, VeldridUniformLayout> uniformLayouts = new Dictionary<string, VeldridUniformLayout>();
-        private readonly List<VeldridUniformLayout> textureLayouts = new List<VeldridUniformLayout>();
+        private readonly Dictionary<string, VeldridResourceLayout> uniformLayouts = new Dictionary<string, VeldridResourceLayout>();
+        private readonly List<VeldridResourceLayout> textureLayouts = new List<VeldridResourceLayout>();
 
         public VeldridShader(VeldridRenderer renderer, string name, VeldridShaderPart[] parts, IUniformBuffer<GlobalUniformData> globalUniformBuffer, ShaderCompilationStore compilationStore)
         {
@@ -104,9 +104,9 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
             renderer.BindUniformBuffer(blockName, veldridBuffer);
         }
 
-        public VeldridUniformLayout? GetTextureLayout(int textureUnit) => textureUnit >= textureLayouts.Count ? null : textureLayouts[textureUnit];
+        public VeldridResourceLayout? GetTextureLayout(int textureUnit) => textureUnit >= textureLayouts.Count ? null : textureLayouts[textureUnit];
 
-        public VeldridUniformLayout? GetUniformBufferLayout(string name) => uniformLayouts.GetValueOrDefault(name);
+        public VeldridResourceLayout? GetUniformBufferLayout(string name) => uniformLayouts.GetValueOrDefault(name);
 
         private void compile()
         {
@@ -186,10 +186,10 @@ namespace osu.Framework.Graphics.Veldrid.Shaders
                         if (layout.Elements.All(e => e.Kind != ResourceKind.Sampler))
                             throw new InvalidOperationException($"Texture {textureElement.Name} has no associated sampler.");
 
-                        textureLayouts.Add(new VeldridUniformLayout(set, renderer.Factory.CreateResourceLayout(layout)));
+                        textureLayouts.Add(new VeldridResourceLayout(set, renderer.Factory.CreateResourceLayout(layout)));
                     }
                     else if (layout.Elements[0].Kind == ResourceKind.UniformBuffer)
-                        uniformLayouts[layout.Elements[0].Name] = new VeldridUniformLayout(set, renderer.Factory.CreateResourceLayout(layout));
+                        uniformLayouts[layout.Elements[0].Name] = new VeldridResourceLayout(set, renderer.Factory.CreateResourceLayout(layout));
                 }
 
                 Logger.Log(cached

@@ -109,7 +109,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 Initialise();
 
             Debug.Assert(gpuBuffer != null);
-            renderer.BindVertexBuffer(gpuBuffer, VeldridVertexUtils<DepthWrappingVertex<T>>.Layout);
+
+            renderer.BindVertexBuffer(gpuBuffer, VeldridVertexUtils<DepthWrappingVertex<T>>.Layout, Type);
         }
 
         public virtual void Unbind()
@@ -127,7 +128,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             Bind();
 
             int countVertices = endIndex - startIndex;
-            renderer.DrawVertices(Type, ToElementIndex(startIndex), ToElements(countVertices));
+            renderer.Pipeline.PrepareForDraw();
+            renderer.Commands.DrawIndexed((uint)ToElements(countVertices), 1, (uint)ToElementIndex(startIndex), 0, 0);
 
             Unbind();
         }
