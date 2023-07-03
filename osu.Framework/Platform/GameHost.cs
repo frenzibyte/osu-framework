@@ -28,7 +28,9 @@ using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -1485,5 +1487,50 @@ namespace osu.Framework.Platform
         /// <see cref="GameHost.Run"/> has been invoked.
         /// </summary>
         Running = 3
+    }
+
+    public partial class MyDrawable : Drawable, ITexturedShaderDrawable
+    {
+        public IShader TextureShader { get; private set; }
+
+        [BackgroundDependencyLoader]
+        private void load(ShaderManager shaders)
+        {
+            TextureShader = shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
+        }
+
+        protected override DrawNode CreateDrawNode() => new MyDrawNode(this);
+
+        private class MyDrawNode : TexturedShaderDrawNode
+        {
+            public MyDrawNode(ITexturedShaderDrawable source)
+                : base(source)
+            {
+            }
+
+            public override void Draw(IRenderer renderer)
+            {
+                base.Draw(renderer);
+
+                BindTextureShader(renderer);
+
+                Vector2 size = new Vector2(0.04f, 0.02f);
+
+                const int row = 20;
+                var spacing = new Vector2(size.X + 0.01f, size.Y + 0.01f);
+
+                for (int i = 0; i < 500; i++)
+                {
+                    float x = (float)(0.01 + (i % row) * spacing.X) * 2 - 1;
+                    float y = (float)-((0.1 + Math.Truncate((double)i / row) * spacing.Y) * 2 - 1);
+                    var quad = new Quad(x, y, size.X, size.Y);
+
+                    renderer.DrawQuad(renderer.WhitePixel, quad, Colour4.White);
+                    renderer.FlushCurrentBatch(null);
+                }
+
+                UnbindTextureShader(renderer);
+            }
+        }
     }
 }
