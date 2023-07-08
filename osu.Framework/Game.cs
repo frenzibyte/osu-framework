@@ -9,7 +9,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
-using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Performance;
@@ -266,7 +265,7 @@ namespace osu.Framework
 
             FrameStatistics.BindValueChanged(e => performanceOverlay.State = e.NewValue, true);
 
-            if (DebugUtils.IsDebugBuild)
+            // if (DebugUtils.IsDebugBuild)
             {
                 base.AddInternal(new FrameStatisticsTouchReceptor(this)
                 {
