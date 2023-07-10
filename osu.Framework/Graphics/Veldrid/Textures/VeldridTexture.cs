@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -23,7 +24,7 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 {
     internal class VeldridTexture : INativeTexture
     {
-        private readonly Queue<ITextureUpload> uploadQueue = new Queue<ITextureUpload>();
+        private readonly ConcurrentQueue<ITextureUpload> uploadQueue = new ConcurrentQueue<ITextureUpload>();
 
         IRenderer INativeTexture.Renderer => Renderer;
 
@@ -186,14 +187,11 @@ namespace osu.Framework.Graphics.Veldrid.Textures
 
         public void SetData(ITextureUpload upload)
         {
-            lock (uploadQueue)
-            {
-                bool requireUpload = uploadQueue.Count == 0;
-                uploadQueue.Enqueue(upload);
+            bool requireUpload = uploadQueue.Count == 0;
+            uploadQueue.Enqueue(upload);
 
-                if (requireUpload && !BypassTextureUploadQueueing)
-                    Renderer.EnqueueTextureUpload(this);
-            }
+            if (requireUpload && !BypassTextureUploadQueueing)
+                Renderer.EnqueueTextureUpload(this);
         }
 
         public virtual bool Bind(int unit, WrapMode wrapModeS, WrapMode wrapModeT)
@@ -388,34 +386,14 @@ namespace osu.Framework.Graphics.Veldrid.Textures
             return uploadedRegions.Count != 0;
         }
 
-        public bool UploadComplete
-        {
-            get
-            {
-                lock (uploadQueue)
-                    return uploadQueue.Count == 0;
-            }
-        }
+        public bool UploadComplete => uploadQueue.IsEmpty;
 
         /// <summary>
         /// Whether the texture is currently queued for upload.
         /// </summary>
         public bool IsQueuedForUpload { get; set; }
 
-        private bool tryGetNextUpload([NotNullWhen(true)] out ITextureUpload? upload)
-        {
-            lock (uploadQueue)
-            {
-                if (uploadQueue.Count == 0)
-                {
-                    upload = null;
-                    return false;
-                }
-
-                upload = uploadQueue.Dequeue();
-                return true;
-            }
-        }
+        private bool tryGetNextUpload([NotNullWhen(true)] out ITextureUpload? upload) => uploadQueue.TryDequeue(out upload);
 
         private int? mipLevel;
 

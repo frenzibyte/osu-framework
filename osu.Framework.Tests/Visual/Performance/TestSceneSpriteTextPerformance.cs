@@ -19,19 +19,19 @@ namespace osu.Framework.Tests.Visual.Performance
             base.LoadComplete();
 
             AddLabel("Sprite Texts");
-            AddSliderStep("word length", 1, 10, 5, v =>
+            AddSliderStep("word length", 1, 10, 10, v =>
             {
                 wordLength = v;
                 recreate();
             });
 
-            AddSliderStep("words count", 1, 100, 20, v =>
+            AddSliderStep("words count", 1, 100, 100, v =>
             {
                 wordsCount = v;
                 recreate();
             });
 
-            AddSliderStep("paragraphs count", 1, 20, 1, v =>
+            AddSliderStep("paragraphs count", 1, 20, 20, v =>
             {
                 paragraphsCount = v;
                 recreate();

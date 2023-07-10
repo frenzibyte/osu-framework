@@ -10,6 +10,8 @@ using System.Threading;
 using Microsoft.Extensions.ObjectPool;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Platform.MacOS.Native;
 using osu.Framework.Utils;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
@@ -61,6 +63,9 @@ namespace osu.Framework.Statistics
 
         public double FrameAimTime => 1000.0 / (Clock?.MaximumUpdateHz > 0 ? Clock.MaximumUpdateHz : double.MaxValue);
 
+        public readonly OSLog AppleLog;
+        public readonly OSSignpostID AppleSignpost;
+
         internal PerformanceMonitor(GameThread thread, IEnumerable<StatisticsCounterType> counters)
         {
             Clock = thread.Clock;
@@ -77,7 +82,13 @@ namespace osu.Framework.Statistics
             for (int i = 0; i < FrameStatistics.NUM_PERFORMANCE_COLLECTION_TYPES; i++)
             {
                 var t = (PerformanceCollectionType)i;
-                endCollectionDelegates[i] = new InvokeOnDisposal(() => endCollecting(t));
+                endCollectionDelegates[i] = new InvokeOnDisposal(() => endCollecting(t, t >= PerformanceCollectionType.DrawCall));
+            }
+
+            if (RuntimeInfo.IsApple && thread is DrawThread)
+            {
+                AppleLog = OS.os_log_create(threadName, OS.OS_LOG_CATEGORY_POINTS_OF_INTEREST);
+                AppleSignpost = OS.os_signpost_id_generate(AppleLog);
             }
         }
 
@@ -101,7 +112,7 @@ namespace osu.Framework.Statistics
         /// <summary>
         /// Start collecting a type of passing time.
         /// </summary>
-        public InvokeOnDisposal BeginCollecting(PerformanceCollectionType type)
+        public InvokeOnDisposal BeginCollecting(PerformanceCollectionType type, bool signpost = false)
         {
             // Consume time, regardless of whether we are using it at this point.
             // If not, an `EndCollecting` call may end up reporting more time than actually passed between
@@ -118,6 +129,9 @@ namespace osu.Framework.Statistics
 
             currentCollectionTypeStack.Push(type);
 
+            // if (RuntimeInfo.IsApple && AppleLog.Handle != IntPtr.Zero && signpost)
+            //     OS.signpost_interval_begin(AppleLog, AppleSignpost, Enum.GetName(type)!);
+
             return endCollectionDelegates[(int)type];
         }
 
@@ -125,8 +139,11 @@ namespace osu.Framework.Statistics
         /// End collecting a type of passing time (that was previously started).
         /// </summary>
         /// <param name="type"></param>
-        private void endCollecting(PerformanceCollectionType type)
+        private void endCollecting(PerformanceCollectionType type, bool signpost = false)
         {
+            // if (RuntimeInfo.IsApple && AppleLog.Handle != IntPtr.Zero && signpost)
+            //     OS.signpost_interval_end(AppleLog, AppleSignpost, Enum.GetName(type)!);
+
             currentCollectionTypeStack.Pop();
 
             currentFrame.CollectedTimes.TryAdd(type, 0);
@@ -241,5 +258,17 @@ namespace osu.Framework.Statistics
         }
 
         #endregion
+
+        public void BeginInterval(string name)
+        {
+            if (Renderer.StaticFrameIndex % 100 == 0)
+                OS.signpost_interval_begin(AppleLog, AppleSignpost, name);
+        }
+
+        public void EndInterval(string name)
+        {
+            if (Renderer.StaticFrameIndex % 100 == 0)
+                OS.signpost_interval_end(AppleLog, AppleSignpost, name);
+        }
     }
 }

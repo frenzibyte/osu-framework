@@ -18,7 +18,9 @@ using osu.Framework.Graphics.Veldrid.Buffers;
 using osu.Framework.Graphics.Veldrid.Buffers.Staging;
 using osu.Framework.Graphics.Veldrid.Shaders;
 using osu.Framework.Graphics.Veldrid.Textures;
+using osu.Framework.Platform.MacOS.Native;
 using osu.Framework.Statistics;
+using osu.Framework.Threading;
 using osuTK;
 using osuTK.Graphics;
 using SixLabors.ImageSharp;
@@ -488,6 +490,8 @@ namespace osu.Framework.Graphics.Veldrid
 
         public void DrawVertices(PrimitiveTopology type, int indexStart, int indicesCount)
         {
+            DrawThread.DrawMonitor.BeginInterval("Draw call");
+
             var veldridShader = (VeldridShader)Shader!;
 
             pipeline.PrimitiveTopology = type;
@@ -537,6 +541,8 @@ namespace osu.Framework.Graphics.Veldrid
             }
 
             Commands.DrawIndexed((uint)indicesCount, 1, (uint)indexStart, 0, 0);
+
+            DrawThread.DrawMonitor.EndInterval("Draw call");
         }
 
         /// <summary>

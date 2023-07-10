@@ -50,6 +50,8 @@ namespace osu.Framework.Statistics
         Scheduler,
         IPC,
         DrawReset,
+        DrawCall,
+        SpriteTextDrawNode,
     }
 
     internal enum StatisticsCounterType

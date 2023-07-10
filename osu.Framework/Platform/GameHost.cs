@@ -44,6 +44,7 @@ using osu.Framework.Graphics.Video;
 using osu.Framework.IO.Serialization;
 using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
+using osu.Framework.Platform.MacOS.Native;
 using Rectangle = System.Drawing.Rectangle;
 using Size = System.Drawing.Size;
 

@@ -63,6 +63,8 @@ namespace osu.Framework.Graphics.Rendering
         /// </summary>
         public ulong FrameIndex { get; private set; }
 
+        public static ulong StaticFrameIndex;
+
         public ref readonly MaskingInfo CurrentMaskingInfo => ref currentMaskingInfo;
 
         public RectangleI Viewport { get; private set; }
@@ -176,7 +178,7 @@ namespace osu.Framework.Graphics.Rendering
 
             Initialise(graphicsSurface);
 
-            defaultQuadBatch = CreateQuadBatch<TexturedVertex2D>(100, 1000);
+            defaultQuadBatch = CreateQuadBatch<TexturedVertex2D>(1000, 1000);
             resetScheduler.AddDelayed(disposalQueue.CheckPendingDisposals, 0, true);
 
             IsInitialised = true;
@@ -202,6 +204,7 @@ namespace osu.Framework.Graphics.Rendering
             Debug.Assert(defaultQuadBatch != null);
 
             FrameIndex++;
+            StaticFrameIndex = FrameIndex;
 
             resetScheduler.Update();
 

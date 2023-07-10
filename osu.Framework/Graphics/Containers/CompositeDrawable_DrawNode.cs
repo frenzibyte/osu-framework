@@ -174,7 +174,7 @@ namespace osu.Framework.Graphics.Containers
                     return;
 
                 if (quadBatch == null && mayHaveOwnVertexBatch(sourceChildrenCount))
-                    quadBatch = renderer.CreateQuadBatch<TexturedVertex2D>(100, 1000);
+                    quadBatch = renderer.CreateQuadBatch<TexturedVertex2D>(1000, 1000);
             }
 
             public override void Draw(IRenderer renderer)

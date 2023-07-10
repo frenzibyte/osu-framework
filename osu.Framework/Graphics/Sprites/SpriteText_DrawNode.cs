@@ -4,10 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Platform.MacOS.Native;
+using osu.Framework.Statistics;
+using osu.Framework.Threading;
 using osuTK;
 using osuTK.Graphics;
 
@@ -66,7 +70,7 @@ namespace osu.Framework.Graphics.Sprites
                     {
                         var shadowQuad = parts[i].DrawQuad;
 
-                        renderer.DrawQuad(parts[i].Texture,
+                        renderer.DrawQuad(renderer.WhitePixel,
                             new Quad(
                                 shadowQuad.TopLeft + shadowOffset,
                                 shadowQuad.TopRight + shadowOffset,
@@ -75,7 +79,7 @@ namespace osu.Framework.Graphics.Sprites
                             finalShadowColour, inflationPercentage: parts[i].InflationPercentage);
                     }
 
-                    renderer.DrawQuad(parts[i].Texture, parts[i].DrawQuad, DrawColourInfo.Colour, inflationPercentage: parts[i].InflationPercentage);
+                    renderer.DrawQuad(renderer.WhitePixel, parts[i].DrawQuad, DrawColourInfo.Colour, inflationPercentage: parts[i].InflationPercentage);
                 }
 
                 UnbindTextureShader(renderer);
@@ -98,7 +102,7 @@ namespace osu.Framework.Graphics.Sprites
 
                 Vector2 inflationAmount = DrawInfo.MatrixInverse.ExtractScale().Xy;
 
-                foreach (var character in Source.characters)
+                foreach (var character in Source.characters.GroupBy(c => c.Texture.NativeTexture).SelectMany(g => g))
                 {
                     parts.Add(new ScreenSpaceCharacterPart
                     {

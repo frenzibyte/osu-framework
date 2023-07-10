@@ -14,10 +14,14 @@ namespace osu.Framework.Threading
     {
         private readonly GameHost host;
 
+        internal static PerformanceMonitor DrawMonitor = null!;
+
         public DrawThread(Action onNewFrame, GameHost host)
             : base(onNewFrame, "Draw")
         {
             this.host = host;
+
+            DrawMonitor = Monitor!;
         }
 
         public override bool IsCurrent => ThreadSafety.IsDrawThread;
