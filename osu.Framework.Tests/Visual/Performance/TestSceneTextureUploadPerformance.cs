@@ -65,20 +65,20 @@ namespace osu.Framework.Tests.Visual.Performance
 
             // Ensure we don't hit a runaway scenario where too many uploads are queued
             // due to the update loop running at a higher rate than draw loop.
-            if (lastUploadedFrame != renderer.FrameIndex && Flow.Count > 0)
+            if (lastUploadedFrame != renderer.ResetId && Flow.Count > 0)
             {
                 for (int i = 0; i < UploadsPerFrame.Value; i++)
                 {
                     var sprite = Flow[updateOffset++ % Flow.Count];
 
-                    var upload = (int)(renderer.FrameIndex / ((float)DrawableCount.Value / UploadsPerFrame.Value)) % 2 == 0
+                    var upload = (int)(renderer.ResetId / ((float)DrawableCount.Value / UploadsPerFrame.Value)) % 2 == 0
                         ? sampleTextureUpload
                         : sampleTextureUpload2;
 
                     ((Sprite)sprite).Texture.SetData(upload);
                 }
 
-                lastUploadedFrame = renderer.FrameIndex;
+                lastUploadedFrame = renderer.ResetId;
             }
         }
 
