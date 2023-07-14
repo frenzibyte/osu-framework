@@ -11,11 +11,9 @@ using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Input.Events;
 using osu.Framework.Platform;
 using osuTK;
 using osuTK.Graphics;
-using osuTK.Input;
 
 namespace osu.Framework.Tests.Visual.Sprites
 {
@@ -55,17 +53,6 @@ namespace osu.Framework.Tests.Visual.Sprites
             };
 
             AddStep("take screenshot", takeScreenshot);
-        }
-
-        protected override bool OnKeyDown(KeyDownEvent e)
-        {
-            if (e.Key == Key.F12)
-            {
-                takeScreenshot();
-                return true;
-            }
-
-            return base.OnKeyDown(e);
         }
 
         private void takeScreenshot()
