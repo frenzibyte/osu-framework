@@ -57,9 +57,9 @@ namespace osu.Framework.Graphics.Rendering
         protected internal Storage? CacheStorage { set; }
 
         /// <summary>
-        /// The current frame index.
+        /// The current reset index.
         /// </summary>
-        ulong FrameIndex { get; }
+        ulong ResetId { get; }
 
         /// <summary>
         /// The maximum allowed texture size.

@@ -164,14 +164,14 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                 Renderer.RegisterVertexBufferUse(this);
             }
 
-            LastUseFrameIndex = Renderer.FrameIndex;
+            LastUseResetId = Renderer.ResetId;
 
             return ref vertexMemory;
         }
 
-        public ulong LastUseFrameIndex { get; private set; }
+        public ulong LastUseResetId { get; private set; }
 
-        public bool InUse => LastUseFrameIndex > 0;
+        public bool InUse => LastUseResetId > 0;
 
         void IVertexBuffer.Free()
         {
@@ -185,7 +185,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             memoryOwner = null;
             vertexMemory = Memory<DepthWrappingVertex<T>>.Empty;
 
-            LastUseFrameIndex = 0;
+            LastUseResetId = 0;
 
             isInitialised = false;
         }

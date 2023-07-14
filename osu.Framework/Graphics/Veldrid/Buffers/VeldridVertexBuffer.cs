@@ -156,14 +156,14 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
                 renderer.RegisterVertexBufferUse(this);
             }
 
-            LastUseFrameIndex = renderer.FrameIndex;
+            LastUseResetId = renderer.ResetId;
 
             return stagingBuffer!.Data;
         }
 
-        public ulong LastUseFrameIndex { get; private set; }
+        public ulong LastUseResetId { get; private set; }
 
-        public bool InUse => LastUseFrameIndex > 0;
+        public bool InUse => LastUseResetId > 0;
 
         public void Free()
         {
@@ -176,7 +176,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             gpuBuffer?.Dispose();
             gpuBuffer = null;
 
-            LastUseFrameIndex = 0;
+            LastUseResetId = 0;
         }
     }
 }

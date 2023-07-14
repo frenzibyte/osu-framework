@@ -53,11 +53,6 @@ namespace osu.Framework.Graphics.Veldrid
         public override bool IsUvOriginTopLeft => Device.IsUvOriginTopLeft;
         public override bool IsClipSpaceYInverted => Device.IsClipSpaceYInverted;
 
-        /// <summary>
-        /// Represents the <see cref="Renderer.FrameIndex"/> of the latest frame that has completed rendering by the GPU.
-        /// </summary>
-        public ulong LatestCompletedFrameIndex { get; private set; }
-
         public GraphicsDevice Device { get; private set; } = null!;
 
         public ResourceFactory Factory => Device.ResourceFactory;
@@ -65,21 +60,8 @@ namespace osu.Framework.Graphics.Veldrid
         public CommandList Commands { get; private set; } = null!;
         public CommandList BufferUpdateCommands { get; private set; } = null!;
 
-        /// <summary>
-        /// A list of fences which tracks in-flight frames for the purpose of knowing the last completed frame.
-        /// This is tracked for the purpose of exposing <see cref="LatestCompletedFrameIndex"/>.
-        /// </summary>
-        private readonly List<FrameCompletionFence> pendingFramesFences = new List<FrameCompletionFence>();
-
-        /// <summary>
-        /// We are using fences every frame. Construction can be expensive, so let's pool some.
-        /// </summary>
-        private readonly Queue<Fence> perFrameFencePool = new Queue<Fence>();
-
         public VeldridIndexData SharedLinearIndex { get; }
         public VeldridIndexData SharedQuadIndex { get; }
-
-        private readonly VeldridStagingTexturePool stagingTexturePool;
 
         private readonly HashSet<IVeldridUniformBuffer> uniformBufferResetList = new HashSet<IVeldridUniformBuffer>();
         private readonly Dictionary<int, VeldridTextureResources> boundTextureUnits = new Dictionary<int, VeldridTextureResources>();
@@ -100,7 +82,6 @@ namespace osu.Framework.Graphics.Veldrid
         {
             SharedLinearIndex = new VeldridIndexData(this);
             SharedQuadIndex = new VeldridIndexData(this);
-            stagingTexturePool = new VeldridStagingTexturePool(this);
         }
 
         protected override void Initialise(IGraphicsSurface graphicsSurface)
@@ -224,8 +205,6 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected internal override void BeginFrame(Vector2 windowSize)
         {
-            updateLastCompletedFrameIndex();
-
             if (windowSize != currentSize)
             {
                 Device.ResizeMainWindow((uint)windowSize.X, (uint)windowSize.Y);
@@ -236,53 +215,10 @@ namespace osu.Framework.Graphics.Veldrid
                 ubo.ResetCounters();
             uniformBufferResetList.Clear();
 
-            stagingTexturePool.NewFrame();
-
             Commands.Begin();
             BufferUpdateCommands.Begin();
 
             base.BeginFrame(windowSize);
-        }
-
-        private void updateLastCompletedFrameIndex()
-        {
-            int? lastSignalledFenceIndex = null;
-
-            // We have a sequential list of all fences which are in flight.
-            // Frame usages are assumed to be sequential and linear.
-            //
-            // Iterate backwards to find the last signalled fence, which can be considered the last completed frame index.
-            for (int i = pendingFramesFences.Count - 1; i >= 0; i--)
-            {
-                var fence = pendingFramesFences[i];
-
-                if (!fence.Fence.Signaled)
-                {
-                    // this rule is broken on metal, if a new command buffer has been submitted while a previous fence wasn't signalled yet,
-                    // then the previous fence will be thrown away and will never be signalled. keep iterating regardless of signal on metal.
-                    if (graphicsSurface.Type != GraphicsSurfaceType.Metal)
-                        Debug.Assert(lastSignalledFenceIndex == null, "A non-signalled fence was detected before the latest signalled frame.");
-
-                    continue;
-                }
-
-                lastSignalledFenceIndex ??= i;
-
-                Device.ResetFence(fence.Fence);
-                perFrameFencePool.Enqueue(fence.Fence);
-            }
-
-            if (lastSignalledFenceIndex != null)
-            {
-                ulong frameIndex = pendingFramesFences[lastSignalledFenceIndex.Value].FrameIndex;
-
-                Debug.Assert(frameIndex > LatestCompletedFrameIndex);
-                LatestCompletedFrameIndex = frameIndex;
-
-                pendingFramesFences.RemoveRange(0, lastSignalledFenceIndex.Value + 1);
-            }
-
-            Debug.Assert(pendingFramesFences.Count < 16, "Completion frame fence leak detected");
         }
 
         protected internal override void FinishFrame()
@@ -292,15 +228,8 @@ namespace osu.Framework.Graphics.Veldrid
             BufferUpdateCommands.End();
             Device.SubmitCommands(BufferUpdateCommands);
 
-            // This is returned via the end-of-lifetime tracking in `pendingFrameFences`.
-            // See `updateLastCompletedFrameIndex`.
-            if (!perFrameFencePool.TryDequeue(out Fence? fence))
-                fence = Factory.CreateFence(false);
-
             Commands.End();
-            Device.SubmitCommands(Commands, fence);
-
-            pendingFramesFences.Add(new FrameCompletionFence(fence, FrameIndex));
+            Device.SubmitCommands(Commands);
         }
 
         protected internal override void SwapBuffers() => Device.SwapBuffers();
@@ -363,9 +292,7 @@ namespace osu.Framework.Graphics.Veldrid
         public void UpdateTexture<T>(global::Veldrid.Texture texture, int x, int y, int width, int height, int level, ReadOnlySpan<T> data)
             where T : unmanaged
         {
-            var staging = stagingTexturePool.Get(width, height, texture.Format);
-            Device.UpdateTexture(staging, data, 0, 0, 0, (uint)width, (uint)height, 1, (uint)level, 0);
-            BufferUpdateCommands.CopyTexture(staging, 0, 0, 0, 0, 0, texture, (uint)x, (uint)y, 0, (uint)level, 0, (uint)width, (uint)height, 1, 1);
+            Device.UpdateTexture(texture, data, (uint)x, (uint)y, 0, (uint)width, (uint)height, 1, (uint)level, 0);
         }
 
         /// <summary>
@@ -381,7 +308,7 @@ namespace osu.Framework.Graphics.Veldrid
         /// <param name="rowLengthInBytes">The number of bytes per row of the image to read from <paramref name="data"/>.</param>
         public void UpdateTexture(global::Veldrid.Texture texture, int x, int y, int width, int height, int level, IntPtr data, int rowLengthInBytes)
         {
-            var staging = stagingTexturePool.Get(width, height, texture.Format);
+            using var staging = Factory.CreateTexture(TextureDescription.Texture2D((uint)width, (uint)height, 1, 1, texture.Format, TextureUsage.Staging));
 
             unsafe
             {
@@ -715,7 +642,5 @@ namespace osu.Framework.Graphics.Veldrid
         }
 
         public void BindTextureResource(VeldridTextureResources resource, int unit) => boundTextureUnits[unit] = resource;
-
-        private record struct FrameCompletionFence(Fence Fence, ulong FrameIndex);
     }
 }

@@ -39,7 +39,7 @@ namespace osu.Framework.Graphics.Rendering
         /// The interval (in frames) before checking whether VBOs should be freed.
         /// VBOs may remain unused for at most double this length before they are recycled.
         /// </summary>
-        internal const int RESOURCE_FREE_CHECK_INTERVAL = 300;
+        private const int vbo_free_check_interval = 300;
 
         protected internal abstract bool VerticalSync { get; set; }
         protected internal abstract bool AllowTearing { get; set; }
@@ -58,7 +58,10 @@ namespace osu.Framework.Graphics.Rendering
         public abstract bool IsUvOriginTopLeft { get; }
         public abstract bool IsClipSpaceYInverted { get; }
 
-        public ulong FrameIndex { get; private set; }
+        /// <summary>
+        /// The current reset index.
+        /// </summary>
+        public ulong ResetId { get; private set; }
 
         public ref readonly MaskingInfo CurrentMaskingInfo => ref currentMaskingInfo;
 
@@ -198,7 +201,7 @@ namespace osu.Framework.Graphics.Rendering
 
             Debug.Assert(defaultQuadBatch != null);
 
-            FrameIndex++;
+            ResetId++;
 
             resetScheduler.Update();
 
@@ -814,12 +817,12 @@ namespace osu.Framework.Graphics.Rendering
 
         private void freeUnusedVertexBuffers()
         {
-            if (FrameIndex % RESOURCE_FREE_CHECK_INTERVAL != 0)
+            if (ResetId % vbo_free_check_interval != 0)
                 return;
 
             foreach (var buf in vertexBuffersInUse)
             {
-                if (buf.InUse && FrameIndex - buf.LastUseFrameIndex > RESOURCE_FREE_CHECK_INTERVAL)
+                if (buf.InUse && ResetId - buf.LastUseResetId > vbo_free_check_interval)
                     buf.Free();
             }
 
