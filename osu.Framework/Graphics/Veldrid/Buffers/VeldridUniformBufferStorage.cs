@@ -32,10 +32,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
             set
             {
                 data = value;
-
-                var staging = renderer.GetFreeStagingBuffer(buffer.SizeInBytes);
-                renderer.Device.UpdateBuffer(staging, 0, ref data);
-                renderer.BufferUpdateCommands.CopyBuffer(staging, 0, buffer, 0, buffer.SizeInBytes);
+                renderer.BufferUpdateCommands.UpdateBuffer(buffer, 0, ref data);
             }
         }
 
