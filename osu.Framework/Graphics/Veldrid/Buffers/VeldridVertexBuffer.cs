@@ -9,7 +9,6 @@ using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Veldrid.Buffers.Staging;
 using osu.Framework.Graphics.Veldrid.Vertices;
 using osu.Framework.Platform;
-using osu.Framework.Statistics;
 using Veldrid;
 using BufferUsage = Veldrid.BufferUsage;
 using PrimitiveTopology = Veldrid.PrimitiveTopology;
@@ -26,8 +25,7 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         private NativeMemoryTracker.NativeMemoryLease? memoryLease;
         private IStagingBuffer<DepthWrappingVertex<T>>? stagingBuffer;
         private DeviceBuffer? gpuBuffer;
-
-        private int lastWrittenVertexIndex = -1;
+        private MappedResource gpuResource;
 
         protected VeldridVertexBuffer(VeldridRenderer renderer, int amountVertices)
         {
@@ -42,20 +40,15 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         /// <param name="vertexIndex">The index of the vertex.</param>
         /// <param name="vertex">The vertex.</param>
         /// <returns>Whether the vertex changed.</returns>
-        public bool SetVertex(int vertexIndex, T vertex)
+        public unsafe bool SetVertex(int vertexIndex, T vertex)
         {
-            ref var currentVertex = ref getMemory()[vertexIndex];
+            getMemory()[vertexIndex] = new DepthWrappingVertex<T>
+            {
+                Vertex = vertex,
+                BackbufferDrawDepth = renderer.BackbufferDrawDepth,
+            };
 
-            bool isNewVertex = vertexIndex > lastWrittenVertexIndex
-                               || !currentVertex.Vertex.Equals(vertex)
-                               || currentVertex.BackbufferDrawDepth != renderer.BackbufferDrawDepth;
-
-            currentVertex.Vertex = vertex;
-            currentVertex.BackbufferDrawDepth = renderer.BackbufferDrawDepth;
-
-            lastWrittenVertexIndex = Math.Max(lastWrittenVertexIndex, vertexIndex);
-
-            return isNewVertex;
+            return false;
         }
 
         /// <summary>
@@ -70,10 +63,11 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
         {
             ThreadSafety.EnsureDrawThread();
 
-            getMemory();
             Debug.Assert(stagingBuffer != null);
 
-            gpuBuffer = renderer.Factory.CreateBuffer(new BufferDescription((uint)(Size * STRIDE), BufferUsage.VertexBuffer | stagingBuffer.CopyTargetUsageFlags));
+            gpuBuffer = renderer.Factory.CreateBuffer(new BufferDescription((uint)(Size * STRIDE), BufferUsage.VertexBuffer | BufferUsage.Dynamic));
+            gpuResource = renderer.Device.Map(gpuBuffer, MapMode.Write);
+
             memoryLease = NativeMemoryTracker.AddMemory(this, gpuBuffer.SizeInBytes);
         }
 
@@ -134,31 +128,20 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
         internal void UpdateRange(int startIndex, int endIndex)
         {
-            if (gpuBuffer == null)
-                Initialise();
-
-            Debug.Assert(stagingBuffer != null);
-            Debug.Assert(gpuBuffer != null);
-
-            int countVertices = endIndex - startIndex;
-            stagingBuffer.CopyTo(gpuBuffer, (uint)startIndex, (uint)startIndex, (uint)countVertices);
-
-            FrameStatistics.Add(StatisticsCounterType.VerticesUpl, countVertices);
         }
 
-        private Span<DepthWrappingVertex<T>> getMemory()
+        private unsafe DepthWrappingVertex<T>* getMemory()
         {
             ThreadSafety.EnsureDrawThread();
 
             if (!InUse)
             {
-                stagingBuffer = renderer.CreateStagingBuffer<DepthWrappingVertex<T>>((uint)Size);
+                Initialise();
                 renderer.RegisterVertexBufferUse(this);
             }
 
             LastUseFrameIndex = renderer.FrameIndex;
-
-            return stagingBuffer!.Data;
+            return (DepthWrappingVertex<T>*)gpuResource.Data;
         }
 
         public ulong LastUseFrameIndex { get; private set; }
@@ -172,6 +155,8 @@ namespace osu.Framework.Graphics.Veldrid.Buffers
 
             stagingBuffer?.Dispose();
             stagingBuffer = null;
+
+            renderer.Device.Unmap(gpuResource.Resource);
 
             gpuBuffer?.Dispose();
             gpuBuffer = null;

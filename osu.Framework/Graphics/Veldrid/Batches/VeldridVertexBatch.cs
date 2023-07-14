@@ -149,7 +149,6 @@ namespace osu.Framework.Graphics.Veldrid.Batches
 
             int count = currentVertexIndex - currentDrawIndex;
 
-            // When using multiple buffers we advance to the next one with every draw to prevent contention on the same buffer with future vertex updates.
             currentDrawIndex = currentVertexIndex;
             changeBeginIndex = -1;
 
