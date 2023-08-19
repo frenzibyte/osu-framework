@@ -247,6 +247,12 @@ namespace osu.Framework.Graphics.Veldrid
 
         protected internal override void BeginFrame(Vector2 windowSize)
         {
+            if (TextureUploadQueue.Count > 0)
+            {
+                metalCaptureManager.StartCapture(metalCaptureDescriptor.Handle);
+                isCapturing = true;
+            }
+
             updateLastCompletedFrameIndex();
 
             if (windowSize != currentSize)
@@ -326,6 +332,12 @@ namespace osu.Framework.Graphics.Veldrid
             Device.SubmitCommands(Commands, fence);
 
             pendingFramesFences.Add(new FrameCompletionFence(fence, FrameIndex));
+
+            if (isCapturing)
+            {
+                metalCaptureManager.StopCapture();
+                isCapturing = false;
+            }
         }
 
         protected internal override void SwapBuffers() => Device.SwapBuffers();
