@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -21,6 +22,7 @@ using osu.Framework.Graphics.Veldrid.Buffers.Staging;
 using osu.Framework.Graphics.Veldrid.Shaders;
 using osu.Framework.Graphics.Veldrid.Textures;
 using osu.Framework.Logging;
+using osu.Framework.Platform.MacOS.Native;
 using osu.Framework.Statistics;
 using osuTK;
 using osuTK.Graphics;
@@ -28,6 +30,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Veldrid;
+using Veldrid.MetalBindings;
 using Veldrid.OpenGL;
 using Veldrid.OpenGLBinding;
 using Image = SixLabors.ImageSharp.Image;
@@ -106,6 +109,10 @@ namespace osu.Framework.Graphics.Veldrid
         };
 
         private static readonly GlobalStatistic<int> stat_graphics_pipeline_created = GlobalStatistics.Get<int>(nameof(VeldridRenderer), "Total pipelines created");
+
+        private MTLCaptureManager metalCaptureManager;
+        private MTLCaptureDescriptor metalCaptureDescriptor;
+        private bool isCapturing;
 
         public VeldridRenderer()
         {
@@ -230,6 +237,10 @@ namespace osu.Framework.Graphics.Veldrid
             TextureUpdateCommands = Factory.CreateCommandList();
 
             pipeline.Outputs = Device.SwapchainFramebuffer.OutputDescription;
+
+            metalCaptureManager = MTLCaptureManager.SharedCaptureManager;
+            metalCaptureDescriptor = MTLCaptureDescriptor.Init();
+            metalCaptureDescriptor.CaptureObject = ((MTLDevice)Device.GetType().GetField("_device", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(Device)!).NativePtr;
         }
 
         private Vector2 currentSize;
