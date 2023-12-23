@@ -84,8 +84,8 @@ namespace osu.Framework.Tests.Visual.Input
 
         private partial class TestContainer : TestContainerNoHandling
         {
-            public override bool AcceptsFocus => Enabled;
-            public override bool RequestsFocus => Enabled;
+            public override bool AcceptsSubtreeFocus => Enabled;
+            public override bool RequestsSubtreeFocus => Enabled;
 
             private bool enabled;
 

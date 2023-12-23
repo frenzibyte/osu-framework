@@ -67,11 +67,11 @@ namespace osu.Framework.Tests.Visual.UserInterface
             TestScreen screen1 = null;
 
             pushAndEnsureCurrent(() => screen1 = new TestScreen { EagerFocus = true });
-            AddUntilStep("wait for focus grab", () => GetContainingInputManager().FocusedDrawable == screen1);
+            AddUntilStep("wait for focus grab", () => GetContainingInputManager().FocusedSubtree == screen1);
 
             pushAndEnsureCurrent(() => new TestScreen(), () => screen1);
 
-            AddUntilStep("focus lost", () => GetContainingInputManager().FocusedDrawable != screen1);
+            AddUntilStep("focus lost", () => GetContainingInputManager().FocusedSubtree != screen1);
         }
 
         [Test]
@@ -80,11 +80,11 @@ namespace osu.Framework.Tests.Visual.UserInterface
             TestScreen screen1 = null, screen2 = null;
 
             pushAndEnsureCurrent(() => screen1 = new TestScreen { EagerFocus = true });
-            AddUntilStep("wait for focus grab", () => GetContainingInputManager().FocusedDrawable == screen1);
+            AddUntilStep("wait for focus grab", () => GetContainingInputManager().FocusedSubtree == screen1);
 
             pushAndEnsureCurrent(() => screen2 = new TestScreen { EagerFocus = true }, () => screen1);
 
-            AddUntilStep("focus transferred", () => GetContainingInputManager().FocusedDrawable == screen2);
+            AddUntilStep("focus transferred", () => GetContainingInputManager().FocusedSubtree == screen2);
         }
 
         [Test]
@@ -1020,9 +1020,9 @@ namespace osu.Framework.Tests.Visual.UserInterface
 
             public int ClickCount { get; private set; }
 
-            public override bool RequestsFocus => EagerFocus;
+            public override bool RequestsSubtreeFocus => EagerFocus;
 
-            public override bool AcceptsFocus => EagerFocus;
+            public override bool AcceptsSubtreeFocus => EagerFocus;
 
             public override bool HandleNonPositionalInput => true;
 

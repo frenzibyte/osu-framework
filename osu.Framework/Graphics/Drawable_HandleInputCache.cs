@@ -81,7 +81,7 @@ namespace osu.Framework.Graphics
             private static readonly string[] non_positional_input_properties =
             {
                 nameof(HandleNonPositionalInput),
-                nameof(AcceptsFocus),
+                nameof(AcceptsSubtreeFocus),
             };
 
             public static bool RequestsPositionalInput(Drawable drawable)

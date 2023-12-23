@@ -67,7 +67,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         });
 
         [Test]
-        public void FocusedOverlayTakesFocusOnShow()
+        public void TestFocusedOverlayTakesFocusOnShow()
         {
             AddAssert("overlay not visible", () => overlay.State.Value == Visibility.Hidden);
             checkNotFocused(() => overlay);
@@ -80,7 +80,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         }
 
         [Test]
-        public void FocusedOverlayLosesFocusOnClickAway()
+        public void TestFocusedOverlayLosesFocusOnClickAway()
         {
             AddAssert("overlay not visible", () => overlay.State.Value == Visibility.Hidden);
             checkNotFocused(() => overlay);
@@ -99,7 +99,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         }
 
         [Test]
-        public void RequestsFocusKeepsFocusOnClickAway()
+        public void TestRequestsFocusKeepsFocusOnClickAway()
         {
             checkFocused(() => requestingFocus);
 
@@ -113,7 +113,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         }
 
         [Test]
-        public void RequestsFocusLosesFocusOnClickingFocused()
+        public void TestRequestsFocusLosesFocusOnClickingFocused()
         {
             checkFocused(() => requestingFocus);
 
@@ -135,10 +135,10 @@ namespace osu.Framework.Tests.Visual.Drawables
         }
 
         /// <summary>
-        /// Ensures that performing <see cref="InputManager.ChangeFocus(Drawable)"/> to a drawable with disabled <see cref="Drawable.AcceptsFocus"/> returns <see langword="false"/>.
+        /// Ensures that performing <see cref="InputManager.ChangeFocus(Drawable)"/> to a drawable with disabled <see cref="Drawable.AcceptsSubtreeFocus"/> returns <see langword="false"/>.
         /// </summary>
         [Test]
-        public void DisabledFocusDrawableCannotReceiveFocusViaChangeFocus()
+        public void TestDisabledFocusDrawableCannotReceiveFocusViaChangeFocus()
         {
             checkFocused(() => requestingFocus);
 
@@ -152,7 +152,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         /// Ensures that performing <see cref="InputManager.ChangeFocus(Drawable)"/> to a non-present drawable returns <see langword="false"/>.
         /// </summary>
         [Test]
-        public void NotPresentDrawableCannotReceiveFocusViaChangeFocus()
+        public void TestNotPresentDrawableCannotReceiveFocusViaChangeFocus()
         {
             checkFocused(() => requestingFocus);
 
@@ -166,7 +166,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         /// Ensures that performing <see cref="InputManager.ChangeFocus(Drawable)"/> to a drawable of a non-present parent returns <see langword="false"/>.
         /// </summary>
         [Test]
-        public void DrawableOfNotPresentParentCannotReceiveFocusViaChangeFocus()
+        public void TestDrawableOfNotPresentParentCannotReceiveFocusViaChangeFocus()
         {
             checkFocused(() => requestingFocus);
 
@@ -189,7 +189,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         }
 
         [Test]
-        public void ShowOverlayInteractions()
+        public void TestShowOverlayInteractions()
         {
             AddStep("click bottom left", () =>
             {
@@ -218,7 +218,66 @@ namespace osu.Framework.Tests.Visual.Drawables
         }
 
         [Test]
-        public void InputPropagation()
+        public void TestFocusPropagationViaRequest()
+        {
+            FocusBox parent = null;
+            FocusBox child = null;
+
+            AddStep("setup", () =>
+            {
+                Children = new[]
+                {
+                    parent = new RequestingFocusBox()
+                        .With(f => f.Add(child = new FocusBox
+                        {
+                            AllowAcceptingFocus = false, // child does not need to accept focus
+                            Size = new Vector2(0.5f),
+                            Colour = Color4.Yellow,
+                        })),
+                };
+            });
+
+            checkFocused(() => parent);
+            checkFocused(() => child);
+
+            AddStep("click away", () =>
+            {
+                InputManager.MoveMouseTo(Vector2.One);
+                InputManager.Click(MouseButton.Left);
+            });
+
+            checkFocused(() => parent);
+            checkFocused(() => child);
+        }
+
+        [Test]
+        public void TestFocusPropagationViaChangeFocus()
+        {
+            FocusBox parent = null;
+            FocusBox child = null;
+
+            AddStep("setup", () =>
+            {
+                Children = new[]
+                {
+                    parent = new FocusBox()
+                        .With(f => f.Add(child = new FocusBox
+                        {
+                            AllowAcceptingFocus = false, // child does not need to accept focus
+                            Size = new Vector2(0.5f),
+                            Colour = Color4.Yellow,
+                        })),
+                };
+            });
+
+            AddStep("focus parent", () => InputManager.ChangeFocus(parent));
+
+            checkFocused(() => parent);
+            checkFocused(() => child);
+        }
+
+        [Test]
+        public void TestInputPropagation()
         {
             AddStep("Focus bottom left", () =>
             {
@@ -241,6 +300,110 @@ namespace osu.Framework.Tests.Visual.Drawables
             AddAssert("Received the joystick button", () =>
                 focusBottomLeft.JoystickPressCount == 1 && focusBottomLeft.JoystickReleaseCount == 1 &&
                 focusBottomRight.JoystickPressCount == 1 && focusBottomRight.JoystickReleaseCount == 1);
+        }
+
+        [Test]
+        public void TestSubtreeInputPropagation()
+        {
+            FocusBox parent = null;
+            FocusBox child = null;
+            FocusBox other = null;
+
+            AddStep("setup", () =>
+            {
+                Children = new[]
+                {
+                    parent = new RequestingFocusBox()
+                        .With(f => f.Add(child = new FocusBox
+                        {
+                            AllowAcceptingFocus = false, // child does not need to accept focus
+                            Size = new Vector2(0.5f),
+                            Colour = Color4.Yellow,
+                        })),
+                    other = new FocusBox
+                    {
+                        Anchor = Anchor.BottomLeft,
+                        Origin = Anchor.BottomLeft,
+                    },
+                };
+            });
+
+            AddStep("press a key (blocking)", () => InputManager.Key(Key.A));
+
+            AddAssert("only child received the key", () =>
+                child.KeyDownCount == 1 && child.KeyUpCount == 1 &&
+                parent.KeyDownCount == 0 && parent.KeyUpCount == 0 &&
+                other.KeyDownCount == 0 && other.KeyUpCount == 0);
+
+            AddStep("make child not block", () => child.AllowBlockingKeyDown = false);
+
+            AddStep("press a key", () => InputManager.Key(Key.A));
+
+            AddAssert("child and parent received the key", () =>
+                child.KeyDownCount == 2 && child.KeyUpCount == 2 &&
+                parent.KeyDownCount == 1 && parent.KeyUpCount == 1 &&
+                other.KeyDownCount == 0 && other.KeyUpCount == 0);
+
+            AddStep("press a joystick (non blocking)", () =>
+            {
+                InputManager.PressJoystickButton(JoystickButton.Button1);
+                InputManager.ReleaseJoystickButton(JoystickButton.Button1);
+            });
+
+            AddAssert("all received joystick button", () =>
+                child.JoystickPressCount == 1 && child.JoystickReleaseCount == 1 &&
+                parent.JoystickPressCount == 1 && parent.JoystickReleaseCount == 1 &&
+                other.JoystickPressCount == 1 && other.JoystickReleaseCount == 1);
+        }
+
+        [Test]
+        public void TestMoveFocusToChild()
+        {
+            FocusBox parent = null;
+            FocusBox child = null;
+
+            AddStep("setup", () =>
+            {
+                Children = new[]
+                {
+                    parent = new RequestingFocusBox()
+                        .With(f => f.Add(child = new FocusBox
+                        {
+                            AllowAcceptingFocus = false, // child does not need to accept focus
+                            Size = new Vector2(0.5f),
+                            Colour = Color4.Yellow,
+                        })),
+                };
+            });
+
+            reset();
+
+            AddStep("change focus to child", () =>
+            {
+                child.AllowAcceptingFocus = true;
+                InputManager.ChangeFocus(child);
+            });
+
+            AddAssert("only parent received lost event", () =>
+                parent.FocusCount == 0 && parent.FocusLostCount == 1 &&
+                child.FocusCount == 0 && child.FocusLostCount == 0);
+
+            reset();
+
+            AddStep("change focus to parent", () => InputManager.ChangeFocus(parent));
+
+            AddAssert("only parent received focus event", () =>
+                parent.FocusCount == 1 && parent.FocusLostCount == 0 &&
+                child.FocusCount == 0 && child.FocusLostCount == 0);
+
+            void reset()
+            {
+                AddStep("reset count", () =>
+                {
+                    parent.FocusCount = parent.FocusLostCount = 0;
+                    child.FocusCount = child.FocusLostCount = 0;
+                });
+            }
         }
 
         private void checkFocused(Func<Drawable> d) => AddAssert("check focus", () => d().HasFocus);
@@ -325,7 +488,7 @@ namespace osu.Framework.Tests.Visual.Drawables
 
         public partial class RequestingFocusBox : FocusBox
         {
-            public override bool RequestsFocus => true;
+            public override bool RequestsSubtreeFocus => true;
 
             public RequestingFocusBox()
             {
@@ -340,10 +503,10 @@ namespace osu.Framework.Tests.Visual.Drawables
             }
         }
 
-        public partial class FocusBox : CompositeDrawable
+        public partial class FocusBox : Container
         {
             protected Box Box;
-            public int KeyDownCount, KeyUpCount, JoystickPressCount, JoystickReleaseCount;
+            public int KeyDownCount, KeyUpCount, JoystickPressCount, JoystickReleaseCount, FocusCount, FocusLostCount;
 
             public FocusBox()
             {
@@ -362,25 +525,29 @@ namespace osu.Framework.Tests.Visual.Drawables
 
             public bool AllowAcceptingFocus = true;
 
-            public override bool AcceptsFocus => AllowAcceptingFocus;
+            public override bool AcceptsSubtreeFocus => AllowAcceptingFocus;
 
             protected override void OnFocus(FocusEvent e)
             {
                 base.OnFocus(e);
                 Box.FadeTo(1);
+                FocusCount++;
             }
 
             protected override void OnFocusLost(FocusLostEvent e)
             {
                 base.OnFocusLost(e);
                 Box.FadeTo(0.5f);
+                FocusLostCount++;
             }
+
+            public bool AllowBlockingKeyDown = true;
 
             // only KeyDown is blocking
             protected override bool OnKeyDown(KeyDownEvent e)
             {
                 ++KeyDownCount;
-                return true;
+                return AllowBlockingKeyDown;
             }
 
             protected override void OnKeyUp(KeyUpEvent e)

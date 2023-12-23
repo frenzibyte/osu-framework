@@ -12,8 +12,9 @@ namespace osu.Framework.Input.Events
     public class FocusLostEvent : UIEvent
     {
         /// <summary>
-        /// The <see cref="Drawable"/> that will gain focus, or <c>null</c> if nothing will gain focus.
+        /// The <see cref="Drawable"/> subtree that will gain focus, or <c>null</c> if nothing will gain focus.
         /// </summary>
+        // todo: this will break
         public readonly Drawable? NextFocused;
 
         public FocusLostEvent(InputState state, Drawable? nextFocused)

@@ -27,9 +27,9 @@ namespace osu.Framework.Graphics.UserInterface
 
         public override bool HandleNonPositionalInput => State.Value == Visibility.Visible;
 
-        public override bool RequestsFocus => State.Value == Visibility.Visible;
+        public override bool RequestsSubtreeFocus => State.Value == Visibility.Visible;
 
-        public override bool AcceptsFocus => State.Value == Visibility.Visible;
+        public override bool AcceptsSubtreeFocus => State.Value == Visibility.Visible;
 
         protected override bool OnKeyDown(KeyDownEvent e)
         {

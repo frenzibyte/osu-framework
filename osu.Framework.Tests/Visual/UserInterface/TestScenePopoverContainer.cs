@@ -280,7 +280,7 @@ namespace osu.Framework.Tests.Visual.UserInterface
                 InputManager.Click(MouseButton.Left);
             });
 
-            AddAssert("textbox is focused", () => InputManager.FocusedDrawable is TextBox);
+            AddAssert("textbox is focused", () => InputManager.FocusedSubtree is TextBox);
             AddAssert("popover still shown", () => this.ChildrenOfType<Popover>().Any(popover => popover.State.Value == Visibility.Visible));
             AddStep("click in popover", () =>
             {
@@ -288,7 +288,7 @@ namespace osu.Framework.Tests.Visual.UserInterface
                 InputManager.Click(MouseButton.Left);
             });
 
-            AddAssert("popover is focused", () => InputManager.FocusedDrawable is Popover);
+            AddAssert("popover is focused", () => InputManager.FocusedSubtree is Popover);
             AddAssert("popover still shown", () => this.ChildrenOfType<Popover>().Any(popover => popover.State.Value == Visibility.Visible));
         }
 

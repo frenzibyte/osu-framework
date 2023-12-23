@@ -32,8 +32,6 @@ namespace osu.Framework.Graphics.UserInterface
         protected FillFlowContainer TextFlow { get; private set; }
         protected Container TextContainer { get; private set; }
 
-        public override bool HandleNonPositionalInput => HasFocus;
-
         /// <summary>
         /// Padding to be used within the TextContainer. Requires special handling due to the sideways scrolling of text content.
         /// </summary>
@@ -1071,6 +1069,9 @@ namespace osu.Framework.Graphics.UserInterface
 
         protected override bool OnKeyDown(KeyDownEvent e)
         {
+            if (!HasFocus)
+                return false;
+
             if (readOnly)
                 return true;
 
@@ -1122,7 +1123,7 @@ namespace osu.Framework.Graphics.UserInterface
         private void killFocus()
         {
             var manager = GetContainingInputManager();
-            if (manager?.FocusedDrawable == this)
+            if (manager?.FocusedSubtree == this)
                 manager.ChangeFocus(null);
         }
 
@@ -1150,6 +1151,9 @@ namespace osu.Framework.Graphics.UserInterface
 
         protected override void OnKeyUp(KeyUpEvent e)
         {
+            if (!HasFocus)
+                return;
+
             Scheduler.AddOnce(revertBlockingStateIfRequired);
             base.OnKeyUp(e);
         }
@@ -1291,7 +1295,7 @@ namespace osu.Framework.Graphics.UserInterface
                 Commit();
         }
 
-        public override bool AcceptsFocus => true;
+        public override bool AcceptsSubtreeFocus => true;
 
         protected override bool OnClick(ClickEvent e)
         {

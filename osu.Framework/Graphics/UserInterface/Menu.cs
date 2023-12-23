@@ -629,9 +629,9 @@ namespace osu.Framework.Graphics.UserInterface
         protected override bool OnClick(ClickEvent e) => true;
         protected override bool OnHover(HoverEvent e) => true;
 
-        public override bool AcceptsFocus => !TopLevelMenu;
+        public override bool AcceptsSubtreeFocus => !TopLevelMenu;
 
-        public override bool RequestsFocus => !TopLevelMenu && State == MenuState.Open;
+        public override bool RequestsSubtreeFocus => !TopLevelMenu && State == MenuState.Open;
 
         protected override void OnFocusLost(FocusLostEvent e)
         {

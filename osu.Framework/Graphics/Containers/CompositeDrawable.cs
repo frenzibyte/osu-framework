@@ -22,6 +22,7 @@ using osu.Framework.Threading;
 using osu.Framework.Statistics;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using osu.Framework.Caching;
 using osu.Framework.Development;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Extensions.ExceptionExtensions;
@@ -570,6 +571,10 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         private ulong currentChildID;
 
+        internal bool ChildrenFocusValid => childrenFocusCache.IsValid;
+
+        private readonly Cached childrenFocusCache = new Cached();
+
         /// <summary>
         /// Adds a child to <see cref="InternalChildren"/>.
         /// </summary>
@@ -607,6 +612,22 @@ namespace osu.Framework.Graphics.Containers
 
             if (AutoSizeAxes != Axes.None)
                 Invalidate(Invalidation.RequiredParentSizeToFit, InvalidationSource.Child);
+
+            invalidateChildrenFocusSuperTree();
+        }
+
+        private void invalidateChildrenFocusSuperTree()
+        {
+            childrenFocusCache.Invalidate();
+            Parent?.invalidateChildrenFocusSuperTree();
+        }
+
+        internal void ValidateChildrenFocus()
+        {
+            childrenFocusCache.Validate();
+
+            foreach (var drawable in aliveInternalChildren.OfType<CompositeDrawable>())
+                drawable.ValidateChildrenFocus();
         }
 
         /// <summary>

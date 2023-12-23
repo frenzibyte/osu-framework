@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.ListExtensions;
@@ -47,9 +48,14 @@ namespace osu.Framework.Input
         protected GameHost Host { get; private set; }
 
         /// <summary>
-        /// The currently focused <see cref="Drawable"/>. Null if there is no current focus.
+        /// The <see cref="Drawable"/> subtree currently focused. Null if there is no current focus.
         /// </summary>
-        public Drawable FocusedDrawable { get; internal set; }
+        public Drawable FocusedSubtree { get; internal set; }
+
+        /// <summary>
+        /// A list containing focused <see cref="Drawable"/>s within the <see cref="FocusedSubtree"/>.
+        /// </summary>
+        private readonly List<Drawable> focusedDrawables = new List<Drawable>();
 
         protected abstract ImmutableArray<InputHandler> InputHandlers { get; }
 
@@ -367,67 +373,83 @@ namespace osu.Framework.Input
         }
 
         /// <summary>
-        /// Reset current focused drawable to the top-most drawable which is <see cref="Drawable.RequestsFocus"/>.
+        /// Reset current focused subtree to the top-most drawable which is <see cref="Drawable.RequestsSubtreeFocus"/>.
         /// </summary>
         /// <param name="triggerSource">The source which triggered this event.</param>
         public void TriggerFocusContention(Drawable triggerSource)
         {
-            if (FocusedDrawable == null) return;
+            if (FocusedSubtree == null) return;
 
             Logger.Log($"Focus contention triggered by {triggerSource}.");
             ChangeFocus(null);
         }
 
         /// <summary>
-        /// Changes the currently-focused drawable. First checks that <paramref name="potentialFocusTarget"/> is in a valid state to receive focus,
-        /// then unfocuses the current <see cref="FocusedDrawable"/> and focuses <paramref name="potentialFocusTarget"/>.
-        /// <paramref name="potentialFocusTarget"/> can be null to reset focus.
-        /// If the given drawable is already focused, nothing happens and no events are fired.
+        /// Changes the currently-focused subtree. First checks that <paramref name="targetSubtree"/> is in a valid state to receive focus,
+        /// then unfocuses the current <see cref="FocusedSubtree"/> and focuses <paramref name="targetSubtree"/>.
+        /// <paramref name="targetSubtree"/> can be null to reset focus.
+        /// If the given drawable subtree is already focused, currently-focused ancestors will become unfocused, but no events will be raised for drawables within the target subtree.
         /// </summary>
-        /// <param name="potentialFocusTarget">The drawable to become focused.</param>
-        /// <returns>True if the given drawable is now focused (or focus is dropped in the case of a null target).</returns>
-        public bool ChangeFocus(Drawable potentialFocusTarget) => ChangeFocus(potentialFocusTarget, CurrentState);
+        /// <param name="targetSubtree">The drawable subtree to become focused.</param>
+        /// <returns>True if the given drawable subtree is now focused (or focus is dropped in the case of a null target).</returns>
+        public bool ChangeFocus(Drawable targetSubtree) => ChangeFocus(targetSubtree, CurrentState);
 
         /// <summary>
-        /// Changes the currently-focused drawable. First checks that <paramref name="potentialFocusTarget"/> is in a valid state to receive focus,
-        /// then unfocuses the current <see cref="FocusedDrawable"/> and focuses <paramref name="potentialFocusTarget"/>.
-        /// <paramref name="potentialFocusTarget"/> can be null to reset focus.
-        /// If the given drawable is already focused, nothing happens and no events are fired.
+        /// Changes the currently-focused subtree. First checks that <paramref name="targetSubtree"/> is in a valid state to receive focus,
+        /// then unfocuses the current <see cref="FocusedSubtree"/> and focuses <paramref name="targetSubtree"/>.
+        /// <paramref name="targetSubtree"/> can be null to reset focus.
+        /// If the given drawable subtree is already focused, currently-focused ancestors will become unfocused, but no events will be raised for drawables within the target subtree.
         /// </summary>
-        /// <param name="potentialFocusTarget">The drawable to become focused.</param>
+        /// <param name="targetSubtree">The drawable subtree to become focused.</param>
         /// <param name="state">The <see cref="InputState"/> associated with the focusing event.</param>
-        /// <returns>True if the given drawable is now focused (or focus is dropped in the case of a null target).</returns>
-        protected bool ChangeFocus(Drawable potentialFocusTarget, InputState state)
+        /// <returns>True if the given drawable subtree is now focused (or focus is dropped in the case of a null target).</returns>
+        protected bool ChangeFocus(Drawable targetSubtree, InputState state)
         {
-            if (potentialFocusTarget == FocusedDrawable)
+            if (targetSubtree == FocusedSubtree)
                 return true;
 
-            if (potentialFocusTarget != null && (!isDrawableValidForFocus(potentialFocusTarget) || !potentialFocusTarget.AcceptsFocus))
+            if (targetSubtree != null && !isSubtreeValidForFocus(targetSubtree))
                 return false;
 
-            var previousFocus = FocusedDrawable;
-
-            FocusedDrawable = null;
-
-            if (previousFocus != null)
-            {
-                previousFocus.HasFocus = false;
-                previousFocus.TriggerEvent(new FocusLostEvent(state, potentialFocusTarget));
-
-                if (FocusedDrawable != null) throw new InvalidOperationException($"Focus cannot be changed inside {nameof(OnFocusLost)}");
-            }
-
-            FocusedDrawable = potentialFocusTarget;
-
-            Logger.Log($"Focus changed from {previousFocus?.ToString() ?? "nothing"} to {FocusedDrawable?.ToString() ?? "nothing"}.", LoggingTarget.Runtime, LogLevel.Debug);
-
-            if (FocusedDrawable != null)
-            {
-                FocusedDrawable.HasFocus = true;
-                FocusedDrawable.TriggerEvent(new FocusEvent(state, previousFocus));
-            }
-
+            updateFocus(targetSubtree, state);
             return true;
+        }
+
+        private void updateFocus(Drawable targetSubtree, InputState state)
+        {
+            var previousFocus = FocusedSubtree;
+
+            var previousFocusedDrawables = new List<Drawable>();
+            previousFocusedDrawables.AddRange(focusedDrawables);
+
+            FocusedSubtree = null;
+            focusedDrawables.Clear();
+
+            targetSubtree?.BuildNonPositionalInputQueue(focusedDrawables);
+            focusedDrawables.Reverse();
+
+            foreach (var drawable in previousFocusedDrawables.Except(focusedDrawables))
+            {
+                drawable.HasFocus = false;
+                drawable.TriggerEvent(new FocusLostEvent(state, targetSubtree));
+
+                if (FocusedSubtree != null)
+                    throw new InvalidOperationException($"Focus cannot be changed inside {nameof(OnFocusLost)}");
+            }
+
+            FocusedSubtree = targetSubtree;
+
+            if (FocusedSubtree != previousFocus)
+                Logger.Log($"Focus changed from {previousFocus?.ToString() ?? "nothing"} to {FocusedSubtree?.ToString() ?? "nothing"}.", LoggingTarget.Runtime, LogLevel.Debug);
+
+            foreach (var drawable in focusedDrawables.Except(previousFocusedDrawables))
+            {
+                drawable.HasFocus = true;
+                drawable.TriggerEvent(new FocusEvent(state, previousFocus));
+            }
+
+            if (FocusedSubtree is CompositeDrawable c)
+                c.ValidateChildrenFocus();
         }
 
         internal override bool BuildNonPositionalInputQueue(List<Drawable> queue, bool allowBlocking = true)
@@ -493,7 +515,10 @@ namespace osu.Framework.Input
             if (!hoverEventsUpdated)
                 updateHoverEvents(CurrentState);
 
-            if (FocusedDrawable == null)
+            if (FocusedSubtree is CompositeDrawable c && !c.ChildrenFocusValid)
+                updateFocus(FocusedSubtree, CurrentState);
+
+            if (FocusedSubtree == null)
                 focusTopMostRequestingDrawable();
 
             base.Update();
@@ -596,10 +621,20 @@ namespace osu.Framework.Input
             for (int i = 0; i < children.Count; i++)
                 children[i].BuildNonPositionalInputQueue(inputQueue);
 
-            if (!unfocusIfNoLongerValid())
+            if (FocusedSubtree != null && !unfocusIfNoLongerValid())
             {
-                inputQueue.Remove(FocusedDrawable);
-                inputQueue.Add(FocusedDrawable);
+                int index = inputQueue.IndexOf(FocusedSubtree);
+
+                if (!inputQueue[^1].HasFocus)
+                {
+                    while (inputQueue[index].HasFocus)
+                    {
+                        Drawable drawable = inputQueue[index];
+
+                        inputQueue.Remove(drawable);
+                        inputQueue.Add(drawable);
+                    }
+                }
             }
 
             // queues were created in back-to-front order.
@@ -1017,19 +1052,22 @@ namespace osu.Framework.Input
         /// <returns>true if there is no longer a focus.</returns>
         private bool unfocusIfNoLongerValid()
         {
-            if (FocusedDrawable == null) return true;
+            if (FocusedSubtree == null) return true;
 
-            if (isDrawableValidForFocus(FocusedDrawable))
+            if (isSubtreeValidForFocus(FocusedSubtree))
                 return false;
 
-            Logger.Log($"Focus on \"{FocusedDrawable}\" no longer valid as a result of {nameof(unfocusIfNoLongerValid)}.", LoggingTarget.Runtime, LogLevel.Debug);
+            Logger.Log($"Focus on \"{FocusedSubtree}\" no longer valid as a result of {nameof(unfocusIfNoLongerValid)}.", LoggingTarget.Runtime, LogLevel.Debug);
             ChangeFocus(null);
             return true;
         }
 
-        private bool isDrawableValidForFocus(Drawable drawable)
+        private bool isDrawableValidForFocus(Drawable drawable) =>
+            drawable.AcceptsSubtreeFocus && drawable.HandleNonPositionalInput && drawable.IsAlive && drawable.IsPresent && drawable.Parent != null;
+
+        private bool isSubtreeValidForFocus(Drawable drawable)
         {
-            bool valid = drawable.IsAlive && drawable.IsPresent && drawable.Parent != null;
+            bool valid = isDrawableValidForFocus(drawable);
 
             if (valid)
             {
@@ -1059,12 +1097,12 @@ namespace osu.Framework.Input
             {
                 focusTarget = clickedDrawable;
 
-                if (!focusTarget.AcceptsFocus)
+                if (!focusTarget.AcceptsSubtreeFocus)
                 {
                     // search upwards from the clicked drawable until we find something to handle focus.
-                    Drawable previousFocused = FocusedDrawable;
+                    Drawable previousFocused = FocusedSubtree;
 
-                    while (focusTarget?.AcceptsFocus == false)
+                    while (focusTarget?.AcceptsSubtreeFocus == false)
                         focusTarget = focusTarget.Parent;
 
                     if (focusTarget != null && previousFocused != null)
@@ -1090,7 +1128,7 @@ namespace osu.Framework.Input
             // todo: don't rebuild input queue every frame
             foreach (var d in NonPositionalInputQueue)
             {
-                if (d.RequestsFocus)
+                if (d.RequestsSubtreeFocus)
                 {
                     ChangeFocus(d);
                     return;

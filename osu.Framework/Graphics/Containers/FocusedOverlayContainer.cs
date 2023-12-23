@@ -10,9 +10,9 @@ namespace osu.Framework.Graphics.Containers
     /// </summary>
     public abstract partial class FocusedOverlayContainer : OverlayContainer
     {
-        public override bool RequestsFocus => State.Value == Visibility.Visible;
+        public override bool RequestsSubtreeFocus => State.Value == Visibility.Visible;
 
-        public override bool AcceptsFocus => State.Value == Visibility.Visible;
+        public override bool AcceptsSubtreeFocus => State.Value == Visibility.Visible;
 
         protected override void UpdateState(ValueChangedEvent<Visibility> state)
         {

@@ -2189,7 +2189,7 @@ namespace osu.Framework.Graphics
         /// An event that occurs when this <see cref="Drawable"/> gains focus.
         /// </summary>
         /// <remarks>
-        /// This will only be invoked on the <see cref="Drawable"/> that returned <code>true</code> from both <see cref="AcceptsFocus"/> and a previous <see cref="OnClick"/> invocation.
+        /// This will only be invoked on the <see cref="Drawable"/> that returned <code>true</code> from both <see cref="AcceptsSubtreeFocus"/> and a previous <see cref="OnClick"/> invocation.
         /// </remarks>
         /// <param name="e">The <see cref="FocusEvent"/> containing information about the input event.</param>
         protected virtual void OnFocus(FocusEvent e) => Handle(e);
@@ -2346,31 +2346,40 @@ namespace osu.Framework.Graphics
 
         /// <summary>
         /// Whether this <see cref="Drawable"/> handles non-positional input.
-        /// This value is true by default if <see cref="Handle"/> or any non-positional (e.g. keyboard related) "On-" input methods are overridden.
+        /// This property is true by default if <see cref="Handle"/> or any non-positional (e.g. keyboard related) "On-" input methods are overridden.
         /// </summary>
+        /// <remarks>
+        /// This must be <c>true</c> if a drawable wants to be focused.
+        /// </remarks>
         public virtual bool HandleNonPositionalInput => RequestsNonPositionalInput;
 
         /// <summary>
         /// Whether this <see cref="Drawable"/> handles positional input.
-        /// This value is true by default if <see cref="Handle"/> or any positional (i.e. mouse related) "On-" input methods are overridden.
+        /// This property is true by default if <see cref="Handle"/> or any positional (i.e. mouse related) "On-" input methods are overridden.
         /// </summary>
         public virtual bool HandlePositionalInput => RequestsPositionalInput;
 
         /// <summary>
-        /// Check whether we have active focus.
+        /// Check whether we have active focus, either requested by ourselves or passed down from our ancestors.
         /// </summary>
+        /// <remarks>To receive focus from an ancestor, <see cref="HandleNonPositionalInput"/> must be true.</remarks>
         public bool HasFocus { get; internal set; }
 
         /// <summary>
-        /// If true, we are eagerly requesting focus. If nothing else above us has (or is requesting focus) we will get it.
+        /// Whether this <see cref="Drawable"/> is the root of a focus subtree.
         /// </summary>
-        /// <remarks>In order to get focused, <see cref="HandleNonPositionalInput"/> must be true.</remarks>
-        public virtual bool RequestsFocus => false;
+        internal bool IsFocusSubtreeRoot { get; set; }
 
         /// <summary>
-        /// If true, we will gain focus (receiving priority on keyboard input) (and receive an <see cref="OnFocus"/> event) on returning true in <see cref="OnClick"/>.
+        /// If true, we are eagerly requesting focus for our subtree. If nothing else behind us has (or is requesting focus) we will get it.
         /// </summary>
-        public virtual bool AcceptsFocus => false;
+        /// <remarks>In order to get focused, <see cref="HandleNonPositionalInput"/> must be true.</remarks>
+        public virtual bool RequestsSubtreeFocus => false;
+
+        /// <summary>
+        /// If true, we will gain subtree focus (receiving priority on keyboard input, starting from top-most children) and receive an <see cref="OnFocus"/> event on returning true in <see cref="OnClick"/>.
+        /// </summary>
+        public virtual bool AcceptsSubtreeFocus => false;
 
         /// <summary>
         /// Whether this Drawable is currently hovered over.
