@@ -4,8 +4,11 @@
 #nullable disable
 
 using System;
+using System.Threading;
+using osu.Framework.Logging;
 using osu.Framework.Platform.MacOS.Native;
 using osuTK;
+using SDL2;
 
 namespace osu.Framework.Platform.MacOS
 {
@@ -21,6 +24,8 @@ namespace osu.Framework.Platform.MacOS
 
         private delegate void ScrollWheelDelegate(IntPtr handle, IntPtr selector, IntPtr theEvent); // v@:@
 
+        private NSWindow nsWindow;
+
         private IntPtr originalScrollWheel;
         private ScrollWheelDelegate scrollWheelHandler;
 
@@ -33,10 +38,20 @@ namespace osu.Framework.Platform.MacOS
         {
             base.Create();
 
+            nsWindow = new NSWindow(WindowHandle);
+
             // replace [SDLView scrollWheel:(NSEvent *)] with our own version
             IntPtr viewClass = Class.Get("SDLView");
             scrollWheelHandler = scrollWheel;
             originalScrollWheel = Class.SwizzleMethod(viewClass, "scrollWheel:", "v@:@", scrollWheelHandler);
+        }
+
+        protected override void RunMainLoop()
+        {
+            if (OperatingSystem.IsMacOSVersionAtLeast(14, 0))
+                scheduleWithDisplayLink((_, _, _) => RunFrame());
+            else
+                base.RunMainLoop();
         }
 
         /// <summary>
@@ -66,5 +81,32 @@ namespace osu.Framework.Platform.MacOS
 
             ScheduleEvent(() => TriggerMouseWheel(new Vector2(scrollingDeltaX * scale_factor, scrollingDeltaY * scale_factor), true));
         }
+
+        #region CADisplayLink
+
+        private CADisplayLink displayLink;
+        private DisplayLinkCallbackDelegate displayLinkCallbackHandler;
+
+        private delegate void DisplayLinkCallbackDelegate(IntPtr handle, IntPtr selector, IntPtr displayLink); // v@:@
+
+        private void scheduleWithDisplayLink(DisplayLinkCallbackDelegate callback)
+        {
+            const string callback_selector = "displayLinkCallback:";
+
+            // CADisplayLink requires passing an NSObject and a selector to perform callbacks.
+            // We cannot easily create a new class to do this, so we inject the selector to an existing class like NSWindow and setup the callback there and use it.
+            // todo: this is pretty dodgy, but works just fine.
+            IntPtr windowClass = Class.Get("NSWindow");
+            displayLinkCallbackHandler = callback;
+            Class.RegisterMethod(windowClass, displayLinkCallbackHandler, callback_selector, "v@:@");
+
+            displayLink = nsWindow.DisplayLinkWithTarget(nsWindow.Handle, Selector.Get(callback_selector));
+            displayLink.AddToRunLoop(NSRunLoop.CurrentRunLoop, NSRunLoopMode.NSDefaultRunLoopMode);
+
+            while (Exists)
+                NSRunLoop.CurrentRunLoop.Run(NSRunLoopMode.NSDefaultRunLoopMode, NSDate.DistantFuture);
+        }
+
+        #endregion
     }
 }

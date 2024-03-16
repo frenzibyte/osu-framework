@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using osu.Framework.Extensions.EnumExtensions;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 
 namespace osu.Framework.Input
@@ -77,19 +78,19 @@ namespace osu.Framework.Input
                 return key.ToString().Substring("Midi".Length).Replace("Sharp", "#");
 
             if (key >= InputKey.FirstJoystickHatRightButton)
-                return $"Joystick Hat {key - InputKey.FirstJoystickHatRightButton + 1} Right";
+                return $" Hat {key - InputKey.FirstJoystickHatRightButton + 1} Right";
             if (key >= InputKey.FirstJoystickHatLeftButton)
-                return $"Joystick Hat {key - InputKey.FirstJoystickHatLeftButton + 1} Left";
+                return $" Hat {key - InputKey.FirstJoystickHatLeftButton + 1} Left";
             if (key >= InputKey.FirstJoystickHatDownButton)
-                return $"Joystick Hat {key - InputKey.FirstJoystickHatDownButton + 1} Down";
+                return $" Hat {key - InputKey.FirstJoystickHatDownButton + 1} Down";
             if (key >= InputKey.FirstJoystickHatUpButton)
-                return $"Joystick Hat {key - InputKey.FirstJoystickHatUpButton + 1} Up";
+                return $" Hat {key - InputKey.FirstJoystickHatUpButton + 1} Up";
             if (key >= InputKey.FirstJoystickAxisPositiveButton)
-                return $"Joystick Axis {key - InputKey.FirstJoystickAxisPositiveButton + 1} +";
+                return $" Axis {key - InputKey.FirstJoystickAxisPositiveButton + 1} +";
             if (key >= InputKey.FirstJoystickAxisNegativeButton)
-                return $"Joystick Axis {key - InputKey.FirstJoystickAxisNegativeButton + 1} -";
+                return $" Axis {key - InputKey.FirstJoystickAxisNegativeButton + 1} -";
             if (key >= InputKey.FirstJoystickButton)
-                return $"Joystick {key - InputKey.FirstJoystickButton + 1}";
+                return $@"{FontAwesome.Brands.CcApplePay.Icon} {key - InputKey.FirstJoystickButton + 1}";
 
             switch (key)
             {

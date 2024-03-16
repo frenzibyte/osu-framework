@@ -46,6 +46,10 @@ namespace osu.Framework.Tests.Visual.Input
             new[]
             {
                 InputKey.Control, InputKey.Super, InputKey.Alt
+            },
+            new[]
+            {
+                InputKey.Joystick1, InputKey.Joystick2
             }
         };
 

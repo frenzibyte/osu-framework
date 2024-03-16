@@ -818,7 +818,7 @@ namespace osu.Framework.Platform
                 if (CanExit)
                 {
                     // Close the window and stop all threads
-                    performExit(true);
+                    // performExit(true);
 
                     host_running_mutex.Release();
                 }

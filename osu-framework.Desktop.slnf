@@ -2,6 +2,9 @@
   "solution": {
     "path": "osu-framework.sln",
     "projects": [
+      "..\\veldrid\\src\\Veldrid.MetalBindings\\Veldrid.MetalBindings.csproj",
+      "..\\veldrid\\src\\Veldrid.OpenGLBindings\\Veldrid.OpenGLBindings.csproj",
+      "..\\veldrid\\src\\Veldrid\\Veldrid.csproj",
       "osu.Framework.Benchmarks\\osu.Framework.Benchmarks.csproj",
       "osu.Framework.NativeLibs\\osu.Framework.NativeLibs.csproj",
       "osu.Framework.SourceGeneration.Tests\\osu.Framework.SourceGeneration.Tests.csproj",

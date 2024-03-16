@@ -26,6 +26,9 @@ namespace osu.Framework.Platform.MacOS.Native
         public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, int int1);
 
         [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, double double1);
+
+        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
         public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, ulong ulong1);
 
         [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
@@ -56,10 +59,19 @@ namespace osu.Framework.Platform.MacOS.Native
         public static extern bool SendBool(IntPtr receiver, IntPtr selector, IntPtr ptr1, IntPtr ptr2);
 
         [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static extern void SendVoid(IntPtr receiver, IntPtr selector);
+
+        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
         public static extern void SendVoid(IntPtr receiver, IntPtr selector, IntPtr ptr1);
 
         [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static extern void SendVoid(IntPtr receiver, IntPtr selector, IntPtr ptr1, IntPtr ptr2);
+
+        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
         public static extern void SendVoid(IntPtr receiver, IntPtr selector, IntPtr intPtr1, IntPtr intPtr2, IntPtr intPtr3, IntPtr intPtr4);
+
+        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static extern void SendVoid(IntPtr receiver, IntPtr selector, CAFrameRateRange frameRateRange);
 
         [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend_fpret")]
         public static extern float SendFloat_i386(IntPtr receiver, IntPtr selector);
@@ -68,6 +80,9 @@ namespace osu.Framework.Platform.MacOS.Native
         public static extern double SendFloat_x64(IntPtr receiver, IntPtr selector);
 
         public static float SendFloat(IntPtr receiver, IntPtr selector) => IntPtr.Size == 4 ? SendFloat_i386(receiver, selector) : (float)SendFloat_x64(receiver, selector);
+
+        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend_stret")]
+        public static extern CAFrameRateRange SendCAFrameRateRange(IntPtr receiver, IntPtr selector);
 
         public static IntPtr AppKitLibrary;
 
