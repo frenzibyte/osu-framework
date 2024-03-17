@@ -277,6 +277,11 @@ namespace osu.Framework.Platform
             while (Exists)
                 RunFrame();
 
+            CleanupAfterLoop();
+        }
+
+        protected void CleanupAfterLoop()
+        {
             Exited?.Invoke();
             Close();
             SDL.SDL_Quit();

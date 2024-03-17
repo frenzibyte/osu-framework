@@ -503,7 +503,9 @@ namespace osu.Framework.Platform
                 // Without this, the wait handle, internally used in the Veldrid-side implementation of `WaitUntilNextFrameReady()`,
                 // will potentially be in a bad state and take the timeout value (1 second) to recover.
                 if (didRenderFrame)
-                    Renderer.WaitUntilNextFrameReady();
+                {
+                    // Renderer.WaitUntilNextFrameReady();
+                }
 
                 didRenderFrame = false;
                 buffer = DrawRoots.GetForRead();
@@ -818,7 +820,7 @@ namespace osu.Framework.Platform
                 if (CanExit)
                 {
                     // Close the window and stop all threads
-                    // performExit(true);
+                    performExit(true);
 
                     host_running_mutex.Release();
                 }

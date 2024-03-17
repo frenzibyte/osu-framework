@@ -4,11 +4,8 @@
 #nullable disable
 
 using System;
-using System.Threading;
-using osu.Framework.Logging;
 using osu.Framework.Platform.MacOS.Native;
 using osuTK;
-using SDL2;
 
 namespace osu.Framework.Platform.MacOS
 {
@@ -48,9 +45,12 @@ namespace osu.Framework.Platform.MacOS
 
         protected override void RunMainLoop()
         {
-            if (OperatingSystem.IsMacOSVersionAtLeast(14, 0))
-                scheduleWithDisplayLink((_, _, _) => RunFrame());
-            else
+            // if (OperatingSystem.IsMacOSVersionAtLeast(14, 0))
+            // {
+            //     runOnDisplayLink((_, _, _) => RunFrame());
+            //     CleanupAfterLoop();
+            // }
+            // else
                 base.RunMainLoop();
         }
 
@@ -89,7 +89,7 @@ namespace osu.Framework.Platform.MacOS
 
         private delegate void DisplayLinkCallbackDelegate(IntPtr handle, IntPtr selector, IntPtr displayLink); // v@:@
 
-        private void scheduleWithDisplayLink(DisplayLinkCallbackDelegate callback)
+        private void runOnDisplayLink(DisplayLinkCallbackDelegate callback)
         {
             const string callback_selector = "displayLinkCallback:";
 
@@ -100,11 +100,11 @@ namespace osu.Framework.Platform.MacOS
             displayLinkCallbackHandler = callback;
             Class.RegisterMethod(windowClass, displayLinkCallbackHandler, callback_selector, "v@:@");
 
-            displayLink = nsWindow.DisplayLinkWithTarget(nsWindow.Handle, Selector.Get(callback_selector));
+            displayLink = CADisplayLink.DisplayLinkWithTarget(nsWindow.Handle, Selector.Get(callback_selector));
             displayLink.AddToRunLoop(NSRunLoop.CurrentRunLoop, NSRunLoopMode.NSDefaultRunLoopMode);
 
             while (Exists)
-                NSRunLoop.CurrentRunLoop.Run(NSRunLoopMode.NSDefaultRunLoopMode, NSDate.DistantFuture);
+                NSRunLoop.CurrentRunLoop.Run(NSDate.Now);
         }
 
         #endregion
