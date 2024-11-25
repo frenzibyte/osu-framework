@@ -447,7 +447,7 @@ namespace osu.Framework.Platform.SDL3
         /// Updates <see cref="Size"/> and <see cref="Scale"/> according to SDL state.
         /// </summary>
         /// <returns>Whether the window size has been changed after updating.</returns>
-        private unsafe void fetchWindowSize()
+        private unsafe void fetchWindowSize(bool storeToConfig = true)
         {
             int w, h;
             SDL_GetWindowSize(SDLWindowHandle, &w, &h);
@@ -462,7 +462,8 @@ namespace osu.Framework.Platform.SDL3
             Scale = (float)drawableW / w;
             Size = new Size(w, h);
 
-            storeWindowSizeToConfig();
+            if (storeToConfig)
+                storeWindowSizeToConfig();
         }
 
         #region SDL Event Handling
