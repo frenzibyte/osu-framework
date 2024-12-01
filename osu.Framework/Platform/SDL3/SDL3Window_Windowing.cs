@@ -651,14 +651,10 @@ namespace osu.Framework.Platform.SDL3
                     break;
 
                 case WindowState.Fullscreen:
-                    var closestMode = getClosestDisplayMode(SDLWindowHandle, sizeFullscreen.Value, display, displayMode);
-
-                    Size = new Size(closestMode.w, closestMode.h);
-
                     ensureWindowOnDisplay(display);
 
-                    SDL_SetWindowFullscreenMode(SDLWindowHandle, &closestMode);
-                    SDL_SetWindowFullscreen(SDLWindowHandle, true);
+                    var closestMode = getClosestDisplayMode(SDLWindowHandle, sizeFullscreen.Value, display, displayMode);
+                    Size = SetFullscreen(closestMode);
                     break;
 
                 case WindowState.FullscreenBorderless:
@@ -797,6 +793,21 @@ namespace osu.Framework.Platform.SDL3
             storingSizeToConfig = true;
             sizeWindowed.Value = Size;
             storingSizeToConfig = false;
+        }
+
+        /// <summary>
+        /// Prepare display of a fullscreen window.
+        /// </summary>
+        /// <param name="sdlDisplayMode">The display mode to use when making this window fullscreen, if the platform supports using specific display modes.</param>
+        /// <returns>
+        /// The size of the fullscreen window's draw area. This may be different from the given <paramref name="sdlDisplayMode"/>
+        /// as some platforms do not support using specific display modes (e.g. macOS).
+        /// </returns>
+        protected virtual unsafe Size SetFullscreen(SDL_DisplayMode sdlDisplayMode)
+        {
+            SDL_SetWindowFullscreenMode(SDLWindowHandle, &sdlDisplayMode);
+            SDL_SetWindowFullscreen(SDLWindowHandle, true);
+            return new Size(sdlDisplayMode.w, sdlDisplayMode.h);
         }
 
         /// <summary>

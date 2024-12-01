@@ -4,9 +4,14 @@
 #nullable disable
 
 using System;
+using System.Collections.Generic;
+using System.Drawing;
+using osu.Framework.Configuration;
 using osu.Framework.Platform.MacOS.Native;
 using osu.Framework.Platform.SDL3;
 using osuTK;
+using SDL;
+using static SDL.SDL3;
 
 namespace osu.Framework.Platform.MacOS
 {
@@ -25,6 +30,12 @@ namespace osu.Framework.Platform.MacOS
         private IntPtr originalScrollWheel;
         private ScrollWheelDelegate scrollWheelHandler;
 
+        public override IEnumerable<WindowMode> SupportedWindowModes => new[]
+        {
+            Configuration.WindowMode.Windowed,
+            Configuration.WindowMode.Fullscreen,
+        };
+
         public SDL3MacOSWindow(GraphicsSurfaceType surfaceType, string appName)
             : base(surfaceType, appName)
         {
@@ -38,6 +49,21 @@ namespace osu.Framework.Platform.MacOS
             IntPtr viewClass = Class.Get("SDL3View");
             scrollWheelHandler = scrollWheel;
             originalScrollWheel = Class.SwizzleMethod(viewClass, "scrollWheel:", "v@:@", scrollWheelHandler);
+        }
+
+        protected override unsafe Size SetFullscreen(SDL_DisplayMode sdlDisplayMode)
+        {
+            var desktopMode = SDL_GetDesktopDisplayMode(sdlDisplayMode.displayID);
+
+            // SDL3 offers us two options for fullscreen:
+            //   1. SDL3's "fullscreen" mode (resize window to fit current display)
+            //   2. macOS's native "fullscreen space" mode (make window become fullscreen in a dedicated space for it)
+            // the first option is good for its ability to change display mode in game,
+            // but behaves finicky at times and gets broken by external window managers.
+            // we'll go with the second option for now, by setting fullscreen mode to null.
+            SDL_SetWindowFullscreenMode(SDLWindowHandle, null);
+            SDL_SetWindowFullscreen(SDLWindowHandle, true);
+            return Size.Round(new Size(desktopMode->w, desktopMode->h) * desktopMode->pixel_density);
         }
 
         /// <summary>
