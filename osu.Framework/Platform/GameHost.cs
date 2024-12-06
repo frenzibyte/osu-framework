@@ -202,6 +202,19 @@ namespace osu.Framework.Platform
         public virtual string InitialFileSelectorPath => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         /// <summary>
+        /// Creates a provider component for interacting with a system-provided file selector.
+        /// </summary>
+        /// <param name="allowedExtensions">The list of extensions allowed to be selected, or empty to allow all files.</param>
+        [CanBeNull]
+        public virtual ISystemFileSelector CreateSystemFileSelector(string[] allowedExtensions) => null;
+
+        /// <summary>
+        /// Creates a provider component for interacting with a system-provided directory selector.
+        /// </summary>
+        [CanBeNull]
+        public virtual ISystemDirectorySelector CreateSystemDirectorySelector() => null;
+
+        /// <summary>
         /// Retrieve a storage for the specified location.
         /// </summary>
         /// <param name="path">The absolute path to be used as a root for the storage.</param>

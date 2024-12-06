@@ -7,10 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Input.Events;
+using osu.Framework.Logging;
+using osu.Framework.Platform;
 
 namespace osu.Framework.Graphics.UserInterface
 {
@@ -25,10 +28,30 @@ namespace osu.Framework.Graphics.UserInterface
         [Cached]
         public readonly Bindable<FileInfo> CurrentFile = new Bindable<FileInfo>();
 
+        [CanBeNull]
+        private ISystemFileSelector systemFileSelector;
+
         protected FileSelector(string initialPath = null, string[] validFileExtensions = null)
             : base(initialPath)
         {
             this.validFileExtensions = validFileExtensions ?? Array.Empty<string>();
+        }
+
+        private protected override bool PresentSystemSelectorIfAvailable(GameHost host)
+        {
+            systemFileSelector = host.CreateSystemFileSelector(validFileExtensions);
+            if (systemFileSelector == null)
+                return false;
+
+            systemFileSelector.Selected += f => Schedule(() =>
+            {
+                CurrentFile.Value = f;
+                CurrentPath.Value = f.Directory;
+            });
+
+            systemFileSelector.Cancelled += () => Schedule(() => Logger.Log("Uhh..."));
+            systemFileSelector.Present();
+            return true;
         }
 
         protected override bool TryGetEntriesForPath(DirectoryInfo path, out ICollection<DirectorySelectorItem> items)
@@ -59,6 +82,12 @@ namespace osu.Framework.Graphics.UserInterface
             {
                 return false;
             }
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            systemFileSelector?.Dispose();
+            base.Dispose(isDisposing);
         }
 
         protected abstract partial class DirectoryListingFile : DirectorySelectorItem

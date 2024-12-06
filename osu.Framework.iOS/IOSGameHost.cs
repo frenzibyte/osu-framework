@@ -23,6 +23,8 @@ namespace osu.Framework.iOS
 {
     public class IOSGameHost : SDLGameHost
     {
+        private IOSWindow iosWindow => (IOSWindow)Window;
+
         public IOSGameHost()
             : base(string.Empty)
         {
@@ -75,6 +77,38 @@ namespace osu.Framework.iOS
 
         public override VideoDecoder CreateVideoDecoder(Stream stream)
             => new IOSVideoDecoder(Renderer, stream);
+
+        public override ISystemFileSelector? CreateSystemFileSelector(string[] allowedExtensions)
+        {
+            IOSFileSelector? selector = null;
+
+            UIApplication.SharedApplication.InvokeOnMainThread(() =>
+            {
+                if (!OperatingSystem.IsIOSVersionAtLeast(14))
+                    // todo: selectors should be supported before iOS 14, something is wrong.
+                    return;
+
+                selector = new IOSFileSelector(iosWindow.UIWindow, allowedExtensions);
+            });
+
+            return selector;
+        }
+
+        public override ISystemDirectorySelector? CreateSystemDirectorySelector()
+        {
+            IOSDirectorySelector? selector = null;
+
+            UIApplication.SharedApplication.InvokeOnMainThread(() =>
+            {
+                if (!OperatingSystem.IsIOSVersionAtLeast(14))
+                    // todo: selectors should be supported before iOS 14, something is wrong.
+                    return;
+
+                selector = new IOSDirectorySelector(iosWindow.UIWindow);
+            });
+
+            return selector;
+        }
 
         public override IEnumerable<KeyBinding> PlatformKeyBindings => MacOSGameHost.KeyBindings;
     }

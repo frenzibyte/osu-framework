@@ -7,10 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osuTK;
 
@@ -22,6 +24,8 @@ namespace osu.Framework.Graphics.UserInterface
     public abstract partial class DirectorySelector : CompositeDrawable
     {
         private FillFlowContainer directoryFlow;
+
+        protected Container<Drawable> Content { get; private set; } = null!;
 
         protected readonly BindableBool ShowHiddenItems = new BindableBool();
 
@@ -52,6 +56,9 @@ namespace osu.Framework.Graphics.UserInterface
 
         private string initialPath;
 
+        [CanBeNull]
+        private ISystemDirectorySelector systemDirectorySelector;
+
         protected DirectorySelector(string initialPath = null)
         {
             this.initialPath = initialPath;
@@ -67,59 +74,86 @@ namespace osu.Framework.Graphics.UserInterface
         [BackgroundDependencyLoader]
         private void load(GameHost gameHost)
         {
+            Container contentContainer;
+
             initialPath ??= gameHost.InitialFileSelectorPath;
 
-            InternalChild = new GridContainer
+            InternalChild = contentContainer = new Container
             {
                 RelativeSizeAxes = Axes.Both,
-                RowDimensions = new[]
+                Child = Content = new Container
                 {
-                    new Dimension(GridSizeMode.AutoSize),
-                    new Dimension(),
-                },
-                Content = new[]
-                {
-                    new Drawable[]
+                    RelativeSizeAxes = Axes.Both,
+                    Child = new GridContainer
                     {
-                        new GridContainer
+                        RelativeSizeAxes = Axes.Both,
+                        RowDimensions = new[]
                         {
-                            RelativeSizeAxes = Axes.X,
-                            AutoSizeAxes = Axes.Y,
-                            ColumnDimensions = new[]
+                            new Dimension(GridSizeMode.AutoSize),
+                            new Dimension(),
+                        },
+                        Content = new[]
+                        {
+                            new Drawable[]
                             {
-                                new Dimension(),
-                                new Dimension(GridSizeMode.AutoSize),
-                            },
-                            RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
-                            Content = new[]
-                            {
-                                new[]
+                                new GridContainer
                                 {
-                                    CreateBreadcrumb(),
-                                    CreateHiddenToggleButton()
+                                    RelativeSizeAxes = Axes.X,
+                                    AutoSizeAxes = Axes.Y,
+                                    ColumnDimensions = new[]
+                                    {
+                                        new Dimension(),
+                                        new Dimension(GridSizeMode.AutoSize),
+                                    },
+                                    RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
+                                    Content = new[]
+                                    {
+                                        new[]
+                                        {
+                                            CreateBreadcrumb(),
+                                            CreateHiddenToggleButton()
+                                        }
+                                    }
                                 }
+                            },
+                            new Drawable[]
+                            {
+                                CreateScrollContainer().With(d =>
+                                {
+                                    d.RelativeSizeAxes = Axes.Both;
+                                    d.Child = directoryFlow = new FillFlowContainer
+                                    {
+                                        AutoSizeAxes = Axes.Y,
+                                        RelativeSizeAxes = Axes.X,
+                                        Direction = FillDirection.Vertical,
+                                        Spacing = new Vector2(2),
+                                    };
+                                })
                             }
                         }
-                    },
-                    new Drawable[]
-                    {
-                        CreateScrollContainer().With(d =>
-                        {
-                            d.RelativeSizeAxes = Axes.Both;
-                            d.Child = directoryFlow = new FillFlowContainer
-                            {
-                                AutoSizeAxes = Axes.Y,
-                                RelativeSizeAxes = Axes.X,
-                                Direction = FillDirection.Vertical,
-                                Spacing = new Vector2(2),
-                            };
-                        })
                     }
                 }
             };
 
             ShowHiddenItems.ValueChanged += _ => updateDisplay();
             CurrentPath.BindValueChanged(_ => updateDisplay(), true);
+
+            bool presented = PresentSystemSelectorIfAvailable(gameHost);
+
+            if (presented)
+                contentContainer.Hide();
+        }
+
+        private protected virtual bool PresentSystemSelectorIfAvailable(GameHost host)
+        {
+            systemDirectorySelector = host.CreateSystemDirectorySelector();
+            if (systemDirectorySelector == null)
+                return false;
+
+            systemDirectorySelector.Selected += d => Schedule(() => CurrentPath.Value = d);
+            systemDirectorySelector.Cancelled += () => Schedule(() => Logger.Log("Umm..."));
+            systemDirectorySelector.Present();
+            return true;
         }
 
         /// <summary>
@@ -223,6 +257,12 @@ namespace osu.Framework.Graphics.UserInterface
         /// </summary>
         protected virtual void NotifySelectionError()
         {
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            systemDirectorySelector?.Dispose();
+            base.Dispose(isDisposing);
         }
     }
 }
