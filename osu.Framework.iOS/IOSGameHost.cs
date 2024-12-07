@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.Versioning;
 using Foundation;
 using osu.Framework.Configuration;
 using osu.Framework.Extensions;
@@ -18,6 +20,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Platform.MacOS;
 using UIKit;
+using UniformTypeIdentifiers;
 
 namespace osu.Framework.iOS
 {
@@ -80,7 +83,7 @@ namespace osu.Framework.iOS
 
         public override ISystemFileSelector? CreateSystemFileSelector(string[] allowedExtensions)
         {
-            IOSFileSelector? selector = null;
+            ISystemFileSelector? selector = null;
 
             UIApplication.SharedApplication.InvokeOnMainThread(() =>
             {
@@ -88,7 +91,15 @@ namespace osu.Framework.iOS
                     // todo: selectors should be supported before iOS 14, something is wrong.
                     return;
 
-                selector = new IOSFileSelector(iosWindow.UIWindow, allowedExtensions);
+                var types = createTypesFromExtensions(allowedExtensions);
+#pragma warning disable CA1416
+                bool useImagePicker = types.All(t => t.ConformsTo(UTTypes.Image));
+#pragma warning restore CA1416
+
+                if (useImagePicker)
+                    selector = new IOSImageSelector(iosWindow.UIWindow, types);
+                else
+                    selector = new IOSFileSelector(iosWindow.UIWindow, types);
             });
 
             return selector;
@@ -111,5 +122,36 @@ namespace osu.Framework.iOS
         }
 
         public override IEnumerable<KeyBinding> PlatformKeyBindings => MacOSGameHost.KeyBindings;
+
+        [SupportedOSPlatform("ios14.0")]
+        private static UTType[] createTypesFromExtensions(string[] allowedExtensions)
+        {
+            UTType[] utTypes;
+
+            if (allowedExtensions.Length == 0)
+                utTypes = new[] { UTTypes.Data };
+            else
+            {
+                utTypes = new UTType[allowedExtensions.Length];
+
+                for (int i = 0; i < allowedExtensions.Length; i++)
+                {
+                    string extension = allowedExtensions[i];
+
+                    var type = UTType.CreateFromExtension(extension.Replace(".", string.Empty));
+
+                    if (type == null)
+                    {
+                        // todo: fix messsage lol
+                        throw new InvalidOperationException($"System failed to recognise extension \"{extension}\" when creating file selector.\n"
+                                                            + $"If this is an extension provided by your application, consider adding it to whatever.");
+                    }
+
+                    utTypes[i] = type;
+                }
+            }
+
+            return utTypes;
+        }
     }
 }

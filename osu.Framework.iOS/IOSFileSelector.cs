@@ -21,36 +21,11 @@ namespace osu.Framework.iOS
 
         private readonly UIDocumentPickerViewController viewController;
 
-        public IOSFileSelector(UIWindow window, string[] allowedExtensions)
+        public IOSFileSelector(UIWindow window, UTType[] types)
         {
             this.window = window;
 
-            UTType[] utTypes;
-
-            if (allowedExtensions.Length == 0)
-                utTypes = new[] { UTTypes.Data };
-            else
-            {
-                utTypes = new UTType[allowedExtensions.Length];
-
-                for (int i = 0; i < allowedExtensions.Length; i++)
-                {
-                    string extension = allowedExtensions[i];
-
-                    var type = UTType.CreateFromExtension(extension.Replace(".", string.Empty));
-
-                    if (type == null)
-                    {
-                        // todo: fix messsage lol
-                        throw new InvalidOperationException($"System failed to recognise extension \"{extension}\" when creating file selector.\n"
-                                                            + $"If this is an extension provided by your application, consider adding it to whatever.");
-                    }
-
-                    utTypes[i] = type;
-                }
-            }
-
-            viewController = new UIDocumentPickerViewController(utTypes, true);
+            viewController = new UIDocumentPickerViewController(types, true);
             viewController.Delegate = this;
         }
 

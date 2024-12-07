@@ -25,7 +25,7 @@ namespace osu.Framework.Tests.Visual.UserInterface
         [BackgroundDependencyLoader]
         private void load()
         {
-            Add(selector = new BasicFileSelector { RelativeSizeAxes = Axes.Both });
+            Add(selector = new BasicFileSelector(null, new[] { ".jpg" }) { RelativeSizeAxes = Axes.Both });
         }
 
         protected override void LoadComplete()
