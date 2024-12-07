@@ -14,11 +14,6 @@ namespace osu.Framework.Platform
         event Action<DirectoryInfo> Selected;
 
         /// <summary>
-        /// Triggered when the user has cancelled/dismissed the selector.
-        /// </summary>
-        event Action Cancelled;
-
-        /// <summary>
         /// Presents the system directory selector.
         /// </summary>
         void Present();

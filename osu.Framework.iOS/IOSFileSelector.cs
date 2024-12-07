@@ -15,7 +15,6 @@ namespace osu.Framework.iOS
     public class IOSFileSelector : UIDocumentPickerDelegate, ISystemFileSelector
     {
         public event Action<FileInfo>? Selected;
-        public event Action? Cancelled;
 
         private readonly UIWindow window;
 
@@ -64,9 +63,6 @@ namespace osu.Framework.iOS
 
         public override void DidPickDocument(UIDocumentPickerViewController controller, NSUrl url)
             => Selected?.Invoke(new FileInfo(url.Path!));
-
-        public override void WasCancelled(UIDocumentPickerViewController controller)
-            => Cancelled?.Invoke();
 
         protected override void Dispose(bool disposing)
         {

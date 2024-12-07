@@ -14,11 +14,6 @@ namespace osu.Framework.Platform
         event Action<FileInfo> Selected;
 
         /// <summary>
-        /// Triggered when the user has cancelled/dismissed the selector.
-        /// </summary>
-        event Action Cancelled;
-
-        /// <summary>
         /// Presents the system file selector.
         /// </summary>
         void Present();

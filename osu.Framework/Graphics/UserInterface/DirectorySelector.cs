@@ -12,7 +12,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osuTK;
 
@@ -151,7 +150,6 @@ namespace osu.Framework.Graphics.UserInterface
                 return false;
 
             systemDirectorySelector.Selected += d => Schedule(() => CurrentPath.Value = d);
-            systemDirectorySelector.Cancelled += () => Schedule(() => Logger.Log("Umm..."));
             systemDirectorySelector.Present();
             return true;
         }

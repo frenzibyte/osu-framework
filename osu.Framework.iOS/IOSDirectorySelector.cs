@@ -15,7 +15,6 @@ namespace osu.Framework.iOS
     public class IOSDirectorySelector : UIDocumentPickerDelegate, ISystemDirectorySelector
     {
         public event Action<DirectoryInfo>? Selected;
-        public event Action? Cancelled;
 
         private readonly UIWindow window;
         private readonly UIDocumentPickerViewController viewController;
@@ -38,9 +37,6 @@ namespace osu.Framework.iOS
 
         public override void DidPickDocument(UIDocumentPickerViewController controller, NSUrl url)
             => Selected?.Invoke(new DirectoryInfo(url.AbsoluteString!));
-
-        public override void WasCancelled(UIDocumentPickerViewController controller)
-            => Cancelled?.Invoke();
 
         protected override void Dispose(bool disposing)
         {
