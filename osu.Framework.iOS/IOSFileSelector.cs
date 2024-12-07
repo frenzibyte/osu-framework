@@ -66,11 +66,7 @@ namespace osu.Framework.iOS
 
         protected override void Dispose(bool disposing)
         {
-            var v = viewController;
-
-            UIApplication.SharedApplication.InvokeOnMainThread(() => v.DismissViewController(true, null));
             viewController.Dispose();
-
             base.Dispose(disposing);
         }
     }
