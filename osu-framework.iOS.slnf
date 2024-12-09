@@ -2,6 +2,8 @@
   "solution": {
     "path": "osu-framework.sln",
     "projects": [
+      "..\\SDL3-CS\\SDL3-CS.iOSBindings\\SDL3-CS.iOSBindings.csproj",
+      "osu.Framework.iOS.SDLBindings\\osu.Framework.iOS.SDLBindings.csproj",
       "osu.Framework.iOS\\osu.Framework.iOS.csproj",
       "osu.Framework.NativeLibs\\osu.Framework.NativeLibs.csproj",
       "osu.Framework.Templates\\templates\\template-empty\\TemplateGame.Game\\TemplateGame.Game.csproj",

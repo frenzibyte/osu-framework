@@ -15,11 +15,17 @@
     <PackageTags>osu game framework</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\osu.Framework.iOS.SDLBindings\osu.Framework.iOS.SDLBindings.csproj" />
     <ProjectReference Include="..\osu.Framework\osu.Framework.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="runtimes\**\*" Pack="true" PackagePath="runtimes" />
     <None Include="stubs\**\*" Pack="true" PackagePath="stubs" />
     <Content Include="osu.Framework.iOS.Workarounds.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="SDL.iOSBindings">
+      <HintPath>..\SDL.iOSBindings.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

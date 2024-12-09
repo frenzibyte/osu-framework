@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0-ios</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>true</ImplicitUsings>
+        <IsBindingProject>true</IsBindingProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <NativeReference Include="/Users/salman/.nuget/packages/ppy.sdl3-cs/2024.1128.0/runtimes/ios/native/SDL3.xcframework">
+        <Kind>Framework</Kind>
+      </NativeReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ObjcBindingApiDefinition Include="ApiDefinition.cs"/>
+        <ObjcBindingCoreSource Include="StructsAndEnums.cs"/>
+    </ItemGroup>
+</Project>
