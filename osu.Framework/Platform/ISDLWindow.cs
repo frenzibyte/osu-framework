@@ -22,6 +22,11 @@ namespace osu.Framework.Platform
         event Action<MouseButton> MouseDown;
         event Action<MouseButton> MouseUp;
         event Action<Vector2, bool> MouseWheel;
+        event Action PenIn;
+        event Action PenOut;
+        event Action<Vector2> PenMove;
+        event Action<MouseButton> PenDown;
+        event Action<MouseButton> PenUp;
         event Action<Key> KeyDown;
         event Action<Key> KeyUp;
         event Action<string> TextInput;

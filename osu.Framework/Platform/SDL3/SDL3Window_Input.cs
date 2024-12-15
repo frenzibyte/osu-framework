@@ -510,9 +510,23 @@ namespace osu.Framework.Platform.SDL3
 
         private void handleKeymapChangedEvent() => KeymapChanged?.Invoke();
 
+        private void handlePenProximityEvent(SDL_PenProximityEvent evtPenProximity)
+        {
+            switch (evtPenProximity.type)
+            {
+                case SDL_EventType.SDL_EVENT_PEN_PROXIMITY_IN:
+                    PenIn?.Invoke();
+                    break;
+
+                case SDL_EventType.SDL_EVENT_PEN_PROXIMITY_OUT:
+                    PenOut?.Invoke();
+                    break;
+            }
+        }
+
         private void handlePenMotionEvent(SDL_PenMotionEvent evtPenMotion)
         {
-            MouseMove?.Invoke(new Vector2(evtPenMotion.x * Scale, evtPenMotion.y * Scale));
+            PenMove?.Invoke(new Vector2(evtPenMotion.x * Scale, evtPenMotion.y * Scale));
         }
 
         private void handlePenTouchEvent(SDL_PenTouchEvent evtPenTouch)
@@ -544,7 +558,7 @@ namespace osu.Framework.Platform.SDL3
                 }
 
                 penPressedButtons |= mask;
-                MouseDown?.Invoke(button);
+                PenDown?.Invoke(button);
             }
             else
             {
@@ -555,7 +569,7 @@ namespace osu.Framework.Platform.SDL3
                 }
 
                 penPressedButtons &= ~mask;
-                MouseUp?.Invoke(button);
+                PenUp?.Invoke(button);
             }
         }
 
@@ -673,6 +687,13 @@ namespace osu.Framework.Platform.SDL3
         protected void TriggerMouseWheel(Vector2 delta, bool precise) => MouseWheel?.Invoke(delta, precise);
 
         /// <summary>
+        /// Invoked when the current position of the mouse cursor is no longer valid to read.
+        /// </summary>
+        public event Action? MouseInvalidatePosition;
+
+        protected void TriggerMouseInvalidatePosition() => MouseInvalidatePosition?.Invoke();
+
+        /// <summary>
         /// Invoked when the user moves the mouse cursor within the window.
         /// </summary>
         public event Action<Vector2>? MouseMove;
@@ -697,6 +718,41 @@ namespace osu.Framework.Platform.SDL3
         public event Action<MouseButton>? MouseUp;
 
         protected void TriggerMouseUp(MouseButton button) => MouseUp?.Invoke(button);
+
+        /// <summary>
+        /// Invoked when the pen is close to the screen and its motion became tracked.
+        /// </summary>
+        public event Action? PenIn;
+
+        protected void TriggerPenIn() => PenIn?.Invoke();
+
+        /// <summary>
+        /// Invoked when the pen became far from the screen and motion will no longer be tracked.
+        /// </summary>
+        public event Action? PenOut;
+
+        protected void TriggerPenOut() => PenOut?.Invoke();
+
+        /// <summary>
+        /// Invoked when the user moves their pen.
+        /// </summary>
+        public event Action<Vector2>? PenMove;
+
+        protected void TriggerPenMove(float x, float y) => PenMove?.Invoke(new Vector2(x, y));
+
+        /// <summary>
+        /// Invoked when the pen produced a button press, as a result of pressing the pen down or by pressing an auxiliary button.
+        /// </summary>
+        public event Action<MouseButton>? PenDown;
+
+        protected void TriggerPenDown(MouseButton button) => PenDown?.Invoke(button);
+
+        /// <summary>
+        /// Invoked when the button press signaled by <see cref="PenDown"/> has been released.
+        /// </summary>
+        public event Action<MouseButton>? PenUp;
+
+        protected void TriggerPenUp(MouseButton button) => PenUp?.Invoke(button);
 
         /// <summary>
         /// Invoked when the user presses a key.

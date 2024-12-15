@@ -102,16 +102,28 @@ namespace osu.Framework.Input
             switch (e)
             {
                 case MouseDownEvent mouseDown:
-                    new MouseButtonInput(mouseDown.Button, true).Apply(CurrentState, this);
+                    if (e.CurrentState.Mouse.LastSource is ISourcedFromPen)
+                        new MouseButtonInputFromPen(mouseDown.Button, true).Apply(CurrentState, this);
+                    else
+                        new MouseButtonInput(mouseDown.Button, true).Apply(CurrentState, this);
                     break;
 
                 case MouseUpEvent mouseUp:
-                    new MouseButtonInput(mouseUp.Button, false).Apply(CurrentState, this);
+                    if (e.CurrentState.Mouse.LastSource is ISourcedFromPen)
+                        new MouseButtonInputFromPen(mouseUp.Button, false).Apply(CurrentState, this);
+                    else
+                        new MouseButtonInput(mouseUp.Button, false).Apply(CurrentState, this);
                     break;
 
                 case MouseMoveEvent mouseMove:
                     if (mouseMove.ScreenSpaceMousePosition != CurrentState.Mouse.Position)
-                        new MousePositionAbsoluteInput { Position = mouseMove.ScreenSpaceMousePosition }.Apply(CurrentState, this);
+                    {
+                        if (e.CurrentState.Mouse.LastSource is ISourcedFromPen)
+                            new MousePositionAbsoluteInputFromPen { Position = mouseMove.ScreenSpaceMousePosition }.Apply(CurrentState, this);
+                        else
+                            new MousePositionAbsoluteInput { Position = mouseMove.ScreenSpaceMousePosition }.Apply(CurrentState, this);
+                    }
+
                     break;
 
                 case ScrollEvent scroll:

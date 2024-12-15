@@ -598,6 +598,12 @@ namespace osu.Framework.Platform.SDL2
         /// </summary>
         public event Action<MouseButton>? MouseUp;
 
+        public event Action<MouseButton>? PenDown;
+        public event Action<MouseButton>? PenUp;
+        public event Action<Vector2>? PenMove;
+        public event Action? PenIn;
+        public event Action? PenOut;
+
         protected void TriggerMouseUp(MouseButton button) => MouseUp?.Invoke(button);
 
         /// <summary>

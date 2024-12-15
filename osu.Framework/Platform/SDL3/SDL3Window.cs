@@ -590,6 +590,11 @@ namespace osu.Framework.Platform.SDL3
                 case SDL_EventType.SDL_EVENT_PEN_MOTION:
                     handlePenMotionEvent(e.pmotion);
                     break;
+
+                case SDL_EventType.SDL_EVENT_PEN_PROXIMITY_IN:
+                case SDL_EventType.SDL_EVENT_PEN_PROXIMITY_OUT:
+                    handlePenProximityEvent(e.pproximity);
+                    break;
             }
         }
 
