@@ -23,6 +23,8 @@ namespace osu.Framework.iOS
 {
     public class IOSGameHost : SDLGameHost
     {
+        public new IIOSWindow Window => (IIOSWindow)base.Window;
+
         private IOSFilePresenter presenter = null!;
 
         public IOSGameHost()
