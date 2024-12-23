@@ -11,7 +11,9 @@ using Foundation;
 using ObjCRuntime;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.IO.Stores;
+using osu.Framework.Logging;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Processing;
 using UIKit;
 
@@ -22,10 +24,16 @@ namespace osu.Framework.iOS.Graphics.Textures
         public IOSTextureLoaderStore(IResourceStore<byte[]> store)
             : base(store)
         {
+            if (!stopwatch.IsRunning)
+                stopwatch.Start();
         }
+
+        private static readonly Stopwatch stopwatch = new Stopwatch();
 
         protected override unsafe Image<TPixel> ImageFromStream<TPixel>(Stream stream)
         {
+            double time = stopwatch.ElapsedMilliseconds;
+
             using (var nativeData = NSData.FromStream(stream))
             {
                 if (nativeData == null)
@@ -57,19 +65,23 @@ namespace osu.Framework.iOS.Graphics.Textures
                     Debug.Assert(alignment > 0);
 
                     // allocate aligned memory region to contain image pixel data.
-                    int bytesCount = accelerateImage.BytesPerRow * accelerateImage.Height;
                     accelerateImage.Data = (IntPtr)NativeMemory.AlignedAlloc((nuint)(accelerateImage.BytesPerRow * accelerateImage.Height), (nuint)alignment);
 
                     var result = vImageBuffer_InitWithCGImage(&accelerateImage, &format, null, uiImage.CGImage!.Handle, vImageFlags.NoAllocate);
                     Debug.Assert(result == vImageError.NoError);
 
-                    var dataSpan = new ReadOnlySpan<byte>(accelerateImage.Data.ToPointer(), bytesCount);
+                    var image = new Image<TPixel>(width, height);
 
-                    int stride = accelerateImage.BytesPerRow / 4;
-                    var image = Image.LoadPixelData<TPixel>(dataSpan, stride, height);
-                    image.Mutate(i => i.Crop(width, height));
+                    for (int i = 0; i < height; i++)
+                    {
+                        var imageRow = image.DangerousGetPixelRowMemory(i);
+                        var dataRow = new ReadOnlySpan<TPixel>((byte*)accelerateImage.Data + i * accelerateImage.BytesPerRow, width);
+                        dataRow.CopyTo(imageRow.Span);
+                    }
 
                     NativeMemory.AlignedFree(accelerateImage.Data.ToPointer());
+
+                    Logger.Log($"IOSTextureLoaderStore: texture loading spent {stopwatch.ElapsedMilliseconds - time:0.00}ms");
                     return image;
                 }
             }

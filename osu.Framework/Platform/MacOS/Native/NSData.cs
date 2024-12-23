@@ -11,6 +11,7 @@ namespace osu.Framework.Platform.MacOS.Native
         internal IntPtr Handle { get; }
 
         private static readonly IntPtr class_pointer = Class.Get("NSData");
+        private static readonly IntPtr sel_release = Selector.Get("release");
         private static readonly IntPtr sel_data_with_bytes = Selector.Get("dataWithBytes:length:");
         private static readonly IntPtr sel_bytes = Selector.Get("bytes");
         private static readonly IntPtr sel_length = Selector.Get("length");
@@ -29,6 +30,8 @@ namespace osu.Framework.Platform.MacOS.Native
             Marshal.Copy(pointer, bytes, 0, size);
             return bytes;
         }
+
+        internal void Release() => Cocoa.SendVoid(Handle, sel_release);
 
         internal static unsafe NSData FromBytes(byte[] bytes)
         {

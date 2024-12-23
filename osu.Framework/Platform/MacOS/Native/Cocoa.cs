@@ -4,13 +4,14 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using osu.Framework.Platform.Apple.Native;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Tiff;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace osu.Framework.Platform.MacOS.Native
 {
-    internal static class Cocoa
+    internal static partial class Cocoa
     {
         internal const string LIB_DL = "libSystem.dylib";
         internal const string LIB_APPKIT = "/System/Library/Frameworks/AppKit.framework/AppKit";
@@ -19,69 +20,82 @@ namespace osu.Framework.Platform.MacOS.Native
 
         internal const int RTLD_NOW = 2;
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, int int1);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, int int1);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, ulong ulong1);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, ulong ulong1);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1, int int1);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1, int int1);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1, ulong ulong11);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1, ulong ulong11);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1, IntPtr ptr2);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1, IntPtr ptr2);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern int SendInt(IntPtr receiver, IntPtr selector);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial IntPtr SendIntPtr(IntPtr receiver, IntPtr selector, IntPtr ptr1, IntPtr ptr2, IntPtr ptr3);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern uint SendUint(IntPtr receiver, IntPtr selector);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial int SendInt(IntPtr receiver, IntPtr selector);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern bool SendBool(IntPtr receiver, IntPtr selector);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial uint SendUint(IntPtr receiver, IntPtr selector);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern bool SendBool(IntPtr receiver, IntPtr selector, IntPtr ptr1);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool SendBool(IntPtr receiver, IntPtr selector);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern bool SendBool(IntPtr receiver, IntPtr selector, IntPtr ptr1, IntPtr ptr2);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool SendBool(IntPtr receiver, IntPtr selector, IntPtr ptr1);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern void SendVoid(IntPtr receiver, IntPtr selector, IntPtr ptr1);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool SendBool(IntPtr receiver, IntPtr selector, IntPtr ptr1, IntPtr ptr2);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern void SendVoid(IntPtr receiver, IntPtr selector, IntPtr intPtr1, IntPtr intPtr2, IntPtr intPtr3, IntPtr intPtr4);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial void SendVoid(IntPtr receiver, IntPtr selector);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend_fpret")]
-        public static extern float SendFloat_i386(IntPtr receiver, IntPtr selector);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial void SendVoid(IntPtr receiver, IntPtr selector, IntPtr ptr1);
 
-        [DllImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
-        public static extern double SendFloat_x64(IntPtr receiver, IntPtr selector);
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial void SendVoid(IntPtr receiver, IntPtr selector, IntPtr intPtr1, IntPtr intPtr2, IntPtr intPtr3, IntPtr intPtr4);
+
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend_fpret")]
+        public static partial float SendFloat_i386(IntPtr receiver, IntPtr selector);
+
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial double SendFloat_x64(IntPtr receiver, IntPtr selector);
+
+        [LibraryImport(LIB_OBJ_C, EntryPoint = "objc_msgSend")]
+        public static partial CGSize SendCGSize(IntPtr receiver, IntPtr selector);
 
         public static float SendFloat(IntPtr receiver, IntPtr selector) => IntPtr.Size == 4 ? SendFloat_i386(receiver, selector) : (float)SendFloat_x64(receiver, selector);
 
         public static IntPtr AppKitLibrary;
 
-        [DllImport(LIB_CORE_GRAPHICS, EntryPoint = "CGCursorIsVisible")]
-        public static extern bool CGCursorIsVisible();
+        [LibraryImport(LIB_CORE_GRAPHICS, EntryPoint = "CGCursorIsVisible")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool CGCursorIsVisible();
 
-        [DllImport(LIB_CORE_GRAPHICS, EntryPoint = "CGEventSourceFlagsState")]
-        public static extern ulong CGEventSourceFlagsState(int stateID);
+        [LibraryImport(LIB_CORE_GRAPHICS, EntryPoint = "CGEventSourceFlagsState")]
+        public static partial ulong CGEventSourceFlagsState(int stateID);
 
-        [DllImport(LIB_DL)]
-        private static extern IntPtr dlsym(IntPtr handle, string name);
+        [LibraryImport(LIB_DL, StringMarshalling = StringMarshalling.Utf8)]
+        private static partial IntPtr dlsym(IntPtr handle, string name);
 
-        [DllImport(LIB_DL)]
-        private static extern IntPtr dlopen(string fileName, int flags);
+        [LibraryImport(LIB_DL, StringMarshalling = StringMarshalling.Utf8)]
+        private static partial IntPtr dlopen(string fileName, int flags);
 
         static Cocoa()
         {
