@@ -1,8 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Project">
-    <TargetFramework>net8.0</TargetFramework>
-    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net8.0;net8.0-macos</TargetFrameworks>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
+  <PropertyGroup Condition="$(TargetFramework.Contains('macos'))">
+    <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+    <SupportedOSPlatformVersion>10.15</SupportedOSPlatformVersion>
+    <NullabilityInfoContextSupport>true</NullabilityInfoContextSupport>
+  </PropertyGroup>
+  <Target Name="OsuFrameworkIOSRemoveMacOSFrameworks" Condition="$(TargetFramework.Contains('macos'))" BeforeTargets="_ComputeLinkNativeExecutableInputs" AfterTargets="_LoadLinkerOutput">
+    <ItemGroup>
+      <_LinkerFrameworks Remove="OpenGLES"/>
+    </ItemGroup>
+  </Target>
   <PropertyGroup>
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
