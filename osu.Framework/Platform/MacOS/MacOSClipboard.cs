@@ -1,44 +1,77 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
-using osu.Framework.Platform.MacOS.Native;
+using System.IO;
+using AppKit;
+using ObjCRuntime;
 using SixLabors.ImageSharp;
+using NSObject = Foundation.NSObject;
+using NSString = Foundation.NSString;
 
 namespace osu.Framework.Platform.MacOS
 {
     public class MacOSClipboard : Clipboard
     {
-        private readonly NSPasteboard generalPasteboard = NSPasteboard.GeneralPasteboard();
+        public override string? GetText() => getFromPasteboard<NSString>();
 
-        public override string? GetText() => Cocoa.FromNSString(getFromPasteboard(Class.Get("NSString")));
-
-        public override Image<TPixel>? GetImage<TPixel>() => Cocoa.FromNSImage<TPixel>(getFromPasteboard(Class.Get("NSImage")));
-
-        public override void SetText(string text) => setToPasteboard(Cocoa.ToNSString(text));
-
-        public override bool SetImage(Image image) => setToPasteboard(Cocoa.ToNSImage(image));
-
-        private IntPtr getFromPasteboard(IntPtr @class)
+        public override Image<TPixel>? GetImage<TPixel>()
         {
-            NSArray classArray = NSArray.ArrayWithObject(@class);
+            using var nsImage = getFromPasteboard<NSImage>();
+            using var nsData = nsImage?.AsTiff();
 
-            if (!generalPasteboard.CanReadObjectForClasses(classArray, null))
-                return IntPtr.Zero;
+            if (nsData == null)
+                return null;
 
-            var result = generalPasteboard.ReadObjectsForClasses(classArray, null);
-            IntPtr[]? objects = result?.ToArray();
-
-            return objects?.Length > 0 ? objects[0] : IntPtr.Zero;
+            return Image.Load<TPixel>(nsData.ToArray());
         }
 
-        private bool setToPasteboard(IntPtr handle)
+        public override void SetText(string text) => setToPasteboard(new NSString(text));
+
+        public override bool SetImage(Image image)
         {
-            if (handle == IntPtr.Zero)
+            using (var stream = new MemoryStream())
+            {
+                image.SaveAsTiff(stream);
+                stream.Seek(0, SeekOrigin.Begin);
+                var nsImage = NSImage.FromStream(stream);
+                return setToPasteboard(nsImage);
+            }
+        }
+
+        private T? getFromPasteboard<T>()
+            where T : NSObject, INSPasteboardWriting
+        {
+            T? result = null;
+
+            NSApplication.SharedApplication.InvokeOnMainThread(() =>
+            {
+                Class[] classArray = new[] { new Class(typeof(T)) };
+
+                if (!NSPasteboard.GeneralPasteboard.CanReadObjectForClasses(classArray, null))
+                {
+                    result = null;
+                    return;
+                }
+
+                var objects = NSPasteboard.GeneralPasteboard.ReadObjectsForClasses(classArray, null);
+                result = objects.Length == 0 ? null : (T)objects[0];
+            });
+
+            return result;
+        }
+
+        private bool setToPasteboard<T>(T? value)
+            where T : NSObject, INSPasteboardWriting
+        {
+            if (value == null)
                 return false;
 
-            generalPasteboard.ClearContents();
-            generalPasteboard.WriteObjects(NSArray.ArrayWithObject(handle));
+            NSApplication.SharedApplication.InvokeOnMainThread(() =>
+            {
+                NSPasteboard.GeneralPasteboard.ClearContents();
+                NSPasteboard.GeneralPasteboard.WriteObjects(new INSPasteboardWriting[] { value });
+            });
+
             return true;
         }
     }

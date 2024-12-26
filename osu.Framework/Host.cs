@@ -7,7 +7,9 @@ using System;
 using System.Diagnostics;
 using osu.Framework.Platform;
 using osu.Framework.Platform.Linux;
+#if MACOS
 using osu.Framework.Platform.MacOS;
+#endif
 using osu.Framework.Platform.Windows;
 
 namespace osu.Framework
@@ -25,8 +27,10 @@ namespace osu.Framework
                 case RuntimeInfo.Platform.Linux:
                     return new LinuxGameHost(gameName, hostOptions);
 
+#if MACOS
                 case RuntimeInfo.Platform.macOS:
                     return new MacOSGameHost(gameName, hostOptions);
+#endif
 
                 default:
                     throw new InvalidOperationException($"Could not find a suitable host for the selected operating system ({RuntimeInfo.OS}).");

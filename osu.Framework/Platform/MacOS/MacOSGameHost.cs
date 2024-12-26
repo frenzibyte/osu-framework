@@ -7,12 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using AppKit;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Input.Handlers.Mouse;
 using osu.Framework.Logging;
-using osu.Framework.Platform.MacOS.Native;
 
 namespace osu.Framework.Platform.MacOS
 {
@@ -21,6 +22,7 @@ namespace osu.Framework.Platform.MacOS
         internal MacOSGameHost(string gameName, HostOptions options)
             : base(gameName, options)
         {
+            NSApplication.Init();
         }
 
         protected override IWindow CreateWindow(GraphicsSurfaceType preferredSurface)
@@ -72,7 +74,7 @@ namespace osu.Framework.Platform.MacOS
                 return true;
             }
 
-            Finder.OpenFolderAndSelectItem(filename);
+            Task.Run(() => NSWorkspace.SharedWorkspace.SelectFile(filename, string.Empty));
             return true;
         }
 
