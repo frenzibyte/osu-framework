@@ -8,6 +8,7 @@ using Foundation;
 using osu.Framework.IO.Stores;
 using osu.Framework.Platform.Apple;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Memory;
 
 namespace osu.Framework.Platform.MacOS
 {
@@ -20,19 +21,21 @@ namespace osu.Framework.Platform.MacOS
 
         protected override unsafe Image<TPixel> ImageFromStream<TPixel>(Stream stream)
         {
-            uint length = (uint)(stream.Length - stream.Position);
-            using var nativeData = NSMutableData.FromLength((int)length);
+            int length = (int)(stream.Length - stream.Position);
+            using var buffer = MemoryAllocator.Default.Allocate<byte>(length);
+            stream.ReadExactly(buffer.Memory.Span);
 
-            var bytesSpan = new Span<byte>(nativeData.MutableBytes.ToPointer(), (int)length);
-            stream.ReadExactly(bytesSpan);
+            fixed (byte* ptr = buffer.Memory.Span)
+            {
+                using var nativeData = NSData.FromBytesNoCopy((IntPtr)ptr, (nuint)length, false);
+                using var nsImage = new NSImage(nativeData);
 
-            using var nsImage = new NSImage(nativeData);
+                if (nsImage.Handle == IntPtr.Zero)
+                    throw new ArgumentException($"{nameof(Image)} could not be created from {nameof(stream)}.");
 
-            if (nsImage.Handle == IntPtr.Zero)
-                throw new ArgumentException($"{nameof(Image)} could not be created from {nameof(stream)}.");
-
-            var cgImage = nsImage.CGImage;
-            return ImageFromCGImage<TPixel>(cgImage);
+                var cgImage = nsImage.CGImage;
+                return ImageFromCGImage<TPixel>(cgImage);
+            }
         }
     }
 }
