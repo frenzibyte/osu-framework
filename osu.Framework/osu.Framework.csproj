@@ -20,7 +20,9 @@
   </PropertyGroup>
   <ItemGroup Condition="$(TargetFramework.Contains('macos')) != true">
     <Compile Remove="Platform\MacOS\**\*.cs" />
+    <Compile Remove="Platform\Apple\**\*.cs" />
     <None Include="Platform\MacOS\**\*.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
+    <None Include="Platform\Apple\**\*.cs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
   </ItemGroup>
   <ItemGroup Label="Package References">
     <PackageReference Include="managed-midi" Version="1.10.1" />
