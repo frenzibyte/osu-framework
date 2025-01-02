@@ -9,7 +9,7 @@ using osu.Framework.Timing;
 
 namespace osu.Framework.Screens
 {
-    public partial class Screen : CompositeDrawable, IScreen
+    public partial class Screen : Container, IScreen
     {
         public bool ValidForResume { get; set; } = true;
 
@@ -20,10 +20,19 @@ namespace osu.Framework.Screens
         [Resolved]
         protected Game Game { get; private set; } = null!;
 
+        protected override Container<Drawable> Content { get; }
+
         public Screen()
         {
             RelativeSizeAxes = Axes.Both;
+
+            base.AddInternal(Content = new Container
+            {
+                RelativeSizeAxes = Axes.Both,
+            });
         }
+
+        protected sealed override void AddInternal(Drawable drawable) => throw new InvalidOperationException($"Use {nameof(Add)} or {nameof(Content)} instead.");
 
         internal override void UpdateClock(IFrameBasedClock clock)
         {

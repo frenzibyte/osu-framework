@@ -1043,7 +1043,7 @@ namespace osu.Framework.Tests.Visual.UserInterface
             [BackgroundDependencyLoader]
             private void load()
             {
-                InternalChildren = new Drawable[]
+                Children = new Drawable[]
                 {
                     new Box
                     {
