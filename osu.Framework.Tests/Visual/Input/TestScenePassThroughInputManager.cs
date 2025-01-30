@@ -237,6 +237,21 @@ namespace osu.Framework.Tests.Visual.Input
         }
 
         [Test]
+        public void TestSyncPressed()
+        {
+            AddStep("Press buttons", () =>
+            {
+                InputManager.PressButton(MouseButton.Left);
+                InputManager.PressKey(Key.A);
+                InputManager.PressJoystickButton(JoystickButton.Button1);
+            });
+            addTestInputManagerStep();
+            AddAssert("input not synced", () => !mouse.IsPressed(MouseButton.Left) && !keyboard.IsPressed(Key.A) && !joystick.IsPressed(JoystickButton.Button1));
+            AddStep("sync pressed input", () => testInputManager.SyncPressed());
+            AddAssert("input synced", () => mouse.IsPressed(MouseButton.Left) && keyboard.IsPressed(Key.A) && joystick.IsPressed(JoystickButton.Button1));
+        }
+
+        [Test]
         public void TestMouseTouchProductionOnPassThrough()
         {
             addTestInputManagerStep();
@@ -341,6 +356,8 @@ namespace osu.Framework.Tests.Visual.Input
                 Anchor = Anchor.Centre;
                 Child = Status = new TestSceneInputManager.ContainingInputManagerStatusText();
             }
+
+            public void SyncPressed() => Sync(ButtonSyncKind.Pressed);
         }
 
         public partial class HandlingBox : Box
