@@ -43,10 +43,7 @@ namespace osu.Framework.Input
                 useParentInput = value;
 
                 if (UseParentInput)
-                {
-                    syncReleasedInputs();
-                    syncJoystickAxes();
-                }
+                    Sync(ButtonSyncKind.Released);
             }
         }
 
@@ -209,21 +206,34 @@ namespace osu.Framework.Input
 
             // There are scenarios wherein we cannot receive the release events of pressed inputs. For simplicity, sync every frame.
             if (UseParentInput)
-            {
-                syncReleasedInputs();
-                syncJoystickAxes();
-            }
+                Sync(ButtonSyncKind.Released);
         }
 
         /// <summary>
-        /// Updates state of any buttons that have been released by parent while <see cref="UseParentInput"/> was disabled.
+        /// Synchronises the state of this input manager with the parent input manager depending on the specified <see cref="ButtonSyncKind"/>.
+        /// <list type="bullet">
+        /// <item>When <see cref="ButtonSyncKind.Released"/> is specified, only buttons which have been released in the parent input manager get released here.</item>
+        /// <item>When <see cref="ButtonSyncKind.Pressed"/> is specified, only buttons which have been pressed in the parent input manager get pressed here.</item>
+        /// <item>In addition, joystick axes state are updated by this method regardless of the specified sync kind.</item>
+        /// </list>
         /// </summary>
-        private void syncReleasedInputs()
+        /// <remarks>
+        /// This method considers touch input as "buttons" as well, given their property of being in a pressed/released state.
+        /// </remarks>
+        /// <param name="kind">The kind of sync behaviour to use for buttons state.</param>
+        protected void Sync(ButtonSyncKind kind)
         {
             if (parentInputManager == null)
                 return;
 
             var parentState = parentInputManager.CurrentState;
+
+            syncButtonsState(kind, parentState);
+            syncJoystickAxes(parentState);
+        }
+
+        private void syncButtonsState(ButtonSyncKind kind, InputState? parentState)
+        {
             var mouseDiff = (parentState?.Mouse?.Buttons ?? new ButtonStates<MouseButton>()).EnumerateDifference(CurrentState.Mouse.Buttons);
             var keyDiff = (parentState?.Keyboard.Keys ?? new ButtonStates<Key>()).EnumerateDifference(CurrentState.Keyboard.Keys);
             var touchDiff = (parentState?.Touch ?? new TouchState()).EnumerateDifference(CurrentState.Touch);
@@ -232,32 +242,46 @@ namespace osu.Framework.Input
             var tabletPenDiff = (parentState?.Tablet?.PenButtons ?? new ButtonStates<TabletPenButton>()).EnumerateDifference(CurrentState.Tablet.PenButtons);
             var tabletAuxiliaryDiff = (parentState?.Tablet?.AuxiliaryButtons ?? new ButtonStates<TabletAuxiliaryButton>()).EnumerateDifference(CurrentState.Tablet.AuxiliaryButtons);
 
-            if (mouseDiff.Released.Length > 0)
-                new MouseButtonInput(mouseDiff.Released.Select(button => new ButtonInputEntry<MouseButton>(button, false))).Apply(CurrentState, this);
-            foreach (var key in keyDiff.Released)
-                new KeyboardKeyInput(key, false).Apply(CurrentState, this);
-            if (touchDiff.deactivated.Length > 0)
-                new TouchInput(touchDiff.deactivated, false).Apply(CurrentState, this);
-            foreach (var button in joyButtonDiff.Released)
-                new JoystickButtonInput(button, false).Apply(CurrentState, this);
-            foreach (var key in midiDiff.Released)
-                new MidiKeyInput(key, parentState?.Midi?.Velocities.GetValueOrDefault(key) ?? 0, false).Apply(CurrentState, this);
-            foreach (var button in tabletPenDiff.Released)
-                new TabletPenButtonInput(button, false).Apply(CurrentState, this);
-            foreach (var button in tabletAuxiliaryDiff.Released)
-                new TabletAuxiliaryButtonInput(button, false).Apply(CurrentState, this);
+            switch (kind)
+            {
+                case ButtonSyncKind.Pressed:
+                    if (mouseDiff.Pressed.Length > 0)
+                        new MouseButtonInput(mouseDiff.Pressed.Select(button => new ButtonInputEntry<MouseButton>(button, true))).Apply(CurrentState, this);
+                    foreach (var key in keyDiff.Pressed)
+                        new KeyboardKeyInput(key, true).Apply(CurrentState, this);
+                    if (touchDiff.activated.Length > 0)
+                        new TouchInput(touchDiff.activated, true).Apply(CurrentState, this);
+                    foreach (var button in joyButtonDiff.Pressed)
+                        new JoystickButtonInput(button, true).Apply(CurrentState, this);
+                    foreach (var key in midiDiff.Pressed)
+                        new MidiKeyInput(key, parentState?.Midi?.Velocities.GetValueOrDefault(key) ?? 0, true).Apply(CurrentState, this);
+                    foreach (var button in tabletPenDiff.Pressed)
+                        new TabletPenButtonInput(button, true).Apply(CurrentState, this);
+                    foreach (var button in tabletAuxiliaryDiff.Pressed)
+                        new TabletAuxiliaryButtonInput(button, true).Apply(CurrentState, this);
+                    break;
+
+                case ButtonSyncKind.Released:
+                    if (mouseDiff.Released.Length > 0)
+                        new MouseButtonInput(mouseDiff.Released.Select(button => new ButtonInputEntry<MouseButton>(button, false))).Apply(CurrentState, this);
+                    foreach (var key in keyDiff.Released)
+                        new KeyboardKeyInput(key, false).Apply(CurrentState, this);
+                    if (touchDiff.deactivated.Length > 0)
+                        new TouchInput(touchDiff.deactivated, false).Apply(CurrentState, this);
+                    foreach (var button in joyButtonDiff.Released)
+                        new JoystickButtonInput(button, false).Apply(CurrentState, this);
+                    foreach (var key in midiDiff.Released)
+                        new MidiKeyInput(key, parentState?.Midi?.Velocities.GetValueOrDefault(key) ?? 0, false).Apply(CurrentState, this);
+                    foreach (var button in tabletPenDiff.Released)
+                        new TabletPenButtonInput(button, false).Apply(CurrentState, this);
+                    foreach (var button in tabletAuxiliaryDiff.Released)
+                        new TabletAuxiliaryButtonInput(button, false).Apply(CurrentState, this);
+                    break;
+            }
         }
 
-        /// <summary>
-        /// Updates state of joystick axes that have changed values while <see cref="UseParentInput"/> was disabled.
-        /// </summary>
-        private void syncJoystickAxes()
+        private void syncJoystickAxes(InputState? parentState)
         {
-            if (parentInputManager == null)
-                return;
-
-            var parentState = parentInputManager.CurrentState;
-
             // Basically only perform the full state diff if we have found that any axis changed.
             // This avoids unnecessary alloc overhead.
             for (int i = 0; i < JoystickState.MAX_AXES; i++)
@@ -268,6 +292,22 @@ namespace osu.Framework.Input
                     break;
                 }
             }
+        }
+
+        protected enum ButtonSyncKind
+        {
+            /// <summary>
+            /// Sync input that is shown to be released in the parent input manager.
+            /// </summary>
+            Released,
+
+            /// <summary>
+            /// Sync input that is shown to be pressed in the parent input manager.
+            /// </summary>
+            /// <remarks>
+            /// This is used in osu! to sync pressed input from parent when the input manager is first loaded in the gameplay screen.
+            /// </remarks>
+            Pressed,
         }
     }
 }
