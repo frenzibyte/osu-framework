@@ -12,12 +12,16 @@ namespace osu.Framework.Graphics.Textures
     /// </summary>
     internal class TextureWithRefCount : Texture
     {
+        private readonly Texture parent;
         private readonly ReferenceCount count;
 
         public TextureWithRefCount(Texture parent, ReferenceCount count)
             : base(parent)
         {
+            this.parent = parent;
             this.count = count;
+
+            Average = parent.Average;
 
             count.Increment();
         }
@@ -36,6 +40,12 @@ namespace osu.Framework.Graphics.Textures
         // The base property invokes the overridden NativeTexture property, which will throw an exception if not available
         // So this property is redirected to reference the intended member
         public sealed override bool Available => base.NativeTexture.Available;
+
+        internal override void SetData(ITextureUpload upload, WrapMode wrapModeS, WrapMode wrapModeT, Opacity? opacity)
+        {
+            base.SetData(upload, wrapModeS, wrapModeT, opacity);
+            Average = parent.Average;
+        }
 
         ~TextureWithRefCount()
         {

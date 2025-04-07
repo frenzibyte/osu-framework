@@ -8,6 +8,8 @@ using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Visualisation;
 using osuTK;
+using osuTK.Graphics;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -52,6 +54,8 @@ namespace osu.Framework.Graphics.Textures
         /// The texture opacity.
         /// </summary>
         public Opacity Opacity { get; protected set; } = Opacity.Mixed;
+
+        public Colour4 Average { get; protected set; } = Colour4.Transparent;
 
         /// <summary>
         /// The texture wrap mode in horizontal direction.
@@ -214,6 +218,7 @@ namespace osu.Framework.Graphics.Textures
             }
 
             UpdateOpacity(upload, ref opacity);
+            UpdateAverage(upload);
 
             NativeTexture.SetData(upload);
         }
@@ -244,6 +249,25 @@ namespace osu.Framework.Graphics.Textures
             // }
             //
             // return firstPixelValue == 0 ? Opacity.Transparent : Opacity.Opaque;
+        }
+
+        protected void UpdateAverage(ITextureUpload upload)
+        {
+            ReadOnlySpan<Rgba32> data = upload.Data;
+            float totalR = 0;
+            float totalG = 0;
+            float totalB = 0;
+
+            // The first pixel is GUARANTEED to be either fully-opaque or fully-transparent.
+            // Now we need to go through the rest of the image and check that every other pixel matches this value.
+            for (int i = 0; i < data.Length; i++)
+            {
+                totalR += data[i].R;
+                totalG += data[i].G;
+                totalB += data[i].B;
+            }
+
+            Average = new Color4(totalR / data.Length / 255, totalG / data.Length / 255, totalB / data.Length / 255, 1);
         }
 
         protected void UpdateOpacity(ITextureUpload upload, ref Opacity? uploadOpacity)
