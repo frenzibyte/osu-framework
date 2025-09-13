@@ -300,108 +300,47 @@ namespace osu.Framework.IO.Network
                 {
                     PrePerform();
 
-                    HttpRequestMessage request;
-
                     StringBuilder requestParameters = new StringBuilder();
                     foreach (var p in queryParameters)
                         requestParameters.Append($"{p.key}={Uri.EscapeDataString(p.value)}&");
                     string requestString = requestParameters.ToString().TrimEnd('&');
                     url = string.IsNullOrEmpty(requestString) ? url : $"{url}?{requestString}";
 
+                    // todo: maybe this is a bit broken now
+                    reportForwardProgress();
+
+                    try
+                    {
+                        response = await sendRequest(linkedToken, url).ConfigureAwait(false);
+                    }
+                    catch (HttpRequestException hre)
+                    {
+                        // on macOS, if the connected network cannot communicate via IPv6, and web content filtering is enabled,
+                        // then the error "Connection reset by peer" will always be triggered when attempting to connect via IPv6.
+                        // To try accommodating for this, check if an SSL error is triggered here and try again with IPv4 instead.
+                        if (hre.HttpRequestError == HttpRequestError.SecureConnectionError && RuntimeInfo.OS == RuntimeInfo.Platform.macOS)
+                        {
+                            useIPv6 = false;
+
+                            response = await sendRequest(linkedToken, url).ConfigureAwait(false);
+                        }
+                        else
+                            throw;
+                    }
+
+                    ResponseStream = CreateOutputStream();
+
                     if (Method == HttpMethod.Get)
                     {
-                        if (files.Count > 0)
-                            throw new InvalidOperationException($"Cannot use {nameof(AddFile)} in a GET request. Please set the {nameof(Method)} to POST.");
-
-                        request = new HttpRequestMessage(HttpMethod.Get, url);
+                        //GETs are easy
+                        await beginResponse(linkedToken.Token).ConfigureAwait(false);
                     }
                     else
                     {
-                        request = new HttpRequestMessage(Method, url);
+                        reportForwardProgress();
+                        UploadProgress?.Invoke(0, contentLength);
 
-                        Stream postContent = null;
-
-                        if (rawContent != null)
-                        {
-                            if (formParameters.Count > 0)
-                                throw new InvalidOperationException($"Cannot use {nameof(AddRaw)} in conjunction with form parameters");
-                            if (files.Count > 0)
-                                throw new InvalidOperationException($"Cannot use {nameof(AddRaw)} in conjunction with {nameof(AddFile)}");
-
-                            postContent = new MemoryStream();
-                            rawContent.Position = 0;
-
-                            await rawContent.CopyToAsync(postContent, linkedToken.Token).ConfigureAwait(false);
-
-                            postContent.Position = 0;
-                        }
-                        else if (formParameters.Count > 0 || files.Count > 0)
-                        {
-                            if (!string.IsNullOrEmpty(ContentType) && ContentType != form_content_type)
-                                throw new InvalidOperationException($"Cannot use custom {nameof(ContentType)} in a POST request with form/file parameters.");
-
-                            ContentType = form_content_type;
-
-                            var formData = new MultipartFormDataContent(form_boundary);
-
-                            foreach (var p in formParameters)
-                                formData.Add(new StringContent(p.value), p.key);
-
-                            foreach (var p in files)
-                            {
-                                var byteContent = new ByteArrayContent(p.Content);
-                                byteContent.Headers.Add("Content-Type", "application/octet-stream");
-                                formData.Add(byteContent, p.ParamName, p.Filename);
-                            }
-
-                            postContent = await formData.ReadAsStreamAsync(linkedToken.Token).ConfigureAwait(false);
-                        }
-
-                        if (postContent != null)
-                        {
-                            requestStream = new LengthTrackingStream(postContent);
-                            requestStream.BytesRead.ValueChanged += e =>
-                            {
-                                reportForwardProgress();
-                                UploadProgress?.Invoke(e.NewValue, contentLength);
-                            };
-
-                            request.Content = new StreamContent(requestStream);
-                            if (!string.IsNullOrEmpty(ContentType))
-                                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(ContentType);
-                        }
-                    }
-
-                    request.Headers.UserAgent.TryParseAdd(UserAgent);
-
-                    if (!string.IsNullOrEmpty(Accept))
-                        request.Headers.Accept.TryParseAdd(Accept);
-
-                    foreach (var kvp in headers)
-                        request.Headers.Add(kvp.Key, kvp.Value);
-
-                    reportForwardProgress();
-
-                    using (request)
-                    {
-                        response = await client
-                                         .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, linkedToken.Token)
-                                         .ConfigureAwait(false);
-
-                        ResponseStream = CreateOutputStream();
-
-                        if (Method == HttpMethod.Get)
-                        {
-                            //GETs are easy
-                            await beginResponse(linkedToken.Token).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            reportForwardProgress();
-                            UploadProgress?.Invoke(0, contentLength);
-
-                            await beginResponse(linkedToken.Token).ConfigureAwait(false);
-                        }
+                        await beginResponse(linkedToken.Token).ConfigureAwait(false);
                     }
                 }
                 catch (Exception) when (timeoutToken.IsCancellationRequested)
@@ -430,6 +369,90 @@ namespace osu.Framework.IO.Network
 
                 Complete(new WebException($"Request to {url} aborted by user.", WebExceptionStatus.RequestCanceled));
             }
+        }
+
+        private async Task<HttpResponseMessage> sendRequest(CancellationTokenSource linkedToken, string url)
+        {
+            HttpRequestMessage request;
+
+            if (Method == HttpMethod.Get)
+            {
+                if (files.Count > 0)
+                    throw new InvalidOperationException($"Cannot use {nameof(AddFile)} in a GET request. Please set the {nameof(Method)} to POST.");
+
+                request = new HttpRequestMessage(HttpMethod.Get, url);
+            }
+            else
+            {
+                request = new HttpRequestMessage(Method, url);
+
+                Stream postContent = null;
+
+                if (rawContent != null)
+                {
+                    if (formParameters.Count > 0)
+                        throw new InvalidOperationException($"Cannot use {nameof(AddRaw)} in conjunction with form parameters");
+                    if (files.Count > 0)
+                        throw new InvalidOperationException($"Cannot use {nameof(AddRaw)} in conjunction with {nameof(AddFile)}");
+
+                    postContent = new MemoryStream();
+                    rawContent.Position = 0;
+
+                    await rawContent.CopyToAsync(postContent, linkedToken.Token).ConfigureAwait(false);
+
+                    postContent.Position = 0;
+                }
+                else if (formParameters.Count > 0 || files.Count > 0)
+                {
+                    if (!string.IsNullOrEmpty(ContentType) && ContentType != form_content_type)
+                        throw new InvalidOperationException($"Cannot use custom {nameof(ContentType)} in a POST request with form/file parameters.");
+
+                    ContentType = form_content_type;
+
+                    var formData = new MultipartFormDataContent(form_boundary);
+
+                    foreach (var p in formParameters)
+                        formData.Add(new StringContent(p.value), p.key);
+
+                    foreach (var p in files)
+                    {
+                        var byteContent = new ByteArrayContent(p.Content);
+                        byteContent.Headers.Add("Content-Type", "application/octet-stream");
+                        formData.Add(byteContent, p.ParamName, p.Filename);
+                    }
+
+                    postContent = await formData.ReadAsStreamAsync(linkedToken.Token).ConfigureAwait(false);
+                }
+
+                if (postContent != null)
+                {
+                    requestStream = new LengthTrackingStream(postContent);
+                    requestStream.BytesRead.ValueChanged += e =>
+                    {
+                        reportForwardProgress();
+                        UploadProgress?.Invoke(e.NewValue, contentLength);
+                    };
+
+                    request.Content = new StreamContent(requestStream);
+                    if (!string.IsNullOrEmpty(ContentType))
+                        request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(ContentType);
+                }
+            }
+
+            request.Headers.UserAgent.TryParseAdd(UserAgent);
+
+            if (!string.IsNullOrEmpty(Accept))
+                request.Headers.Accept.TryParseAdd(Accept);
+
+            foreach (var kvp in headers)
+                request.Headers.Add(kvp.Key, kvp.Value);
+
+            var requestResponse = await client
+                                        .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, linkedToken.Token)
+                                        .ConfigureAwait(false);
+
+            request.Dispose();
+            return requestResponse;
         }
 
         /// <summary>
