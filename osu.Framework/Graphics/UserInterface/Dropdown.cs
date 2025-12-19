@@ -1,8 +1,6 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-#nullable disable
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -30,7 +28,8 @@ namespace osu.Framework.Graphics.UserInterface
     /// </summary>
     /// <typeparam name="T">Type of value to select.</typeparam>
     [Cached(typeof(IDropdown))]
-    public abstract partial class Dropdown<T> : CompositeDrawable, IHasCurrentValue<T>, IFocusManager, IDropdown
+    public abstract partial class Dropdown<T> : CompositeDrawable, IHasCurrentValue<T?>, IFocusManager, IDropdown
+        where T : notnull
     {
         protected internal DropdownHeader Header;
         protected internal DropdownMenu Menu;
@@ -78,7 +77,8 @@ namespace osu.Framework.Graphics.UserInterface
         }
 
         private readonly IBindableList<T> itemSource = new BindableList<T>();
-        private IBindableList<T> boundItemSource;
+
+        private IBindableList<T>? boundItemSource;
 
         /// <summary>
         /// Allows the developer to assign an <see cref="IBindableList{T}"/> as the source
@@ -103,9 +103,6 @@ namespace osu.Framework.Graphics.UserInterface
         private void setItems(IEnumerable<T> value)
         {
             clearItems();
-
-            if (value == null)
-                return;
 
             foreach (var entry in value)
                 addDropdownItem(entry);
@@ -164,8 +161,9 @@ namespace osu.Framework.Graphics.UserInterface
 
         private bool removeDropdownItem(T value)
         {
-            if (value == null)
-                return false;
+            // todo: null items are not supported anyway?
+            // if (value == null)
+            //     return false;
 
             if (!itemMap.TryGetValue(value, out var item))
                 return false;
@@ -195,7 +193,7 @@ namespace osu.Framework.Graphics.UserInterface
                     return e.GetLocalisableDescription();
 
                 default:
-                    return item?.ToString() ?? "null";
+                    return item.ToString() ?? string.Empty;
             }
         }
 
@@ -218,17 +216,17 @@ namespace osu.Framework.Graphics.UserInterface
             return false;
         }
 
-        private readonly BindableWithCurrent<T> current = new BindableWithCurrent<T>();
+        private readonly BindableWithCurrent<T?> current = new BindableWithCurrent<T?>();
 
-        public Bindable<T> Current
+        public Bindable<T?> Current
         {
             get => current.Current;
             set => current.Current = value;
         }
 
-        private DropdownMenuItem<T> selectedItem;
+        private DropdownMenuItem<T>? selectedItem;
 
-        protected DropdownMenuItem<T> SelectedItem
+        protected DropdownMenuItem<T>? SelectedItem
         {
             get => selectedItem;
             set
@@ -291,6 +289,9 @@ namespace osu.Framework.Graphics.UserInterface
 
             var dropdownMenuItems = MenuItems.ToList();
 
+            // todo: SelectedItem is not null here?
+            Debug.Assert(SelectedItem != null);
+
             switch (action)
             {
                 case DropdownHeader.DropdownSelectionAction.Previous:
@@ -340,7 +341,7 @@ namespace osu.Framework.Graphics.UserInterface
             return false;
         }
 
-        private void collectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void collectionChanged(object? _, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
             {
@@ -400,20 +401,23 @@ namespace osu.Framework.Graphics.UserInterface
             updateItemSelection(Current.Value);
         }
 
-        private void updateItemSelection(T value)
+        private void updateItemSelection(T? value)
         {
-            if (value != null && itemMap.TryGetValue(value, out var existingItem))
-                selectedItem = existingItem;
-            else
+            if (value != null)
             {
-                if (value == null && selectedItem != null)
-                    selectedItem = new DropdownMenuItem<T>(default(LocalisableString), default);
-                else
-                    selectedItem = new DropdownMenuItem<T>(GenerateItemText(value), value);
+                // todo: why are we allowing to select non-existent item...
+                selectedItem = itemMap.TryGetValue(value, out var existingItem)
+                    ? existingItem
+                    : new DropdownMenuItem<T>(GenerateItemText(value), value);
             }
+            else
+                // todo: selectedItem should be null if value is null.
+                selectedItem = null;
 
             Menu.SelectItem(selectedItem);
-            Header.Label = selectedItem.Text.Value;
+
+            // todo: Header should probably be aware when no item is selected.
+            Header.Label = selectedItem?.Text.Value ?? "null";
         }
 
         /// <summary>
@@ -439,7 +443,7 @@ namespace osu.Framework.Graphics.UserInterface
         /// <param name="val">The value to hide.</param>
         internal void HideItem(T val)
         {
-            if (itemMap.TryGetValue(val, out DropdownMenuItem<T> item))
+            if (itemMap.TryGetValue(val, out DropdownMenuItem<T>? item))
             {
                 Menu.HideItem(item);
                 updateHeaderVisibility();
@@ -452,7 +456,7 @@ namespace osu.Framework.Graphics.UserInterface
         /// <param name="val">The value to show.</param>
         internal void ShowItem(T val)
         {
-            if (itemMap.TryGetValue(val, out DropdownMenuItem<T> item))
+            if (itemMap.TryGetValue(val, out DropdownMenuItem<T>? item))
             {
                 Menu.ShowItem(item);
                 updateHeaderVisibility();
@@ -470,7 +474,7 @@ namespace osu.Framework.Graphics.UserInterface
 
         public abstract partial class DropdownMenu : Menu, IKeyBindingHandler<PlatformAction>
         {
-            private SearchContainer<DrawableMenuItem> itemsFlow;
+            private SearchContainer<DrawableMenuItem> itemsFlow => (SearchContainer<DrawableMenuItem>)ItemsContainer;
 
             /// <summary>
             /// Search terms to filter items displayed in this menu.
@@ -508,19 +512,19 @@ namespace osu.Framework.Graphics.UserInterface
             protected internal IEnumerable<DrawableDropdownMenuItem> VisibleMenuItems => Children.OfType<DrawableDropdownMenuItem>().Where(i => i.MatchingFilter);
             protected internal IEnumerable<DrawableDropdownMenuItem> MenuItemsInView => VisibleMenuItems.Where(item => !item.IsMaskedAway);
 
-            public DrawableDropdownMenuItem PreselectedItem => VisibleMenuItems.FirstOrDefault(c => c.IsPreSelected)
-                                                               ?? VisibleMenuItems.FirstOrDefault(c => c.IsSelected);
+            public DrawableDropdownMenuItem? PreselectedItem => VisibleMenuItems.FirstOrDefault(c => c.IsPreSelected)
+                                                                ?? VisibleMenuItems.FirstOrDefault(c => c.IsSelected);
 
             /// <summary>
             /// Selects an item from this <see cref="DropdownMenu"/>.
             /// </summary>
             /// <param name="item">The item to select.</param>
-            public void SelectItem(DropdownMenuItem<T> item)
+            public void SelectItem(DropdownMenuItem<T>? item)
             {
                 Children.OfType<DrawableDropdownMenuItem>().ForEach(c =>
                 {
                     bool wasSelected = c.IsSelected;
-                    c.IsSelected = compareItemEquality(item, c.Item);
+                    c.IsSelected = item != null && compareItemEquality(item, c.Item);
                     if (c.IsSelected && !wasSelected)
                         ContentContainer.ScrollIntoView(c);
                 });
@@ -554,12 +558,12 @@ namespace osu.Framework.Graphics.UserInterface
             /// Preselects an item from this <see cref="DropdownMenu"/>.
             /// </summary>
             /// <param name="item">The item to select.</param>
-            protected internal void PreselectItem(MenuItem item)
+            protected internal void PreselectItem(MenuItem? item)
             {
                 Children.OfType<DrawableDropdownMenuItem>().ForEach(c =>
                 {
                     bool wasPreSelected = c.IsPreSelected;
-                    c.IsPreSelected = compareItemEquality(item, c.Item);
+                    c.IsPreSelected = item != null && compareItemEquality(item, c.Item);
                     if (c.IsPreSelected && !wasPreSelected)
                         ContentContainer.ScrollIntoView(c);
                 });
@@ -586,7 +590,7 @@ namespace osu.Framework.Graphics.UserInterface
 
             public abstract partial class DrawableDropdownMenuItem : DrawableMenuItem, IFilterable
             {
-                public event Action<DropdownMenuItem<T>> PreselectionRequested;
+                public event Action<MenuItem>? PreselectionRequested;
 
                 private bool matchingFilter = true;
 
@@ -690,7 +694,7 @@ namespace osu.Framework.Graphics.UserInterface
 
                 protected override bool OnHover(HoverEvent e)
                 {
-                    PreselectionRequested?.Invoke(Item as DropdownMenuItem<T>);
+                    PreselectionRequested?.Invoke(Item);
                     return base.OnHover(e);
                 }
             }
@@ -704,7 +708,8 @@ namespace osu.Framework.Graphics.UserInterface
                 if (visibleMenuItemsList.Count > 0)
                 {
                     var currentPreselected = PreselectedItem;
-                    int targetPreselectionIndex = visibleMenuItemsList.IndexOf(currentPreselected);
+                    // todo: what if no item is preselected?
+                    int targetPreselectionIndex = currentPreselected == null ? -1 : visibleMenuItemsList.IndexOf(currentPreselected);
 
                     switch (e.Key)
                     {
@@ -765,10 +770,10 @@ namespace osu.Framework.Graphics.UserInterface
             {
             }
 
-            internal override IItemsFlow CreateItemsFlow(FillDirection direction) => (IItemsFlow)(itemsFlow = new SearchableItemsFlow
+            internal override IItemsFlow CreateItemsFlow(FillDirection direction) => new SearchableItemsFlow
             {
                 Direction = direction,
-            });
+            };
 
             private partial class SearchableItemsFlow : SearchContainer<DrawableMenuItem>, IItemsFlow
             {
@@ -786,10 +791,10 @@ namespace osu.Framework.Graphics.UserInterface
         #region IFocusManager
 
         // Isolate input so that the Menu doesn't disturb focus. Focus is managed via the IDropdown interface.
-        void IFocusManager.TriggerFocusContention(Drawable triggerSource) { }
+        void IFocusManager.TriggerFocusContention(Drawable? triggerSource) { }
 
         // Isolate input so that the Menu doesn't disturb focus. Focus is managed via the IDropdown interface.
-        bool IFocusManager.ChangeFocus(Drawable potentialFocusTarget) => false;
+        bool IFocusManager.ChangeFocus(Drawable? potentialFocusTarget) => false;
 
         #endregion
 
@@ -833,15 +838,16 @@ namespace osu.Framework.Graphics.UserInterface
             if (visibleMenuItemsList.Count == 0)
                 return;
 
-            int targetPreselectionIndex = visibleMenuItemsList.IndexOf(Menu.PreselectedItem);
+            // todo: preselected item is null?
+            int targetPreselectionIndex = Menu.PreselectedItem == null ? -1 : visibleMenuItemsList.IndexOf(Menu.PreselectedItem);
             var preselectedItem = Menu.VisibleMenuItems.ElementAt(targetPreselectionIndex);
 
             SelectedItem = (DropdownMenuItem<T>)preselectedItem.Item;
         }
 
-        void IDropdown.TriggerFocusContention(Drawable triggerSource) => GetContainingFocusManager()?.TriggerFocusContention(triggerSource);
+        void IDropdown.TriggerFocusContention(Drawable? triggerSource) => GetContainingFocusManager()?.TriggerFocusContention(triggerSource);
 
-        bool IDropdown.ChangeFocus(Drawable potentialFocusTarget) => GetContainingFocusManager()?.ChangeFocus(potentialFocusTarget) ?? false;
+        bool IDropdown.ChangeFocus(Drawable? potentialFocusTarget) => GetContainingFocusManager()?.ChangeFocus(potentialFocusTarget) ?? false;
 
         #endregion
     }

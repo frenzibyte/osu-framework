@@ -8,6 +8,7 @@ using osu.Framework.Localisation;
 namespace osu.Framework.Graphics.UserInterface
 {
     public partial class BasicDropdown<T> : Dropdown<T>
+        where T : notnull
     {
         protected override DropdownMenu CreateMenu() => new BasicDropdownMenu();
 

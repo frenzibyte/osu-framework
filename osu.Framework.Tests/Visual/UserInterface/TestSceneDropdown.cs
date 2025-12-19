@@ -40,6 +40,15 @@ namespace osu.Framework.Tests.Visual.UserInterface
         }
 
         [Test]
+        public void TestNullDropdown()
+        {
+            AddStep("setup dropdown", () => Child = createDropdown().With(d =>
+            {
+                d.Items = new TestModel?[] { null };
+            }));
+        }
+
+        [Test]
         public void TestSelectByUserInteraction()
         {
             TestDropdown testDropdown = null!;

@@ -7,6 +7,7 @@ using osu.Framework.Localisation;
 namespace osu.Framework.Graphics.UserInterface
 {
     public class DropdownMenuItem<T> : MenuItem
+        where T : notnull
     {
         public readonly T Value;
 
